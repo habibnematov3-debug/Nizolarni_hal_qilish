@@ -1,0 +1,85 @@
+version: '3.9'
+
+services:
+  # ─── PostgreSQL ma'lumotlar bazasi ───────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: nizolar_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nizolar_dev_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nizolar_network
+
+  # ─── Redis keshlash ──────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: nizolar_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nizolar_network
+
+  # ─── NestJS Application ───────────────────────────────────────────────────────
+  app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: nizolar_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/nizolar_dev_db?schema=public
+      JWT_SECRET: nizolarni_hal_qilish_dev_secret_key_2026
+      JWT_EXPIRES_IN: 7d
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - '3000:3000'
+    volumes:
+      - ../uploads:/app/uploads
+    networks:
+      - nizolar_network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:3000/platform/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  nizolar_network:
+    driver: bridge

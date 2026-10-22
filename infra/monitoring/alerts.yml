@@ -1,0 +1,129 @@
+# Alertmanager Ogohlantirish Qoidalari
+# Nizolarni Muqobil Hal Etish Platformasi
+
+groups:
+  # ─── API Ogohlantirishlari ─────────────────────────────────────────────────
+  - name: api_alerts
+    interval: 30s
+    rules:
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "API xatolik darajasi yuqori"
+          description: "So'nggi 5 daqiqada 5xx xatoliklar 5% dan oshdi (hozir: {{ $value | humanizePercentage }})"
+
+      - alert: APIHighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "API javob vaqti sekin"
+          description: "P95 javob vaqti 2 soniyadan oshdi (hozir: {{ $value }}s)"
+
+      - alert: APIDown
+        expr: up{job="nizolar_api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "API ishlamayapti"
+          description: "Nizolarni hal qilish API 1 daqiqadan beri ulangan emas"
+
+  # ─── Ma'lumotlar Bazasi Ogohlantirishlari ──────────────────────────────────
+  - name: database_alerts
+    interval: 30s
+    rules:
+      - alert: DatabaseDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "PostgreSQL ishlamayapti"
+          description: "Ma'lumotlar bazasi ulanmadi"
+
+      - alert: DatabaseHighConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "DB ulanishlar soni yuqori"
+          description: "Faol ulanishlar 80 dan oshdi (hozir: {{ $value }})"
+
+      - alert: DatabaseDiskUsageHigh
+        expr: pg_database_size_bytes / (1024 * 1024 * 1024) > 5
+        for: 10m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "DB hajmi katta"
+          description: "Ma'lumotlar bazasi hajmi 5GB dan oshdi"
+
+  # ─── Tizim Resurslari Ogohlantirishlari ───────────────────────────────────
+  - name: system_alerts
+    interval: 30s
+    rules:
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Xotira ishlatilishi juda yuqori"
+          description: "RAM 90% dan oshdi (hozir: {{ $value | humanizePercentage }})"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "CPU ishlatilishi yuqori"
+          description: "CPU 85% dan oshdi (hozir: {{ $value | humanizePercentage }})"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Disk joyi kam"
+          description: "Disk joyi 15% dan kam qoldi"
+
+  # ─── Xavfsizlik Ogohlantirishlari ─────────────────────────────────────────
+  - name: security_alerts
+    interval: 60s
+    rules:
+      - alert: TooManyFailedLogins
+        expr: rate(auth_login_failed_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Ko'p muvaffaqiyatsiz kirish urinishlari"
+          description: "Daqiqada 10 dan ortiq muvaffaqiyatsiz login (hozir: {{ $value }})"
+
+      - alert: RateLimitExceeded
+        expr: rate(http_requests_rate_limited_total[5m]) > 50
+        for: 3m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Rate limit ko'p marta oshirildi"
+          description: "IP manzillar 5 daqiqada 50 dan ortiq bloklanmoqda"

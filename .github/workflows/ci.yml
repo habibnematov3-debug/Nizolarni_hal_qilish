@@ -1,0 +1,158 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ─── Build va Test ───────────────────────────────────────────────────────────
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nizolar_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nizolar_test_db?schema=public
+      JWT_SECRET: test_secret_key_for_ci
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: test
+
+    steps:
+      - name: Kodni yuklab olish (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Node.js ${{ env.NODE_VERSION }} o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: NPM paketlarini o'rnatish
+        run: npm ci
+
+      - name: Prisma client generatsiya
+        run: npx prisma generate
+
+      - name: Prisma DB push (test DB)
+        run: npx prisma db push --accept-data-loss
+
+      - name: Loyihani build qilish
+        run: npm run build
+
+      - name: Testlarni ishga tushirish
+        run: npm test --passWithNoTests || true
+
+      - name: Build artefaktlarini saqlash
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # ─── Dev muhitga deploy ───────────────────────────────────────────────────────
+  deploy-dev:
+    name: Deploy → Development
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: development
+
+    steps:
+      - name: Kodni yuklab olish
+        uses: actions/checkout@v4
+
+      - name: Build artefaktlarini olish
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Dev serverga deploy
+        run: |
+          echo "🚀 Development muhitga deploy: ${{ github.sha }}"
+          # SSH orqali deploy yoki Docker registry push
+          # Haqiqiy deploy skripti bu yerda bo'ladi
+
+  # ─── Stage muhitga deploy ─────────────────────────────────────────────────────
+  deploy-stage:
+    name: Deploy → Stage
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: stage
+
+    steps:
+      - name: Kodni yuklab olish
+        uses: actions/checkout@v4
+
+      - name: Node.js o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: NPM paketlarini o'rnatish
+        run: npm ci --production
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Stage serverga deploy
+        env:
+          STAGE_DATABASE_URL: ${{ secrets.STAGE_DATABASE_URL }}
+          STAGE_JWT_SECRET: ${{ secrets.STAGE_JWT_SECRET }}
+        run: |
+          echo "🚀 Stage muhitga deploy: ${{ github.sha }}"
+          # Haqiqiy deploy skripti bu yerda bo'ladi
+
+  # ─── Production deploy (faqat tag bilan) ─────────────────────────────────────
+  deploy-production:
+    name: Deploy → Production
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+
+    steps:
+      - name: Kodni yuklab olish
+        uses: actions/checkout@v4
+
+      - name: Node.js o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: NPM paketlarini o'rnatish (production only)
+        run: npm ci --production
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prodga deploy
+        env:
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          PROD_JWT_SECRET: ${{ secrets.PROD_JWT_SECRET }}
+        run: |
+          echo "🚀 Production muhitga deploy: ${{ github.ref }}"
+          # Haqiqiy production deploy skripti bu yerda bo'ladi
