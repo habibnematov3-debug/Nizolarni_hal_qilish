@@ -1,10 +1,16 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { CabinetType, RegistryStatus } from '@prisma/client';
 
 export interface AuthUser {
   id: string;
   username: string;
   fullName: string;
+  pinfl?: string | null;
   organizationId?: string | null;
+  organization?: any;
+  region?: string | null;
+  cabinetType?: CabinetType;
+  registryStatus?: RegistryStatus;
   roles: string[];
 }
 

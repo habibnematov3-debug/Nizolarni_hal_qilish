@@ -6,7 +6,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AssignUserRolesDto } from './dto/assign-roles.dto';
 import { QueryUserDto } from './dto/query-user.dto';
-import { Prisma } from '@prisma/client';
+import { UpdateProfileDto } from '../auth/dto/update-profile.dto';
+import { resolveUserCabinetAndRoles } from '../auth/helpers/cabinet-resolver.helper';
+import { Prisma, RegistryStatus } from '@prisma/client';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 
 @Injectable()
@@ -24,6 +26,7 @@ export class UsersService {
           { username: dto.username },
           ...(dto.email ? [{ email: dto.email }] : []),
           ...(dto.phone ? [{ phone: dto.phone }] : []),
+          ...(dto.pinfl ? [{ pinfl: dto.pinfl }] : []),
         ],
       },
     });
@@ -32,6 +35,7 @@ export class UsersService {
       if (existing.username === dto.username) throw new ConflictException('Ushbu username band');
       if (dto.email && existing.email === dto.email) throw new ConflictException('Ushbu email band');
       if (dto.phone && existing.phone === dto.phone) throw new ConflictException('Ushbu telefon raqami band');
+      if (dto.pinfl && existing.pinfl === dto.pinfl) throw new ConflictException('Ushbu JShShIR ga ega foydalanuvchi mavjud');
     }
 
     if (dto.organizationId) {
@@ -43,7 +47,7 @@ export class UsersService {
       }
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : null;
 
     // Resolve roles
     let roleRecords: { id: string; name: string }[] = [];
@@ -58,6 +62,9 @@ export class UsersService {
       });
     }
 
+    const roleNamesList = roleRecords.map((r) => r.name);
+    const resolved = resolveUserCabinetAndRoles(roleNamesList, dto.registryStatus || RegistryStatus.NONE);
+
     const newUser = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -67,8 +74,12 @@ export class UsersService {
           email: dto.email,
           phone: dto.phone,
           pinfl: dto.pinfl,
+          passportSeriesNumber: dto.passportSeriesNumber,
+          address: dto.address,
           position: dto.position,
           organizationId: dto.organizationId,
+          registryStatus: dto.registryStatus || RegistryStatus.NONE,
+          cabinetType: resolved.cabinetType,
           status: dto.status || 'ACTIVE',
         },
       });
@@ -99,6 +110,7 @@ export class UsersService {
         username: result.username,
         fullName: result.fullName,
         organizationId: result.organizationId,
+        cabinetType: result.cabinetType,
         roles: result.roles,
         status: result.status,
       },
@@ -147,7 +159,7 @@ export class UsersService {
         skip,
         take: limit,
         include: {
-          organization: { select: { id: true, name: true, type: true } },
+          organization: { select: { id: true, name: true, type: true, region: true } },
           userRoles: {
             include: {
               role: { select: { id: true, name: true, displayName: true } },
@@ -159,7 +171,7 @@ export class UsersService {
     ]);
 
     const items = users.map((u) => {
-      const { passwordHash, userRoles, ...safeUser } = u;
+      const { passwordHash, refreshToken, userRoles, ...safeUser } = u;
       return {
         ...safeUser,
         roles: userRoles.map((ur) => ur.role),
@@ -202,7 +214,7 @@ export class UsersService {
       throw new NotFoundException(`Foydalanuvchi topilmadi: ${id}`);
     }
 
-    const { passwordHash, userRoles, ...safeUser } = user;
+    const { passwordHash, refreshToken, userRoles, ...safeUser } = user;
     const roles = userRoles.map((ur) => ur.role.name);
     const permissions = Array.from(
       new Set(
@@ -235,8 +247,15 @@ export class UsersService {
     if (dto.email !== undefined) updateData.email = dto.email;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.pinfl !== undefined) updateData.pinfl = dto.pinfl;
+    if (dto.passportSeriesNumber !== undefined) updateData.passportSeriesNumber = dto.passportSeriesNumber;
+    if (dto.address !== undefined) updateData.address = dto.address;
     if (dto.position !== undefined) updateData.position = dto.position;
     if (dto.status) updateData.status = dto.status;
+    if (dto.registryStatus) {
+      updateData.registryStatus = dto.registryStatus;
+      const resolved = resolveUserCabinetAndRoles(existing.roles, dto.registryStatus);
+      updateData.cabinetType = resolved.cabinetType;
+    }
 
     if (dto.organizationId !== undefined) {
       if (dto.organizationId) {
@@ -259,7 +278,6 @@ export class UsersService {
       data: updateData,
     });
 
-    // If roleNames specified in update, update roles too
     if (dto.roleNames) {
       await this.assignRoles(id, { roles: dto.roleNames }, currentUser, ipAddress, userAgent);
     }
@@ -315,6 +333,8 @@ export class UsersService {
     });
 
     const oldRoles = user.roles;
+    const newRoleNames = roles.map((r) => r.name);
+    const resolved = resolveUserCabinetAndRoles(newRoleNames, user.registryStatus);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.userRole.deleteMany({
@@ -329,11 +349,16 @@ export class UsersService {
           })),
         });
       }
+
+      await tx.user.update({
+        where: { id },
+        data: { cabinetType: resolved.cabinetType },
+      });
     });
 
     const updated = await this.findOne(id);
 
-    // Audit log explicitly for role assignment requirement FT-ADM-03 / ADM-02
+    // Audit log
     await this.auditService.log({
       userId: currentUser.id,
       username: currentUser.username,
@@ -341,12 +366,173 @@ export class UsersService {
       action: 'ROLE_ASSIGN',
       entityType: 'USER',
       entityId: id,
-      oldValues: { roles: oldRoles },
-      newValues: { roles: updated.roles },
+      oldValues: { roles: oldRoles, cabinetType: user.cabinetType },
+      newValues: { roles: updated.roles, cabinetType: updated.cabinetType },
       ipAddress,
       userAgent,
     });
 
     return updated;
+  }
+
+  /**
+   * Shaxsiy ma'lumotlar (Obyektivka)ni olish (FT-AUTH-05 / AUTH-04 / GET /users/me)
+   */
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        organization: true,
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Foydalanuvchi topilmadi');
+    }
+
+    const { passwordHash, refreshToken, userRoles, ...safeUser } = user;
+    const roles = userRoles.map((ur) => ur.role.name);
+    const resolved = resolveUserCabinetAndRoles(roles, user.registryStatus);
+
+    const permissions = Array.from(
+      new Set(
+        userRoles.flatMap((ur) =>
+          ur.role.permissions.map((rp) => rp.permission.code),
+        ),
+      ),
+    );
+
+    return {
+      ...safeUser,
+      cabinetType: resolved.cabinetType,
+      primaryRole: resolved.primaryRole,
+      roles: resolved.roles,
+      permissions,
+      // Metadata defining which fields are editable vs read-only
+      fieldPermissions: {
+        editable: ['phone', 'email', 'address'],
+        readOnly: [
+          'pinfl',
+          'passportSeriesNumber',
+          'passportGivenDate',
+          'passportExpireDate',
+          'fullName',
+          'birthDate',
+          'birthPlace',
+          'nationality',
+          'gender',
+          'registryStatus',
+          'cabinetType',
+        ],
+      },
+    };
+  }
+
+  /**
+   * Ruxsat etilgan maydonlarni tahrirlash (FT-AUTH-05 / AUTH-04 / PATCH /users/me)
+   */
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+    currentUser: AuthUser,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Foydalanuvchi topilmadi');
+    }
+
+    // Check if user attempted to modify Gov-protected fields
+    const rawDto = dto as any;
+    const protectedFields = [
+      'pinfl',
+      'passportSeriesNumber',
+      'passportGivenDate',
+      'passportExpireDate',
+      'fullName',
+      'birthDate',
+      'birthPlace',
+      'nationality',
+      'gender',
+      'registryStatus',
+      'cabinetType',
+    ];
+
+    for (const field of protectedFields) {
+      if (rawDto[field] !== undefined && rawDto[field] !== user[field as keyof typeof user]) {
+        throw new BadRequestException(
+          `"${field}" maydoni davlat axborot tizimlaridan (ONE ID / IIV) olingan va tahrirlanmaydi`,
+        );
+      }
+    }
+
+    // Validate unique email/phone if changed
+    if (dto.email && dto.email !== user.email) {
+      const emailConflict = await this.prisma.user.findFirst({
+        where: { email: dto.email, id: { not: userId } },
+      });
+      if (emailConflict) throw new ConflictException('Ushbu elektron pochta boshqa foydalanuvchida mavjud');
+    }
+
+    if (dto.phone && dto.phone !== user.phone) {
+      const phoneConflict = await this.prisma.user.findFirst({
+        where: { phone: dto.phone, id: { not: userId } },
+      });
+      if (phoneConflict) throw new ConflictException('Ushbu telefon raqami boshqa foydalanuvchida mavjud');
+    }
+
+    const oldValues = {
+      phone: user.phone,
+      email: user.email,
+      address: user.address,
+    };
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.phone !== undefined ? { phone: dto.phone } : {}),
+        ...(dto.email !== undefined ? { email: dto.email } : {}),
+        ...(dto.address !== undefined ? { address: dto.address } : {}),
+      },
+    });
+
+    const newValues = {
+      phone: updated.phone,
+      email: updated.email,
+      address: updated.address,
+    };
+
+    // Audit log (FT-AUTH-05 / AUTH-04: Tahrirlash audit jurnaliga yoziladi)
+    await this.auditService.log({
+      userId: currentUser.id,
+      username: currentUser.username,
+      userFullName: currentUser.fullName,
+      action: 'UPDATE',
+      entityType: 'USER_PROFILE',
+      entityId: userId,
+      oldValues,
+      newValues,
+      ipAddress,
+      userAgent,
+    });
+
+    return this.getProfile(userId);
   }
 }

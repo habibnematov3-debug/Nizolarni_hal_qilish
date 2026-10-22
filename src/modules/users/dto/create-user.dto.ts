@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserStatus } from '@prisma/client';
+import { UserStatus, RegistryStatus } from '@prisma/client';
 import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
@@ -13,11 +13,11 @@ export class CreateUserDto {
   @IsString()
   fullName: string;
 
-  @ApiProperty({ example: 'Secret@2026', description: 'Parol' })
-  @IsNotEmpty({ message: 'Parol kiritilishi shart' })
+  @ApiPropertyOptional({ example: 'Secret@2026', description: 'Parol (ixtiyoriy, ONE ID orqali kiruvchilar uchun shart emas)' })
+  @IsOptional()
   @IsString()
   @MinLength(6, { message: 'Parol kamida 6 belgidan iborat bo\'lishi kerak' })
-  password: string;
+  password?: string;
 
   @ApiPropertyOptional({ example: 'alisher@adliya.uz', description: 'Elektron pochta' })
   @IsOptional()
@@ -34,6 +34,16 @@ export class CreateUserDto {
   @IsString()
   pinfl?: string;
 
+  @ApiPropertyOptional({ example: 'AA1234567', description: 'Pasport seriyasi va raqami' })
+  @IsOptional()
+  @IsString()
+  passportSeriesNumber?: string;
+
+  @ApiPropertyOptional({ example: 'Toshkent shahri, Chilonzor tumani', description: 'Yashash manzili' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
   @ApiPropertyOptional({ example: 'Bosh mutaxassis', description: 'Lavozimi' })
   @IsOptional()
   @IsString()
@@ -43,6 +53,15 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   organizationId?: string;
+
+  @ApiPropertyOptional({
+    enum: RegistryStatus,
+    default: RegistryStatus.NONE,
+    description: 'Reyestrdagi maqomi: NONE, MEDIATOR, ARBITRATION_JUDGE, ARBITRATOR',
+  })
+  @IsOptional()
+  @IsEnum(RegistryStatus)
+  registryStatus?: RegistryStatus;
 
   @ApiPropertyOptional({
     example: ['MINISTRY_STAFF'],
