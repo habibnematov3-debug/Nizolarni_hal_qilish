@@ -62,7 +62,15 @@ Ushbu modul orqali quyidagi funksiyalar boshqariladi:
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+  // Vercel's serverless bundle does not reliably expose swagger-ui-dist's
+  // static files. Load the UI assets from the same pinned version instead.
+  const swaggerUiCdn = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14';
   SwaggerModule.setup('api/docs', app, document, {
+    customCssUrl: [`${swaggerUiCdn}/swagger-ui.css`],
+    customJs: [
+      `${swaggerUiCdn}/swagger-ui-bundle.js`,
+      `${swaggerUiCdn}/swagger-ui-standalone-preset.js`,
+    ],
     swaggerOptions: {
       persistAuthorization: true,
       filter: true,
