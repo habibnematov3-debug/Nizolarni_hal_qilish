@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   Logger,
-  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { TemplateEngineService } from './template-engine.service';
@@ -128,8 +127,14 @@ export class NotificationsService {
   async send(dto: SendNotificationDto) {
     // 1. Idempotency check: "Bir xabar ikki marta yuborilmaydi"
     if (dto.idempotencyKey) {
-      const existing = await this.prisma.notification.findUnique({
-        where: { idempotencyKey: dto.idempotencyKey },
+      const existing = await this.prisma.notification.findFirst({
+        where: {
+          OR: [
+            { idempotencyKey: dto.idempotencyKey },
+            { idempotencyKey: `${dto.idempotencyKey}_CABINET` },
+            { idempotencyKey: `${dto.idempotencyKey}_SMS` },
+          ],
+        },
       });
       if (existing) {
         this.logger.warn(`Notification with idempotencyKey "${dto.idempotencyKey}" already processed.`);
