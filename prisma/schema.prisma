@@ -80,6 +80,32 @@ enum TimerUnit {
   MONTHS
 }
 
+enum CourtClaimStatus {
+  RECEIVED
+  MEDIATOR_ASSIGNED
+  IN_PROCESS
+  RESOLVED
+  RETURNED_TO_COURT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum IntegrationDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum IntegrationStatus {
+  SUCCESS
+  FAILED
+  TIMEOUT
+}
+
 model Organization {
   id          String           @id @default(uuid())
   name        String
@@ -221,7 +247,7 @@ model AuditLog {
   username     String?
   userFullName String?  @map("user_full_name")
   action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, LOGOUT, REFRESH, PUBLISH, ROLE_ASSIGN
-  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS, AUTH, NOTIFICATION, TIMER
+  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS, AUTH, NOTIFICATION, TIMER, INTEGRATION
   entityId     String?  @map("entity_id")
   oldValues    Json?    @map("old_values")
   newValues    Json?    @map("new_values")
@@ -239,7 +265,7 @@ model AuditLog {
 model SystemSetting {
   id          String   @id @default(uuid())
   key         String   @unique
-  group       String   @default("GENERAL") // TIMERS, NOTIFICATIONS, FILE_LIMITS, GENERAL, SESSION
+  group       String   @default("GENERAL") // TIMERS, NOTIFICATIONS, FILE_LIMITS, GENERAL, SESSION, INTEGRATION
   value       Json
   description String?
   updatedBy   String?  @map("updated_by")
@@ -337,4 +363,90 @@ model TimerSetting {
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   @@map("timer_settings")
+}
+
+model CourtClaim {
+  id              String           @id @default(uuid())
+  courtCaseNumber String           @unique @map("court_case_number")
+  courtName       String           @map("court_name")
+  judgeName       String?          @map("judge_name")
+  claimantName    String           @map("claimant_name")
+  claimantPinfl   String?          @map("claimant_pinfl")
+  claimantPhone   String?          @map("claimant_phone")
+  respondentName  String           @map("respondent_name")
+  respondentPinfl String?          @map("respondent_pinfl")
+  respondentPhone String?          @map("respondent_phone")
+  disputeSubject  String           @map("dispute_subject")
+  claimAmount     Decimal?         @map("claim_amount") @db.Decimal(15, 2)
+  courtOrderDate  DateTime         @map("court_order_date")
+  documentUrl     String?          @map("document_url")
+  status          CourtClaimStatus @default(RECEIVED)
+  metadata        Json?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@index([courtCaseNumber])
+  @@index([status])
+  @@map("court_claims")
+}
+
+model TrainingCertificate {
+  id                 String   @id @default(uuid())
+  certificateNumber  String   @unique @map("certificate_number")
+  pinfl              String
+  fullName           String   @map("full_name")
+  trainingCenterCode String   @map("training_center_code") // YUMOM, TDYU, etc.
+  courseName         String   @map("course_name")
+  issuedDate         DateTime @map("issued_date")
+  expiryDate         DateTime @map("expiry_date")
+  status             String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
+  documentUrl        String?  @map("document_url")
+  metadata           Json?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([pinfl])
+  @@index([certificateNumber])
+  @@map("training_certificates")
+}
+
+model BillingTransaction {
+  id               String        @id @default(uuid())
+  invoiceNumber    String        @unique @map("invoice_number")
+  transactionId    String?       @unique @map("transaction_id") // Payment gateway transaction ID
+  userId           String?       @map("user_id")
+  amount           Decimal       @db.Decimal(15, 2)
+  serviceType      String        @map("service_type") // MEDIATION_FEE, QUALIFICATION_EXAM_FEE, REGISTRY_ENTRY_FEE
+  payerPinfl       String?       @map("payer_pinfl")
+  payerName        String?       @map("payer_name")
+  payerPhone       String?       @map("payer_phone")
+  paymentProvider  String?       @map("payment_provider") // MUNIS, PAYME, CLICK, TREASURY
+  paymentStatus    PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt           DateTime?     @map("paid_at")
+  metadata         Json?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  @@index([invoiceNumber])
+  @@index([transactionId])
+  @@index([paymentStatus])
+  @@map("billing_transactions")
+}
+
+model IntegrationLog {
+  id          String               @id @default(uuid())
+  serviceName String               @map("service_name") // ONE_ID, ESIGN, MYGOV, BILLING, COURTS, TRAINING_CENTERS, SMS, LEGAL_CAPACITY, VIDEO, PERSONALIZATION
+  direction   IntegrationDirection
+  status      IntegrationStatus
+  endpoint    String
+  request     Json?
+  response    Json?
+  error       String?
+  durationMs  Int?                 @map("duration_ms")
+  createdAt   DateTime             @default(now()) @map("created_at")
+
+  @@index([serviceName])
+  @@index([status])
+  @@index([createdAt])
+  @@map("integration_logs")
 }
