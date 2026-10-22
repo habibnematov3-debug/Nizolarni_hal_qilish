@@ -135,6 +135,9 @@ npx ts-node test/test-auth-apis.ts
 
 # 3. ADM moduli (20 ta API, tashkilotlar, rollar, audit):
 npx ts-node test/test-all-apis.ts
+
+# 4. ENT integratsiya adapterlari va kiruvchi API contract testi:
+npm run test:ent
 ```
 
 ---

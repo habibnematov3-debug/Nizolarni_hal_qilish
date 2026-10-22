@@ -14,6 +14,12 @@ import { BillingIntegrationAdapter } from '../src/modules/integration/adapters/b
 let app: INestApplication;
 const baseUrl = 'http://localhost:3336';
 
+function assertCondition(condition: unknown, message: string): asserts condition {
+  if (!condition) {
+    throw new Error(`ENT contract check failed: ${message}`);
+  }
+}
+
 async function request(path: string, options: RequestInit = {}) {
   const url = `${baseUrl}${path}`;
   const headers: Record<string, string> = {
@@ -46,7 +52,9 @@ async function runEntTests() {
       method: 'POST',
       body: JSON.stringify({ username: 'admin', password: 'Admin@12345' }),
     });
+    assertCondition([200, 201].includes(adminLoginRes.status), `admin login returned ${adminLoginRes.status}`);
     const adminToken = adminLoginRes.data.data.accessToken;
+    assertCondition(typeof adminToken === 'string' && adminToken.length > 0, 'admin login did not return an access token');
     const adminAuthHeader = { Authorization: `Bearer ${adminToken}` };
 
     // =========================================================================
@@ -54,6 +62,7 @@ async function runEntTests() {
     // =========================================================================
     console.log('\n--- TEST 1: GET /external/mygov/mediators (my.gov.uz portali reyestri) ---');
     const myGovRes = await request('/external/mygov/mediators?page=1&limit=10');
+    assertCondition(myGovRes.status === 200, `my.gov registry returned ${myGovRes.status}`);
     console.log(`[GET /external/mygov/mediators] Status: ${myGovRes.status}`);
     console.log(`  Manba: ${myGovRes.data.data?.source}`);
     console.log(`  Jami mediatorlar soni: ${myGovRes.data.data?.total}`);
@@ -83,6 +92,7 @@ async function runEntTests() {
         documentUrl: 'https://e-sud.sud.uz/files/order_sample.pdf',
       }),
     });
+    assertCondition(courtClaimRes.status === 201, `court claim returned ${courtClaimRes.status}`);
     console.log(`[POST /external/courts/claims] Status: ${courtClaimRes.status}`);
     console.log(`  Ish raqami: ${courtClaimRes.data.data?.courtCaseNumber}`);
     console.log(`  Qabul holati: ${courtClaimRes.data.data?.status}`);
@@ -105,6 +115,7 @@ async function runEntTests() {
         documentUrl: 'https://yumom.uz/certificates/sample.pdf',
       }),
     });
+    assertCondition(certRes.status === 201, `training certificate returned ${certRes.status}`);
     console.log(`[POST /external/training-centers/certificates] Status: ${certRes.status}`);
     console.log(`  Sertifikat raqami: ${certRes.data.data?.certificateNumber}`);
     console.log(`  Holat: ${certRes.data.data?.status}`);
@@ -127,6 +138,7 @@ async function runEntTests() {
         paidAt: new Date().toISOString(),
       }),
     });
+    assertCondition([200, 201].includes(billingCallbackRes.status), `billing callback returned ${billingCallbackRes.status}`);
     console.log(`[POST /external/billing/callback] Status: ${billingCallbackRes.status}`);
     console.log(`  Xabar: ${billingCallbackRes.data.data?.message}`);
 
@@ -138,37 +150,45 @@ async function runEntTests() {
     // ENT-01: OneID & Mobile ID
     const oneIdAdapter = app.get(OneIdIntegrationAdapter);
     const oneIdProfile = await oneIdAdapter.exchangeCode('pinfl_31201851230044');
+    assertCondition(oneIdProfile.pinfl === '31201851230044', 'ONE ID adapter returned the wrong PINFL');
     console.log(`[ENT-01: OneIdAdapter] PINFL: ${oneIdProfile.pinfl}, Passport: ${oneIdProfile.passportSeriesNumber}`);
 
     const mobileIdResult = await oneIdAdapter.verifyMobileId('+998901234567', '123456');
+    assertCondition(mobileIdResult.verified === true, 'Mobile ID adapter did not verify the mock code');
     console.log(`[ENT-01: MobileId] Verified: ${mobileIdResult.verified}`);
 
     // ENT-02: Esign
     const esignAdapter = app.get(EsignIntegrationAdapter);
     const esignVerify = await esignAdapter.verifyPkcs7('sample_pkcs7_hash');
+    assertCondition(esignVerify.valid === true, 'E-imzo verification contract failed');
     console.log(`[ENT-02: EsignAdapter Verify] Valid: ${esignVerify.valid}, Signer: ${esignVerify.fullName}`);
 
     const esignSign = await esignAdapter.signDocument('sha256_hash_contract_agreement', '31201851230011');
+    assertCondition(typeof esignSign.pkcs7 === 'string' && esignSign.pkcs7.length > 0, 'E-imzo signing contract returned no signature');
     console.log(`[ENT-02: EsignAdapter Sign] PKCS7 generated: ${!!esignSign.pkcs7}`);
 
     // ENT-05: SMS Adapter
     const smsAdapter = app.get(SmsIntegrationAdapter);
     const smsResult = await smsAdapter.sendSms('+998901234567', 'Test platforma xabarnomasi');
+    assertCondition(smsResult.success === true, 'SMS adapter contract failed');
     console.log(`[ENT-05: SmsAdapter] Success: ${smsResult.success}, MessageId: ${smsResult.messageId}`);
 
     // ENT-06: Legal Capacity (Sudlanganlik va muomalaga layoqat)
     const capacityAdapter = app.get(LegalCapacityIntegrationAdapter);
     const capacityResult = await capacityAdapter.checkStatus('31201851230011');
+    assertCondition(['APPROVED', 'REJECTED', 'IN_PROGRESS'].includes(capacityResult.status), 'legal capacity adapter returned an invalid status');
     console.log(`[ENT-06: LegalCapacityAdapter] Status: ${capacityResult.status}, Clean: ${!capacityResult.hasCriminalRecord}`);
 
     // ENT-07: Video Conference
     const videoAdapter = app.get(VideoConferenceIntegrationAdapter);
     const meetingRoom = await videoAdapter.createMeeting('Mediatsiya majlisi', new Date().toISOString());
+    assertCondition(meetingRoom.roomUrl.startsWith('https://'), 'video conference adapter returned an invalid room URL');
     console.log(`[ENT-07: VideoConferenceAdapter] Room URL: ${meetingRoom.roomUrl}, PIN: ${meetingRoom.pin}`);
 
     // ENT-10: Personalization Agency
     const personalizationAdapter = app.get(PersonalizationIntegrationAdapter);
     const biometricData = await personalizationAdapter.verifyBiometrics('31201851230044', 'AA7654321');
+    assertCondition(biometricData.documentStatus === 'VALID', 'personalization adapter contract failed');
     console.log(`[ENT-10: PersonalizationAdapter] FullName: ${biometricData.fullName}, Document Status: ${biometricData.documentStatus}`);
 
     // =========================================================================
@@ -176,6 +196,8 @@ async function runEntTests() {
     // =========================================================================
     console.log('\n--- TEST 6: GET /admin/integrations/logs (Integratsiya jurnali) ---');
     const logsRes = await request('/admin/integrations/logs', { headers: adminAuthHeader });
+    assertCondition(logsRes.status === 200, `integration log endpoint returned ${logsRes.status}`);
+    assertCondition(Array.isArray(logsRes.data.data), 'integration log endpoint did not return an array');
     console.log(`[GET /admin/integrations/logs] Status: ${logsRes.status}`);
     console.log(`  Jami qayd etilgan integratsiya loglari: ${logsRes.data.data?.length}`);
     const sampleLog = logsRes.data.data?.[0];
