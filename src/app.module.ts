@@ -11,6 +11,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { IntegrationModule } from './modules/integration/integration.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -29,6 +30,7 @@ import { AppController } from './app.controller';
     ContentModule,
     NotificationsModule,
     IntegrationModule,
+    ReportsModule,
   ],
   controllers: [AppController],
 })

@@ -11,9 +11,9 @@ datasource db {
 }
 
 enum OrganizationType {
-  MINISTRY              // Vazirlik
-  REGIONAL_DEPARTMENT   // Hududiy boshqarma
-  TRAINING_CENTER       // O'quv markazi
+  MINISTRY // Vazirlik
+  REGIONAL_DEPARTMENT // Hududiy boshqarma
+  TRAINING_CENTER // O'quv markazi
 }
 
 enum EntityStatus {
@@ -34,22 +34,22 @@ enum ContentStatus {
 }
 
 enum RegistryStatus {
-  NONE                  // Reyestrda yo'q (Talabgor)
-  MEDIATOR              // Mediator
-  ARBITRATION_JUDGE     // Hakamlik sudyasi
-  ARBITRATOR            // Arbitr
+  NONE // Reyestrda yo'q (Talabgor)
+  MEDIATOR // Mediator
+  ARBITRATION_JUDGE // Hakamlik sudyasi
+  ARBITRATOR // Arbitr
 }
 
 enum CabinetType {
-  APPLICANT             // Talabgor kabineti
-  MEDIATOR              // Mediator kabineti
-  ARBITRATION_JUDGE     // Hakamlik sudyasi kabineti
-  ARBITRATOR            // Arbitr kabineti
-  COMMISSION            // Malaka komissiyasi kabineti
-  REGIONAL_STAFF        // Hududiy adliya xodimi kabineti
-  MINISTRY_STAFF        // Vazirlik xodimi kabineti
-  ADMIN                 // Administrator paneli
-  OPERATOR              // Operator kabineti
+  APPLICANT // Talabgor kabineti
+  MEDIATOR // Mediator kabineti
+  ARBITRATION_JUDGE // Hakamlik sudyasi kabineti
+  ARBITRATOR // Arbitr kabineti
+  COMMISSION // Malaka komissiyasi kabineti
+  REGIONAL_STAFF // Hududiy adliya xodimi kabineti
+  MINISTRY_STAFF // Vazirlik xodimi kabineti
+  ADMIN // Administrator paneli
+  OPERATOR // Operator kabineti
 }
 
 enum AuthProvider {
@@ -106,35 +106,50 @@ enum IntegrationStatus {
   TIMEOUT
 }
 
-model Organization {
-  id          String           @id @default(uuid())
-  name        String
-  type        OrganizationType
-  parentId    String?          @map("parent_id")
-  parent      Organization?    @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children    Organization[]   @relation("OrganizationHierarchy")
-  region      String?
-  status      EntityStatus     @default(ACTIVE)
-  code        String?
-  address     String?
-  phone       String?
-  email       String?
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  RETURNED
+  ACCEPTED
+  FORWARDED
+}
 
-  users       User[]
+enum ReportSummaryStatus {
+  DRAFT
+  SUBMITTED
+}
+
+model Organization {
+  id        String           @id @default(uuid())
+  name      String
+  type      OrganizationType
+  parentId  String?          @map("parent_id")
+  parent    Organization?    @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Organization[]   @relation("OrganizationHierarchy")
+  region    String?
+  status    EntityStatus     @default(ACTIVE)
+  code      String?
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  users            User[]
+  quarterlyReports QuarterlyReport[]
+  reportSummaries  ReportSummary[]
 
   @@map("organizations")
 }
 
 model Role {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  displayName String           @map("display_name")
+  id          String   @id @default(uuid())
+  name        String   @unique
+  displayName String   @map("display_name")
   description String?
-  isSystem    Boolean          @default(false) @map("is_system")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   userRoles   UserRole[]
   permissions RolePermission[]
@@ -143,12 +158,12 @@ model Role {
 }
 
 model Permission {
-  id          String           @id @default(uuid())
-  code        String           @unique
+  id          String   @id @default(uuid())
+  code        String   @unique
   name        String
-  module      String           @default("ADM")
+  module      String   @default("ADM")
   description String?
-  createdAt   DateTime         @default(now()) @map("created_at")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   rolePermissions RolePermission[]
 
@@ -156,54 +171,56 @@ model Permission {
 }
 
 model RolePermission {
-  id           String      @id @default(uuid())
-  roleId       String      @map("role_id")
-  permissionId String      @map("permission_id")
+  id           String @id @default(uuid())
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
 
-  role         Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
 }
 
 model User {
-  id                   String         @id @default(uuid())
-  username             String         @unique
-  email                String?        @unique
-  phone                String?        @unique
-  passwordHash         String?        @map("password_hash")
-  fullName             String         @map("full_name")
-  organizationId       String?        @map("organization_id")
-  organization         Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  status               UserStatus     @default(ACTIVE)
-  pinfl                String?        @unique
-  passportSeriesNumber String?        @map("passport_series_number")
-  passportGivenDate    String?        @map("passport_given_date")
-  passportExpireDate   String?        @map("passport_expire_date")
-  birthDate            String?        @map("birth_date")
-  birthPlace           String?        @map("birth_place")
+  id                   String        @id @default(uuid())
+  username             String        @unique
+  email                String?       @unique
+  phone                String?       @unique
+  passwordHash         String?       @map("password_hash")
+  fullName             String        @map("full_name")
+  organizationId       String?       @map("organization_id")
+  organization         Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  status               UserStatus    @default(ACTIVE)
+  pinfl                String?       @unique
+  passportSeriesNumber String?       @map("passport_series_number")
+  passportGivenDate    String?       @map("passport_given_date")
+  passportExpireDate   String?       @map("passport_expire_date")
+  birthDate            String?       @map("birth_date")
+  birthPlace           String?       @map("birth_place")
   nationality          String?
   gender               String?
   address              String?
   position             String?
 
-  registryStatus       RegistryStatus @default(NONE) @map("registry_status")
-  cabinetType          CabinetType    @default(APPLICANT) @map("cabinet_type")
-  authProvider         AuthProvider   @default(LOCAL) @map("auth_provider")
-  oneIdUserId          String?        @map("one_id_user_id")
-  esignSerialNumber    String?        @map("esign_serial_number")
-  mobileIdPhone        String?        @map("mobile_id_phone")
+  registryStatus    RegistryStatus @default(NONE) @map("registry_status")
+  cabinetType       CabinetType    @default(APPLICANT) @map("cabinet_type")
+  authProvider      AuthProvider   @default(LOCAL) @map("auth_provider")
+  oneIdUserId       String?        @map("one_id_user_id")
+  esignSerialNumber String?        @map("esign_serial_number")
+  mobileIdPhone     String?        @map("mobile_id_phone")
 
-  refreshToken         String?        @map("refresh_token")
-  lastActiveAt         DateTime?      @map("last_active_at")
+  refreshToken String?   @map("refresh_token")
+  lastActiveAt DateTime? @map("last_active_at")
 
-  createdAt            DateTime       @default(now()) @map("created_at")
-  updatedAt            DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  userRoles            UserRole[]
-  auditLogs            AuditLog[]
-  notifications        Notification[]
+  userRoles              UserRole[]
+  auditLogs              AuditLog[]
+  notifications          Notification[]
+  quarterlyReports       QuarterlyReport[]
+  createdReportSummaries ReportSummary[]   @relation("ReportSummaryCreator")
 
   @@map("users")
 }
@@ -214,26 +231,26 @@ model UserRole {
   roleId    String   @map("role_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@map("user_roles")
 }
 
 model DictionaryItem {
-  id          String       @id @default(uuid())
-  category    String       // e.g., regions, specializations, penalty_types, case_statuses, contract_templates, exam_questions
+  id          String   @id @default(uuid())
+  category    String // e.g., regions, specializations, penalty_types, case_statuses, contract_templates, exam_questions
   code        String
-  nameUz      String       @map("name_uz")
-  nameRu      String?      @map("name_ru")
-  nameEn      String?      @map("name_en")
+  nameUz      String   @map("name_uz")
+  nameRu      String?  @map("name_ru")
+  nameEn      String?  @map("name_en")
   description String?
-  sortOrder   Int          @default(0) @map("sort_order")
-  isActive    Boolean      @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
   metadata    Json?
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@unique([category, code])
   @@index([category])
@@ -246,7 +263,7 @@ model AuditLog {
   user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   username     String?
   userFullName String?  @map("user_full_name")
-  action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, LOGOUT, REFRESH, PUBLISH, ROLE_ASSIGN
+  action       String // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, LOGOUT, REFRESH, PUBLISH, ROLE_ASSIGN
   entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS, AUTH, NOTIFICATION, TIMER, INTEGRATION
   entityId     String?  @map("entity_id")
   oldValues    Json?    @map("old_values")
@@ -277,7 +294,7 @@ model SystemSetting {
 
 model Content {
   id          String        @id @default(uuid())
-  type        String        // news, legal_framework, templates, faq, manuals, video_manuals, announcements
+  type        String // news, legal_framework, templates, faq, manuals, video_manuals, announcements
   titleUz     String        @map("title_uz")
   titleRu     String?       @map("title_ru")
   titleEn     String?       @map("title_en")
@@ -411,21 +428,21 @@ model TrainingCertificate {
 }
 
 model BillingTransaction {
-  id               String        @id @default(uuid())
-  invoiceNumber    String        @unique @map("invoice_number")
-  transactionId    String?       @unique @map("transaction_id") // Payment gateway transaction ID
-  userId           String?       @map("user_id")
-  amount           Decimal       @db.Decimal(15, 2)
-  serviceType      String        @map("service_type") // MEDIATION_FEE, QUALIFICATION_EXAM_FEE, REGISTRY_ENTRY_FEE
-  payerPinfl       String?       @map("payer_pinfl")
-  payerName        String?       @map("payer_name")
-  payerPhone       String?       @map("payer_phone")
-  paymentProvider  String?       @map("payment_provider") // MUNIS, PAYME, CLICK, TREASURY
-  paymentStatus    PaymentStatus @default(PENDING) @map("payment_status")
-  paidAt           DateTime?     @map("paid_at")
-  metadata         Json?
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  invoiceNumber   String        @unique @map("invoice_number")
+  transactionId   String?       @unique @map("transaction_id") // Payment gateway transaction ID
+  userId          String?       @map("user_id")
+  amount          Decimal       @db.Decimal(15, 2)
+  serviceType     String        @map("service_type") // MEDIATION_FEE, QUALIFICATION_EXAM_FEE, REGISTRY_ENTRY_FEE
+  payerPinfl      String?       @map("payer_pinfl")
+  payerName       String?       @map("payer_name")
+  payerPhone      String?       @map("payer_phone")
+  paymentProvider String?       @map("payment_provider") // MUNIS, PAYME, CLICK, TREASURY
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt          DateTime?     @map("paid_at")
+  metadata        Json?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   @@index([invoiceNumber])
   @@index([transactionId])
@@ -449,4 +466,51 @@ model IntegrationLog {
   @@index([status])
   @@index([createdAt])
   @@map("integration_logs")
+}
+
+model QuarterlyReport {
+  id             String       @id @default(uuid())
+  mediatorId     String       @map("mediator_id")
+  organizationId String       @map("organization_id")
+  periodYear     Int          @map("period_year")
+  periodQuarter  Int          @map("period_quarter")
+  prefilledData  Json         @map("prefilled_data")
+  additionalData Json?        @map("additional_data")
+  status         ReportStatus @default(DRAFT)
+  returnReason   String?      @map("return_reason")
+  submittedAt    DateTime?    @map("submitted_at")
+  reviewedAt     DateTime?    @map("reviewed_at")
+  forwardedAt    DateTime?    @map("forwarded_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  mediator     User         @relation(fields: [mediatorId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([mediatorId, periodYear, periodQuarter])
+  @@index([organizationId, periodYear, periodQuarter])
+  @@index([status])
+  @@map("quarterly_reports")
+}
+
+model ReportSummary {
+  id             String              @id @default(uuid())
+  organizationId String              @map("organization_id")
+  createdById    String              @map("created_by_id")
+  periodYear     Int                 @map("period_year")
+  periodQuarter  Int                 @map("period_quarter")
+  reportCount    Int                 @default(0) @map("report_count")
+  aggregateData  Json                @map("aggregate_data")
+  status         ReportSummaryStatus @default(DRAFT)
+  submittedAt    DateTime?           @map("submitted_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy    User         @relation("ReportSummaryCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, periodYear, periodQuarter])
+  @@index([periodYear, periodQuarter])
+  @@index([status])
+  @@map("report_summaries")
 }
