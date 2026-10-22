@@ -1,0 +1,139 @@
+# WAF (Web Application Firewall) Qoidalari
+# Nizolarni Muqobil Hal Etish Platformasi
+
+# ─── Umumiy Sozlamalar ─────────────────────────────────────────────────────────
+waf:
+  enabled: true
+  mode: block  # block | detect (faqat loglash)
+  log_path: /var/log/waf/nizolar-waf.log
+
+# ─── IP Whitelist ────────────────────────────────────────────────────────────────
+ip_whitelist:
+  enabled: true
+  addresses:
+    - 127.0.0.1        # Lokal
+    - ::1              # Lokal IPv6
+    # Vazirlik IP-lar (sozlash kerak)
+    # - 192.168.1.0/24
+
+# ─── IP Blacklist ────────────────────────────────────────────────────────────────
+ip_blacklist:
+  enabled: true
+  auto_block_threshold: 100  # Daqiqada 100 dan ortiq xato so'rov
+  block_duration_seconds: 3600  # 1 soat blok
+
+# ─── Amallar Qoidalari ───────────────────────────────────────────────────────────
+rules:
+  # SQL Injection himoya
+  - id: RULE-001
+    name: SQL Injection Prevention
+    description: SQL injection hujumlaridan himoya
+    enabled: true
+    priority: 1
+    conditions:
+      - field: request_body
+        operator: regex_match
+        pattern: "(union|select|insert|update|delete|drop|create|alter|exec|execute|script|javascript|vbscript)\\s"
+        case_insensitive: true
+      - field: query_string
+        operator: regex_match
+        pattern: "(--|;|'|\"|union|select|drop|insert|update|delete|exec)\\s*"
+        case_insensitive: true
+    action: block
+    response_code: 403
+
+  # XSS himoya
+  - id: RULE-002
+    name: XSS Prevention
+    description: Cross-Site Scripting hujumlaridan himoya
+    enabled: true
+    priority: 2
+    conditions:
+      - field: request_body
+        operator: regex_match
+        pattern: "<(script|iframe|object|embed|applet|form)[^>]*>"
+        case_insensitive: true
+      - field: query_string
+        operator: regex_match
+        pattern: "<script[^>]*>|javascript:|on(load|error|click)\\s*="
+        case_insensitive: true
+    action: block
+    response_code: 403
+
+  # Path Traversal himoya
+  - id: RULE-003
+    name: Path Traversal Prevention
+    description: Fayl tizimiga ruxsatsiz kirish hujumlaridan himoya
+    enabled: true
+    priority: 3
+    conditions:
+      - field: request_uri
+        operator: contains
+        value: "../"
+      - field: request_uri
+        operator: contains
+        value: "..%2F"
+      - field: request_uri
+        operator: contains
+        value: "%2e%2e"
+    action: block
+    response_code: 400
+
+  # Fayl yuklash cheklash
+  - id: RULE-004
+    name: File Upload Restriction
+    description: Xavfli fayl turlarini yuklashdan himoya
+    enabled: true
+    priority: 4
+    conditions:
+      - field: filename
+        operator: regex_match
+        pattern: "\\.(php|asp|aspx|jsp|cgi|exe|bat|sh|py|rb|pl)$"
+        case_insensitive: true
+    action: block
+    response_code: 403
+
+  # Rate Limiting (API darajasida)
+  - id: RULE-005
+    name: API Rate Limit
+    description: Tizimni haddan tashqari yuklashdan himoya
+    enabled: true
+    priority: 5
+    rate_limit:
+      requests_per_minute: 100
+      burst: 20
+    conditions:
+      - field: request_uri
+        operator: starts_with
+        value: "/api/"
+    action: rate_limit
+    response_code: 429
+
+  # Admin endpointlar qo'shimcha himoya
+  - id: RULE-006
+    name: Admin Endpoint Protection
+    description: Admin endpointlarga kuchaytirilgan himoya
+    enabled: true
+    priority: 1
+    rate_limit:
+      requests_per_minute: 20
+      burst: 5
+    conditions:
+      - field: request_uri
+        operator: starts_with
+        value: "/platform/metrics"
+      - field: request_uri
+        operator: starts_with
+        value: "/platform/logs"
+    action: rate_limit
+    response_code: 429
+
+# ─── Ogohlantirishlar ────────────────────────────────────────────────────────────
+alerts:
+  slack_webhook: "${SLACK_WEBHOOK_URL}"
+  email:
+    to: ["security@nizolar.uz"]
+    from: "waf@nizolar.uz"
+  thresholds:
+    blocked_requests_per_minute: 10
+    error_rate_percent: 5
