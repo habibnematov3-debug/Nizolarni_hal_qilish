@@ -218,6 +218,7 @@ async function main() {
       passwordHash: commonPasswordHash,
       status: UserStatus.ACTIVE,
       role: 'MEDIATOR',
+      organizationId: tashkentDept.id,
       cabinetType: CabinetType.MEDIATOR,
       registryStatus: RegistryStatus.MEDIATOR,
       pinfl: '31201851230011',
