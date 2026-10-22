@@ -11,6 +11,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { IntegrationModule } from './modules/integration/integration.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -29,5 +30,6 @@ import { IntegrationModule } from './modules/integration/integration.module';
     NotificationsModule,
     IntegrationModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
