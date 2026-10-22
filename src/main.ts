@@ -71,6 +71,7 @@ Ushbu modul orqali quyidagi funksiyalar boshqariladi:
     customSiteTitle: 'Nizolarni hal qilish — ADM API Docs',
   });
 
+  await app.init();
   return app;
 }
 
