@@ -78,9 +78,16 @@ Ushbu modul orqali quyidagi funksiyalar boshqariladi:
 let appPromise: ReturnType<typeof createApp> | undefined;
 
 async function handler(req: Request, res: Response) {
-  const app = await (appPromise ??= createApp(express()));
-  const instance = app.getHttpAdapter().getInstance();
-  return instance(req, res);
+  try {
+    const app = await (appPromise ??= createApp(express()));
+    const instance = app.getHttpAdapter().getInstance();
+    return instance(req, res);
+  } catch (error) {
+    console.error('NestJS serverless initialization failed:', error);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: 'Server failed to initialize' });
+    }
+  }
 }
 
 export default handler;

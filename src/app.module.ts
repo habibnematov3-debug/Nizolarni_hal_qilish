@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { DictionariesModule } from './modules/dictionaries/dictionaries.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ContentModule } from './modules/content/content.module';
     DictionariesModule,
     SettingsModule,
     ContentModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

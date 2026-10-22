@@ -92,11 +92,13 @@ async function main() {
     { code: 'CONTENT_VIEW', name: 'Kontentlarni ko\'rish', module: 'ADM' },
     { code: 'CONTENT_MANAGE', name: 'Kontentlarni yaratish va tahrirlash', module: 'ADM' },
     { code: 'CONTENT_PUBLISH', name: 'Kontentlarni nashr qilish', module: 'ADM' },
-    // AUTH module permissions
+    // AUTH permissions
     { code: 'PROFILE_VIEW', name: 'O\'z profilini ko\'rish', module: 'AUTH' },
     { code: 'PROFILE_EDIT', name: 'O\'z profilini tahrirlash', module: 'AUTH' },
-    { code: 'CASE_SUBMIT', name: 'Nizo bo\'yicha ariza berish', module: 'CASE' },
-    { code: 'MEDIATION_PROCESS', name: 'Mediatsiya jarayonini olib borish', module: 'MEDIATION' },
+    // BIL module permissions
+    { code: 'NOTIFICATIONS_VIEW', name: 'Xabarlarni ko\'rish', module: 'BIL' },
+    { code: 'TEMPLATE_MANAGE', name: 'Xabar shablonlarini boshqarish', module: 'BIL' },
+    { code: 'TIMERS_MANAGE', name: 'Taymerlarni boshqarish', module: 'BIL' },
   ];
 
   for (const perm of permissionsList) {
@@ -133,7 +135,6 @@ async function main() {
 
   // Bind permissions
   const allPermissions = await prisma.permission.findMany();
-  // ADMIN has all
   for (const p of allPermissions) {
     await prisma.rolePermission.upsert({
       where: { roleId_permissionId: { roleId: roleEntities.ADMIN.id, permissionId: p.id } },
@@ -382,43 +383,198 @@ async function main() {
     });
   }
 
-  // 6. Tizim sozlamalari (FT-ADM-07, FT-AUTH-06)
-  console.log('Seeding system settings...');
-  await prisma.systemSetting.upsert({
-    where: { key: 'timers' },
-    update: {},
-    create: {
-      key: 'timers',
-      group: 'TIMERS',
-      description: 'Taymer muddatlari sozlamalari',
-      value: {
-        caseRegistrationDays: 3,
-        mediatorAssignmentDays: 5,
-        mediationProcessMaxDays: 30,
-        agreementExecutionConfirmationDays: 10,
-        sessionInactivityTimeoutMinutes: 30, // FT-AUTH-06: Seans faolsizlik muddati
-      },
-      updatedBy: 'admin',
+  // 6. Xabar shablonlari (FT-BIL-02 / BIL-02)
+  console.log('Seeding notification templates...');
+  const templates = [
+    {
+      code: 'APPLICATION_STATUS',
+      name: 'Ariza holati haqida bildirishnoma',
+      category: 'APPLICATION',
+      titleUz: 'Ariza holati yangilandi',
+      titleRu: 'Статус заявления обновлен',
+      bodyUz: 'Hurmatli {{fullName}}, sizning {{caseNumber}}-sonli arizangiz holati: {{statusName}}.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, статус вашего заявления №{{caseNumber}}: {{statusName}}.',
+      smsTextUz: 'Ariza {{caseNumber}} holati: {{statusName}}. platforma.adliya.uz',
+      smsTextRu: 'Статус заявления {{caseNumber}}: {{statusName}}. platforma.adliya.uz',
+      availableVariables: ['fullName', 'caseNumber', 'statusName'],
     },
-  });
-
-  await prisma.systemSetting.upsert({
-    where: { key: 'fileLimits' },
-    update: {},
-    create: {
-      key: 'fileLimits',
-      group: 'FILE_LIMITS',
-      description: 'Fayl hajmi va formati cheklovlari',
-      value: {
-        maxFileSizeMb: 25,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip'],
-        maxFilesCount: 10,
-      },
-      updatedBy: 'admin',
+    {
+      code: 'EXAM_INVITATION',
+      name: 'Imtihonga taklifnoma',
+      category: 'EXAM',
+      titleUz: 'Mediatorlik bo\'yicha imtihonga taklifnoma',
+      titleRu: 'Приглашение на квалификационный экзамен',
+      bodyUz: 'Hurmatli {{fullName}}, siz {{examDate}} kuni soat {{examTime}} da Yuristlar malakasini oshirish markazida bo\'lib o\'tadigan imtihonga taklif etilasiz.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, вы приглашены на квалификационный экзамен {{examDate}} в {{examTime}}.',
+      smsTextUz: 'Imtihonga taklif: {{examDate}} kuni soat {{examTime}} da. platforma.adliya.uz',
+      availableVariables: ['fullName', 'examDate', 'examTime', 'examLocation'],
     },
-  });
+    {
+      code: 'EXAM_RESULT',
+      name: 'Imtihon natijasi haqida xabarnoma',
+      category: 'EXAM',
+      titleUz: 'Imtihon natijalari e\'lon qilindi',
+      titleRu: 'Результаты квалификационного экзамена',
+      bodyUz: 'Hurmatli {{fullName}}, sizning imtihon natijangiz: {{score}} ball ({{resultStatus}}).',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, ваш результат: {{score}} баллов ({{resultStatus}}).',
+      smsTextUz: 'Imtihon natijangiz: {{score}} ball ({{resultStatus}}). platforma.adliya.uz',
+      availableVariables: ['fullName', 'score', 'resultStatus'],
+    },
+    {
+      code: 'CONTRACT_STATUS',
+      name: 'Shartnoma va kelishuv holati',
+      category: 'CONTRACT',
+      titleUz: 'Kelishuv / Shartnoma imzolandi',
+      titleRu: 'Соглашение / Договор подписан',
+      bodyUz: 'Hurmatli {{fullName}}, {{caseNumber}}-sonli nizo bo\'yicha mediatsiya kelishuvi barcha tomonlar tomonidan imzolandi.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, медиативное соглашение по спору №{{caseNumber}} подписано.',
+      smsTextUz: 'Nizo {{caseNumber}} bo\'yicha kelishuv imzolandi. platforma.adliya.uz',
+      availableVariables: ['fullName', 'caseNumber', 'contractDate'],
+    },
+    {
+      code: 'REPORT_SUBMISSION_DEADLINE',
+      name: 'Hisobot topshirish muddati haqida ogohlantirish',
+      category: 'REPORT',
+      titleUz: 'Davriy hisobot topshirish muddati yaqinlashmoqda',
+      titleRu: 'Приближается срок сдачи отчета',
+      bodyUz: 'Hurmatli {{fullName}}, {{period}} davri uchun mediatorlik faoliyati hisobotini {{deadline}} sanasiga qadar topshirishingiz so\'raladi.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, просим сдать отчет за {{period}} до {{deadline}}.',
+      smsTextUz: 'Eslatma: Hisobot topshirish muddati {{deadline}} gacha. platforma.adliya.uz',
+      availableVariables: ['fullName', 'period', 'deadline'],
+    },
+    {
+      code: 'QUALIFICATION_UPGRADE_REMINDER',
+      name: 'Malaka oshirish muddati (1 oy oldin ogohlantirish)',
+      category: 'QUALIFICATION',
+      titleUz: 'Malaka oshirish muddati yaqinlashmoqda',
+      titleRu: 'Напоминание о повышении квалификации',
+      bodyUz: 'Hurmatli mediator {{fullName}}, sizning mediatorlik sertifikatingiz muddati 1 oydan so\'ng ({{certificateExpiryDate}}) tugaydi. Navbatdagi malaka oshirish kursidan o\'tishingiz zarur.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, срок сертификата истекает {{certificateExpiryDate}}.',
+      smsTextUz: 'Diqqat: Malaka oshirish muddati {{certificateExpiryDate}} gacha. platforma.adliya.uz',
+      availableVariables: ['fullName', 'certificateExpiryDate'],
+    },
+    {
+      code: 'OBLIGATION_EXECUTION_DEADLINE',
+      name: 'Majburiyatni bajarish muddati haqida eslatma',
+      category: 'OBLIGATION',
+      titleUz: 'Kelishuv majburiyatini bajarish muddati yaqinlashmoqda',
+      titleRu: 'Срок исполнения обязательства истекает',
+      bodyUz: 'Hurmatli {{fullName}}, {{caseNumber}}-sonli mediatsiya kelishuvi bo\'yicha belgilangan majburiyatni bajarish muddati: {{obligationDeadline}}.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, срок обязательства по соглашению №{{caseNumber}}: {{obligationDeadline}}.',
+      smsTextUz: 'Eslatma: Kelishuv majburiyati muddati: {{obligationDeadline}}. platforma.adliya.uz',
+      availableVariables: ['fullName', 'caseNumber', 'obligationDeadline'],
+    },
+    {
+      code: 'CALENDAR_EVENT',
+      name: 'Kalendar tadbiri haqida eslatma',
+      category: 'CALENDAR',
+      titleUz: 'Mediatsiya uchrashuvi / Kalendar tadbiri',
+      titleRu: 'Календарное событие / Встреча медиации',
+      bodyUz: 'Hurmatli {{fullName}}, sizning {{eventTitle}} tadbiringiz {{eventDate}} kuni soat {{eventTime}} ga belgilangan.',
+      bodyRu: 'Уважаемый(ая) {{fullName}}, ваше мероприятие {{eventTitle}} назначено на {{eventDate}} в {{eventTime}}.',
+      smsTextUz: 'Tadbir: {{eventTitle}} {{eventDate}} soat {{eventTime}} da. platforma.adliya.uz',
+      availableVariables: ['fullName', 'eventTitle', 'eventDate', 'eventTime'],
+    },
+  ];
 
-  console.log('✅ Database seeded successfully with all 9 roles and test users!');
+  for (const t of templates) {
+    await prisma.notificationTemplate.upsert({
+      where: { code: t.code },
+      update: t,
+      create: t,
+    });
+  }
+
+  // 7. Markaziy taymer sozlamalari (FT-BIL-05 / BIL-03)
+  console.log('Seeding central timer settings...');
+  const timers = [
+    {
+      key: 'CASE_REGISTRATION_TIMEOUT',
+      name: 'Arizani ro\'yxatga olish muddati',
+      description: 'Ariza kelib tushgandan so\'ng qabul qilish yoki rad etish muddati',
+      durationValue: 3,
+      durationUnit: 'DAYS' as const,
+      targetModule: 'MK',
+    },
+    {
+      key: 'MEDIATOR_ASSIGNMENT_TIMEOUT',
+      name: 'Mediator tanlash yoki tayinlash muddati',
+      description: 'Tomonlar mediator tanlashi yoki adliya tomonidan tayinlanishi muddati',
+      durationValue: 5,
+      durationUnit: 'DAYS' as const,
+      targetModule: 'MTS',
+    },
+    {
+      key: 'MEDIATION_PROCESS_MAX_DURATION',
+      name: 'Mediatsiya jarayonining maksimal muddati',
+      description: 'Mediatsiya tartib-taomilini amalga oshirishning qonuniy maksimal muddati',
+      durationValue: 30,
+      durationUnit: 'DAYS' as const,
+      targetModule: 'MTS',
+    },
+    {
+      key: 'AGREEMENT_EXECUTION_CONFIRMATION',
+      name: 'Kelishuv ijrosini tasdiqlash muddati',
+      description: 'Kelishuv shartlari bajarilganligini tomonlar tasdiqlashi muddati',
+      durationValue: 10,
+      durationUnit: 'DAYS' as const,
+      targetModule: 'MON',
+    },
+    {
+      key: 'QUALIFICATION_UPGRADE_ALERT_DAYS',
+      name: 'Malaka oshirish muddati eslatmasi (1 oy oldin)',
+      description: 'Mediatorlik sertifikati amal qilish muddati tugashidan oldin ogohlantirish',
+      durationValue: 30,
+      durationUnit: 'DAYS' as const,
+      targetModule: 'REG',
+    },
+    {
+      key: 'REPORT_SUBMISSION_INTERVAL_MONTHS',
+      name: 'Davriy hisobot topshirish oralig\'i',
+      description: 'Mediatorlar faoliyati bo\'yicha davriy hisobot davri',
+      durationValue: 6,
+      durationUnit: 'MONTHS' as const,
+      targetModule: 'HIS',
+    },
+    {
+      key: 'SESSION_INACTIVITY_TIMEOUT_MINUTES',
+      name: 'Seans faolsizlik muddati',
+      description: 'Foydalanuvchi hech qanday amal bajarmasa seansni yopish vaqti',
+      durationValue: 30,
+      durationUnit: 'MINUTES' as const,
+      targetModule: 'AUTH',
+    },
+  ];
+
+  for (const tm of timers) {
+    await prisma.timerSetting.upsert({
+      where: { key: tm.key },
+      update: tm,
+      create: tm,
+    });
+  }
+
+  // 8. Namunaviy dastlabki bildirishnoma (FT-BIL-04)
+  const talabgor = await prisma.user.findUnique({ where: { username: 'talabgor_nodir' } });
+  if (talabgor) {
+    await prisma.notification.upsert({
+      where: { idempotencyKey: 'seed_init_notif_nodir' },
+      update: {},
+      create: {
+        userId: talabgor.id,
+        channel: 'CABINET',
+        templateCode: 'APPLICATION_STATUS',
+        title: 'Platformaga xush kelibsiz!',
+        content: 'Hurmatli Jamshid Nodirov, «Nizolarni muqobil hal etish» elektron platformasida shaxsiy kabinetingiz faollashtirildi.',
+        status: 'DELIVERED',
+        isRead: false,
+        sentAt: new Date(),
+        idempotencyKey: 'seed_init_notif_nodir',
+      },
+    });
+  }
+
+  console.log('✅ Database seeded successfully with all modules (ADM, AUTH, BIL)!');
 }
 
 main()
