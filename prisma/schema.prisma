@@ -33,6 +33,32 @@ enum ContentStatus {
   ARCHIVED
 }
 
+enum RegistryStatus {
+  NONE                  // Reyestrda yo'q (Talabgor)
+  MEDIATOR              // Mediator
+  ARBITRATION_JUDGE     // Hakamlik sudyasi
+  ARBITRATOR            // Arbitr
+}
+
+enum CabinetType {
+  APPLICANT             // Talabgor kabineti
+  MEDIATOR              // Mediator kabineti
+  ARBITRATION_JUDGE     // Hakamlik sudyasi kabineti
+  ARBITRATOR            // Arbitr kabineti
+  COMMISSION            // Malaka komissiyasi kabineti
+  REGIONAL_STAFF        // Hududiy adliya xodimi kabineti
+  MINISTRY_STAFF        // Vazirlik xodimi kabineti
+  ADMIN                 // Administrator paneli
+  OPERATOR              // Operator kabineti
+}
+
+enum AuthProvider {
+  ONE_ID
+  E_SIGN
+  MOBILE_ID
+  LOCAL
+}
+
 model Organization {
   id          String           @id @default(uuid())
   name        String
@@ -95,22 +121,41 @@ model RolePermission {
 }
 
 model User {
-  id             String        @id @default(uuid())
-  username       String        @unique
-  email          String?       @unique
-  phone          String?       @unique
-  passwordHash   String        @map("password_hash")
-  fullName       String        @map("full_name")
-  organizationId String?       @map("organization_id")
-  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  status         UserStatus    @default(ACTIVE)
-  pinfl          String?
-  position       String?
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id                   String         @id @default(uuid())
+  username             String         @unique
+  email                String?        @unique
+  phone                String?        @unique
+  passwordHash         String?        @map("password_hash")
+  fullName             String         @map("full_name")
+  organizationId       String?        @map("organization_id")
+  organization         Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  status               UserStatus     @default(ACTIVE)
+  pinfl                String?        @unique
+  passportSeriesNumber String?        @map("passport_series_number")
+  passportGivenDate    String?        @map("passport_given_date")
+  passportExpireDate   String?        @map("passport_expire_date")
+  birthDate            String?        @map("birth_date")
+  birthPlace           String?        @map("birth_place")
+  nationality          String?
+  gender               String?
+  address              String?
+  position             String?
 
-  userRoles      UserRole[]
-  auditLogs      AuditLog[]
+  registryStatus       RegistryStatus @default(NONE) @map("registry_status")
+  cabinetType          CabinetType    @default(APPLICANT) @map("cabinet_type")
+  authProvider         AuthProvider   @default(LOCAL) @map("auth_provider")
+  oneIdUserId          String?        @map("one_id_user_id")
+  esignSerialNumber    String?        @map("esign_serial_number")
+  mobileIdPhone        String?        @map("mobile_id_phone")
+
+  refreshToken         String?        @map("refresh_token")
+  lastActiveAt         DateTime?      @map("last_active_at")
+
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  userRoles            UserRole[]
+  auditLogs            AuditLog[]
 
   @@map("users")
 }
@@ -153,8 +198,8 @@ model AuditLog {
   user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   username     String?
   userFullName String?  @map("user_full_name")
-  action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, PUBLISH, ROLE_ASSIGN
-  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS
+  action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, LOGOUT, REFRESH, PUBLISH, ROLE_ASSIGN
+  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS, AUTH
   entityId     String?  @map("entity_id")
   oldValues    Json?    @map("old_values")
   newValues    Json?    @map("new_values")
@@ -172,7 +217,7 @@ model AuditLog {
 model SystemSetting {
   id          String   @id @default(uuid())
   key         String   @unique
-  group       String   @default("GENERAL") // TIMERS, NOTIFICATIONS, FILE_LIMITS, GENERAL
+  group       String   @default("GENERAL") // TIMERS, NOTIFICATIONS, FILE_LIMITS, GENERAL, SESSION
   value       Json
   description String?
   updatedBy   String?  @map("updated_by")
