@@ -1,4 +1,4 @@
-import { PrismaClient, OrganizationType, EntityStatus, UserStatus, ContentStatus } from '@prisma/client';
+import { PrismaClient, OrganizationType, EntityStatus, UserStatus, ContentStatus, RegistryStatus, CabinetType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -92,6 +92,11 @@ async function main() {
     { code: 'CONTENT_VIEW', name: 'Kontentlarni ko\'rish', module: 'ADM' },
     { code: 'CONTENT_MANAGE', name: 'Kontentlarni yaratish va tahrirlash', module: 'ADM' },
     { code: 'CONTENT_PUBLISH', name: 'Kontentlarni nashr qilish', module: 'ADM' },
+    // AUTH module permissions
+    { code: 'PROFILE_VIEW', name: 'O\'z profilini ko\'rish', module: 'AUTH' },
+    { code: 'PROFILE_EDIT', name: 'O\'z profilini tahrirlash', module: 'AUTH' },
+    { code: 'CASE_SUBMIT', name: 'Nizo bo\'yicha ariza berish', module: 'CASE' },
+    { code: 'MEDIATION_PROCESS', name: 'Mediatsiya jarayonini olib borish', module: 'MEDIATION' },
   ];
 
   for (const perm of permissionsList) {
@@ -102,87 +107,49 @@ async function main() {
     });
   }
 
-  // 3. Rollar (Roles)
-  console.log('Creating roles and binding permissions...');
+  // 3. Rollar (Roles) - 9 ta asosiy rol (FT-AUTH-04 / AUTH-03)
+  console.log('Creating all 9 roles...');
+  const rolesData = [
+    { name: 'ADMIN', displayName: 'Administrator', description: 'Tizimning to\'liq vakolatli administratori', isSystem: true },
+    { name: 'MINISTRY_STAFF', displayName: 'Vazirlik xodimi', description: 'Adliya vazirligi mas\'ul xodimi', isSystem: true },
+    { name: 'REGIONAL_STAFF', displayName: 'Hududiy adliya xodimi', description: 'Viloyat / shahar adliya boshqarmasi xodimi', isSystem: true },
+    { name: 'COMMISSION', displayName: 'Malaka komissiyasi', description: 'Mediatorlar malakasini baholash komissiyasi a\'zosi', isSystem: true },
+    { name: 'MEDIATOR', displayName: 'Professional Mediator', description: 'Reyestrdagi professional mediator', isSystem: false },
+    { name: 'ARBITRATION_JUDGE', displayName: 'Hakamlik sudyasi', description: 'Doimiy faoliyat ko\'rsatuvchi hakamlik sudyasi', isSystem: false },
+    { name: 'ARBITRATOR', displayName: 'Arbitr', description: 'Xalqaro va mahalliy tijoriy arbitraj arbitri', isSystem: false },
+    { name: 'TALABGOR', displayName: 'Talabgor', description: 'Ariza beruvchi, nizo ishtirokchisi (jismoniy yoki yuridik shaxs)', isSystem: false },
+    { name: 'OPERATOR', displayName: 'Operator', description: 'Qo\'llab-quvvatlash xizmati / Call-center operatori', isSystem: false },
+  ];
+
+  const roleEntities: Record<string, any> = {};
+  for (const r of rolesData) {
+    const role = await prisma.role.upsert({
+      where: { name: r.name },
+      update: { displayName: r.displayName, isSystem: r.isSystem, description: r.description },
+      create: r,
+    });
+    roleEntities[r.name] = role;
+  }
+
+  // Bind permissions
   const allPermissions = await prisma.permission.findMany();
-
-  const adminRole = await prisma.role.upsert({
-    where: { name: 'ADMIN' },
-    update: { displayName: 'Administrator', isSystem: true },
-    create: {
-      name: 'ADMIN',
-      displayName: 'Administrator',
-      description: 'Tizimning to\'liq vakolatli administratori',
-      isSystem: true,
-    },
-  });
-
-  const staffRole = await prisma.role.upsert({
-    where: { name: 'MINISTRY_STAFF' },
-    update: { displayName: 'Vazirlik xodimi', isSystem: true },
-    create: {
-      name: 'MINISTRY_STAFF',
-      displayName: 'Vazirlik xodimi',
-      description: 'Adliya vazirligi mas\'ul xodimi (kontent, hisobotlar va monitoring)',
-      isSystem: true,
-    },
-  });
-
-  const mediatorRole = await prisma.role.upsert({
-    where: { name: 'MEDIATOR' },
-    update: { displayName: 'Mediator', isSystem: false },
-    create: {
-      name: 'MEDIATOR',
-      displayName: 'Professional Mediator',
-      description: 'Nizolarni muqobil hal etuvchi ro\'yxatdan o\'tgan mediator',
-      isSystem: false,
-    },
-  });
-
-  // Bind all permissions to ADMIN
+  // ADMIN has all
   for (const p of allPermissions) {
     await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: adminRole.id,
-          permissionId: p.id,
-        },
-      },
+      where: { roleId_permissionId: { roleId: roleEntities.ADMIN.id, permissionId: p.id } },
       update: {},
-      create: {
-        roleId: adminRole.id,
-        permissionId: p.id,
-      },
+      create: { roleId: roleEntities.ADMIN.id, permissionId: p.id },
     });
   }
 
-  // Bind Content and View permissions to MINISTRY_STAFF
-  const staffPermCodes = ['ORG_VIEW', 'USER_VIEW', 'DICT_VIEW', 'AUDIT_VIEW', 'CONTENT_VIEW', 'CONTENT_MANAGE', 'CONTENT_PUBLISH'];
-  for (const p of allPermissions.filter((item) => staffPermCodes.includes(item.code))) {
-    await prisma.rolePermission.upsert({
-      where: {
-        roleId_permissionId: {
-          roleId: staffRole.id,
-          permissionId: p.id,
-        },
-      },
-      update: {},
-      create: {
-        roleId: staffRole.id,
-        permissionId: p.id,
-      },
-    });
-  }
-
-  // 4. Foydalanuvchilar (Users)
-  console.log('Creating initial users...');
+  // 4. Foydalanuvchilar (Users) - 9 ta rol va maqomlar bo'yicha
+  console.log('Creating initial users for each cabinet type...');
+  const commonPasswordHash = await bcrypt.hash('Secret@12345', 10);
   const adminPasswordHash = await bcrypt.hash('Admin@12345', 10);
   const staffPasswordHash = await bcrypt.hash('Vazirlik@12345', 10);
 
-  const adminUser = await prisma.user.upsert({
-    where: { username: 'admin' },
-    update: { passwordHash: adminPasswordHash },
-    create: {
+  const usersToSeed = [
+    {
       username: 'admin',
       fullName: 'Tizim Bosh Administratori',
       email: 'admin@adliya.uz',
@@ -191,27 +158,13 @@ async function main() {
       organizationId: ministry.id,
       position: 'Bosh administrator',
       status: UserStatus.ACTIVE,
+      role: 'ADMIN',
+      cabinetType: CabinetType.ADMIN,
+      registryStatus: RegistryStatus.NONE,
+      pinfl: '31201801230001',
+      passportSeriesNumber: 'AA1000001',
     },
-  });
-
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: {
-        userId: adminUser.id,
-        roleId: adminRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: adminUser.id,
-      roleId: adminRole.id,
-    },
-  });
-
-  const staffUser = await prisma.user.upsert({
-    where: { username: 'vazirlik' },
-    update: { passwordHash: staffPasswordHash },
-    create: {
+    {
       username: 'vazirlik',
       fullName: 'Vazirlik Mas\'ul Xodimi',
       email: 'staff@adliya.uz',
@@ -220,27 +173,161 @@ async function main() {
       organizationId: ministry.id,
       position: 'Bosh mutaxassis',
       status: UserStatus.ACTIVE,
+      role: 'MINISTRY_STAFF',
+      cabinetType: CabinetType.MINISTRY_STAFF,
+      registryStatus: RegistryStatus.NONE,
+      pinfl: '31201801230002',
+      passportSeriesNumber: 'AA1000002',
     },
-  });
+    {
+      username: 'hudud_toshkent',
+      fullName: 'Toshkent Hududiy Adliya Xodimi',
+      email: 'tashkent_staff@adliya.uz',
+      phone: '+998901112233',
+      passwordHash: commonPasswordHash,
+      organizationId: tashkentDept.id,
+      position: 'Hududiy inspektor',
+      status: UserStatus.ACTIVE,
+      role: 'REGIONAL_STAFF',
+      cabinetType: CabinetType.REGIONAL_STAFF,
+      registryStatus: RegistryStatus.NONE,
+      pinfl: '31201801230003',
+      passportSeriesNumber: 'AA1000003',
+    },
+    {
+      username: 'komissiya_azosi',
+      fullName: 'Komissiya Raisi Qodirov Sardor',
+      email: 'komissiya@adliya.uz',
+      phone: '+998902223344',
+      passwordHash: commonPasswordHash,
+      organizationId: trainingCenter.id,
+      position: 'Komissiya a\'zosi',
+      status: UserStatus.ACTIVE,
+      role: 'COMMISSION',
+      cabinetType: CabinetType.COMMISSION,
+      registryStatus: RegistryStatus.NONE,
+      pinfl: '31201801230004',
+      passportSeriesNumber: 'AA1000004',
+    },
+    {
+      username: 'mediator_karim',
+      fullName: 'Karimov Alisher Baxtiyorovich',
+      email: 'karimov_mediator@mail.uz',
+      phone: '+998903334455',
+      passwordHash: commonPasswordHash,
+      status: UserStatus.ACTIVE,
+      role: 'MEDIATOR',
+      cabinetType: CabinetType.MEDIATOR,
+      registryStatus: RegistryStatus.MEDIATOR,
+      pinfl: '31201851230011',
+      passportSeriesNumber: 'AA1000005',
+      address: 'Toshkent shahri, Yakkasaroy tumani, Shota Rustaveli ko\'chasi, 25-uy',
+      nationality: 'O\'zbek',
+      gender: 'MALE',
+      birthDate: '1982-06-20',
+      birthPlace: 'Samarqand shahri',
+    },
+    {
+      username: 'sudya_akrom',
+      fullName: 'Akromov Rustam Ilhomovich',
+      email: 'akromov_judge@mail.uz',
+      phone: '+998904445566',
+      passwordHash: commonPasswordHash,
+      status: UserStatus.ACTIVE,
+      role: 'ARBITRATION_JUDGE',
+      cabinetType: CabinetType.ARBITRATION_JUDGE,
+      registryStatus: RegistryStatus.ARBITRATION_JUDGE,
+      pinfl: '31201851230022',
+      passportSeriesNumber: 'AA1000006',
+      address: 'Toshkent shahri, Mirzo Ulug\'bek tumani, 5-mavze',
+      nationality: 'O\'zbek',
+      gender: 'MALE',
+      birthDate: '1979-11-14',
+      birthPlace: 'Buxoro shahri',
+    },
+    {
+      username: 'arbitr_dilshod',
+      fullName: 'Dilshodov Azizbek Olimovich',
+      email: 'dilshodov_arbitr@mail.uz',
+      phone: '+998905556677',
+      passwordHash: commonPasswordHash,
+      status: UserStatus.ACTIVE,
+      role: 'ARBITRATOR',
+      cabinetType: CabinetType.ARBITRATOR,
+      registryStatus: RegistryStatus.ARBITRATOR,
+      pinfl: '31201851230033',
+      passportSeriesNumber: 'AA1000007',
+      address: 'Toshkent shahri, Yunusobod tumani, 12-mavze',
+      nationality: 'O\'zbek',
+      gender: 'MALE',
+      birthDate: '1988-02-18',
+      birthPlace: 'Farg\'ona shahri',
+    },
+    {
+      username: 'talabgor_nodir',
+      fullName: 'Nodirov Jamshid Shuhratovich',
+      email: 'j.nodirov@mail.uz',
+      phone: '+998906667788',
+      passwordHash: commonPasswordHash,
+      status: UserStatus.ACTIVE,
+      role: 'TALABGOR',
+      cabinetType: CabinetType.APPLICANT,
+      registryStatus: RegistryStatus.NONE,
+      pinfl: '31201851230044',
+      passportSeriesNumber: 'AA7654321',
+      passportGivenDate: '2020-05-15',
+      passportExpireDate: '2030-05-15',
+      birthDate: '1985-04-12',
+      birthPlace: 'Toshkent shahri, Shayxontohur tumani',
+      nationality: 'O\'zbek',
+      gender: 'MALE',
+      address: 'Toshkent shahri, Chilonzor tumani, 9-mavze, 14-uy',
+    },
+    {
+      username: 'operator_aziz',
+      fullName: 'Azizova Nigora Mansurovna',
+      email: 'operator@adliya.uz',
+      phone: '+998907778899',
+      passwordHash: commonPasswordHash,
+      organizationId: ministry.id,
+      position: 'Texnik operator',
+      status: UserStatus.ACTIVE,
+      role: 'OPERATOR',
+      cabinetType: CabinetType.OPERATOR,
+      registryStatus: RegistryStatus.NONE,
+      pinfl: '31201801230009',
+      passportSeriesNumber: 'AA1000009',
+    },
+  ];
 
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: {
-        userId: staffUser.id,
-        roleId: staffRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: staffUser.id,
-      roleId: staffRole.id,
-    },
-  });
+  for (const u of usersToSeed) {
+    const { role, ...userData } = u;
+    const user = await prisma.user.upsert({
+      where: { username: userData.username },
+      update: userData,
+      create: userData,
+    });
+
+    const roleEntity = roleEntities[role];
+    if (roleEntity) {
+      await prisma.userRole.upsert({
+        where: {
+          userId_roleId: {
+            userId: user.id,
+            roleId: roleEntity.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: user.id,
+          roleId: roleEntity.id,
+        },
+      });
+    }
+  }
 
   // 5. Spravochniklar (FT-ADM-05 / ADM-03)
   console.log('Seeding dictionaries...');
-
-  // Regions (Hududlar)
   const regions = [
     { code: 'TAS_CITY', nameUz: 'Toshkent shahri', nameRu: 'г. Ташкент' },
     { code: 'TAS_REG', nameUz: 'Toshkent viloyati', nameRu: 'Ташкентская область' },
@@ -272,7 +359,6 @@ async function main() {
     });
   }
 
-  // Specializations (Ixtisosliklar)
   const specializations = [
     { code: 'CIVIL', nameUz: 'Fuqarolik nizolari', nameRu: 'Гражданские споры' },
     { code: 'FAMILY', nameUz: 'Oilaviy nizolar', nameRu: 'Семейные споры' },
@@ -296,53 +382,7 @@ async function main() {
     });
   }
 
-  // Penalty types (Jazo turlari)
-  const penaltyTypes = [
-    { code: 'WARNING', nameUz: 'Ogohlantirish', nameRu: 'Предупреждение' },
-    { code: 'SUSPENSION', nameUz: 'Faoliyatini vaqtincha to\'xtatish', nameRu: 'Приостановление деятельности' },
-    { code: 'TERMINATION', nameUz: 'Reyestrdan chiqarish / Sertifikatni bekor qilish', nameRu: 'Исключение из реестра' },
-  ];
-
-  for (let i = 0; i < penaltyTypes.length; i++) {
-    await prisma.dictionaryItem.upsert({
-      where: { category_code: { category: 'penalty_types', code: penaltyTypes[i].code } },
-      update: {},
-      create: {
-        category: 'penalty_types',
-        code: penaltyTypes[i].code,
-        nameUz: penaltyTypes[i].nameUz,
-        nameRu: penaltyTypes[i].nameRu,
-        sortOrder: i + 1,
-      },
-    });
-  }
-
-  // Case statuses (Holatlar)
-  const caseStatuses = [
-    { code: 'SUBMITTED', nameUz: 'Kelib tushgan', nameRu: 'Подано' },
-    { code: 'REGISTERED', nameUz: 'Ro\'yxatga olingan', nameRu: 'Зарегистрировано' },
-    { code: 'MEDIATOR_ASSIGNED', nameUz: 'Mediator biriktirilgan', nameRu: 'Медиатор назначен' },
-    { code: 'IN_PROCESS', nameUz: 'Mediatsiya jarayonida', nameRu: 'В процессе медиации' },
-    { code: 'AGREEMENT_REACHED', nameUz: 'Kelishuvga erishildi', nameRu: 'Соглашение достигнуто' },
-    { code: 'REJECTED', nameUz: 'Rad etilgan', nameRu: 'Отклонено' },
-    { code: 'CLOSED', nameUz: 'Yopilgan', nameRu: 'Закрыто' },
-  ];
-
-  for (let i = 0; i < caseStatuses.length; i++) {
-    await prisma.dictionaryItem.upsert({
-      where: { category_code: { category: 'case_statuses', code: caseStatuses[i].code } },
-      update: {},
-      create: {
-        category: 'case_statuses',
-        code: caseStatuses[i].code,
-        nameUz: caseStatuses[i].nameUz,
-        nameRu: caseStatuses[i].nameRu,
-        sortOrder: i + 1,
-      },
-    });
-  }
-
-  // 6. Tizim sozlamalari (FT-ADM-07 / ADM-05)
+  // 6. Tizim sozlamalari (FT-ADM-07, FT-AUTH-06)
   console.log('Seeding system settings...');
   await prisma.systemSetting.upsert({
     where: { key: 'timers' },
@@ -356,6 +396,7 @@ async function main() {
         mediatorAssignmentDays: 5,
         mediationProcessMaxDays: 30,
         agreementExecutionConfirmationDays: 10,
+        sessionInactivityTimeoutMinutes: 30, // FT-AUTH-06: Seans faolsizlik muddati
       },
       updatedBy: 'admin',
     },
@@ -377,48 +418,7 @@ async function main() {
     },
   });
 
-  // 7. Namunaviy kontentlar (FT-ADM-04 / ADM-06)
-  console.log('Seeding initial content...');
-  await prisma.content.create({
-    data: {
-      type: 'news',
-      titleUz: '«Nizolarni muqobil hal etish» elektron platformasi ishga tushirildi',
-      titleRu: 'Запущена электронная платформа «Альтернативное разрешение споров»',
-      summaryUz: 'Ushbu platforma orqali fuqarolar va tadbirkorlar o\'z nizolarini mediatorlar yordamida tez va oson hal etishlari mumkin.',
-      bodyUz: '<p>O\'zbekiston Respublikasi Adliya vazirligi tomonidan nizolarni sudgacha hal etish mexanizmlarini raqamlashtirish maqsadida yangi yagona elektron platforma joriy etildi.</p>',
-      status: ContentStatus.PUBLISHED,
-      publishedAt: new Date(),
-      authorId: adminUser.id,
-    },
-  });
-
-  await prisma.content.create({
-    data: {
-      type: 'legal_framework',
-      titleUz: 'O\'zbekiston Respublikasining "Mediatsiya to\'g\'risida"gi Qonuni',
-      titleRu: 'Закон Республики Узбекистан «О медиации»',
-      summaryUz: 'Nizolarni muqobil hal etishning huquqiy asoslari va mediator faoliyati tartibi.',
-      bodyUz: '<p>Ushbu Qonun nizolarni xolis jismoniy shaxs (mediator) ko\'magida hal etish bo\'yicha munosabatlarni tartibga soladi.</p>',
-      status: ContentStatus.PUBLISHED,
-      publishedAt: new Date(),
-      authorId: adminUser.id,
-    },
-  });
-
-  await prisma.content.create({
-    data: {
-      type: 'faq',
-      titleUz: 'Mediatsiya nima va uning qanday afzalliklari bor?',
-      titleRu: 'Что такое медиация и каковы её преимущества?',
-      summaryUz: 'Mediatsiya — tomonlarning kelishuvi asosida nizoni mustaqil va ixtiyoriy hal qilish jarayonidir.',
-      bodyUz: '<p>Asosiy afzalliklar: maxfiylik, sudga qaraganda ancha kam xarajat, tezlik va tomonlar o\'rtasidagi munosabatlarning saqlab qolinishi.</p>',
-      status: ContentStatus.PUBLISHED,
-      publishedAt: new Date(),
-      authorId: adminUser.id,
-    },
-  });
-
-  console.log('✅ Database seeded successfully!');
+  console.log('✅ Database seeded successfully with all 9 roles and test users!');
 }
 
 main()

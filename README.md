@@ -1,7 +1,7 @@
 # «Nizolarni muqobil hal etish» elektron platformasi
-## Administrator paneli (ADM) moduli — Backend REST API
+## Backend REST API (ADM va AUTH modullari)
 
-Ushbu loyiha «Nizolarni muqobil hal etish» axborot tizimining **1-bosqich: Administrator paneli (ADM)** moduli texnik topshirig'i (TZ v0.2) asosida ishlab chiqilgan to'liq funksional Backend REST API tizimidir.
+Ushbu loyiha «Nizolarni muqobil hal etish» axborot tizimining **1-bosqich: Administrator paneli (ADM)** va **Tizimga kirish, foydalanuvchilar va rollar (AUTH)** modullari texnik topshiriqlari (TZ v0.2) asosida ishlab chiqilgan to'liq funksional Backend REST API tizimidir.
 
 ---
 
@@ -10,7 +10,7 @@ Ushbu loyiha «Nizolarni muqobil hal etish» axborot tizimining **1-bosqich: Adm
 - **Platforma**: [NestJS](https://nestjs.com/) (Node.js / TypeScript)
 - **Ma'lumotlar bazasi**: [PostgreSQL 18+](https://www.postgresql.org/)
 - **ORM / Ma'lumotlar qatlami**: [Prisma ORM](https://www.prisma.io/)
-- **Xavfsizlik & Autentifikatsiya**: Passport-JWT, Bcrypt
+- **Xavfsizlik & Autentifikatsiya**: Passport-JWT, Bcrypt, ONE ID, E-IMZO, Mobil ID adapterlari
 - **Validatsiya**: Class-Validator, Class-Transformer
 - **API Hujjatlari**: OpenAPI / Swagger UI
 
@@ -18,58 +18,66 @@ Ushbu loyiha «Nizolarni muqobil hal etish» axborot tizimining **1-bosqich: Adm
 
 ## 📌 Modul imkoniyatlari va Funksional talablar
 
-| Talab kodi | Nomi | Izoh |
-| :--- | :--- | :--- |
-| **FT-ADM-01 / ADM-01** | **Tashkilotlar boshqaruvi** | Vazirlik, hududiy boshqarmalar va o'quv markazlari ierarxiyasi (daraxt ko'rinishida), tahrirlash va holat boshqaruvi. |
-| **FT-ADM-02, FT-ADM-03 / ADM-02** | **Foydalanuvchilar va rollar** | Foydalanuvchilarni qo'shish, tashkilot va rollarga biriktirish, rollar huquqlarini (permissions) sozlash. Rol o'zgarishi audit jurnaliga yoziladi. |
-| **FT-ADM-05 / ADM-03** | **Spravochniklar boshqaruvi** | Hududlar, ixtisosliklar, jazo turlari, ish holatlari, shartnoma namunalari, imtihon savollarini boshqarish. Faolsizlantirilgan qiymat eski yozuvlarda saqlanadi. |
-| **FT-ADM-06 / ADM-04** | **Audit jurnali (Audit Log)** | Muhim amallar (LOGIN, CREATE, UPDATE, STATUS_CHANGE, ROLE_ASSIGN, DELETE, PUBLISH) bo'yicha o'zgarmas (immutable) arxiv. Foydalanuvchi, sana va amal bo'yicha filtrlash. |
-| **FT-ADM-07 / ADM-05** | **Tizim sozlamalari** | Taymer muddatlari, fayl hajmi va formati cheklovlari, SMS/Email shablonlari. O'zgarishlar auditga yoziladi. |
-| **FT-ADM-04 / ADM-06** | **Kontent boshqaruvi** | Yangiliklar, huquqiy baza, namunalar, ko'p beriladigan savollar (FAQ), qo'llanma va e'lonlarni ko'p tillilikda (UZ, RU, EN) boshqarish va nashr qilish. |
+### 1. AUTH Moduli (Tizimga kirish, foydalanuvchilar va rollar)
+- **FT-AUTH-01 / AUTH-01**: ONE ID, E-imzo yoki Mobil ID orqali xavfsiz kirish (parolsiz identifikatsiya).
+- **FT-AUTH-02, FT-AUTH-03 / AUTH-02**: Reyestr maqomiga mos kabinetni avtomatik ochish:
+  - Mediator bo'lmagan shaxs -> **Talabgor kabineti** (`APPLICANT`)
+  - Reyestrdagi mediator -> **Mediator kabineti** (`MEDIATOR`)
+  - Hakamlik sudyasi -> **Hakamlik sudyasi kabineti** (`ARBITRATION_JUDGE`)
+  - Arbitr -> **Arbitr kabineti** (`ARBITRATOR`)
+- **FT-AUTH-04 / AUTH-03 (RBAC)**: 9 ta tizim roli (`ADMIN`, `MINISTRY_STAFF`, `REGIONAL_STAFF`, `COMMISSION`, `MEDIATOR`, `ARBITRATION_JUDGE`, `ARBITRATOR`, `TALABGOR`, `OPERATOR`). Hududiy xodim faqat o'z hududidagi ma'lumotni ko'radi. Ruxsatsiz kirish urinishlarida 403 xatosi qaytadi va Audit jurnaliga yoziladi.
+- **FT-AUTH-05 / AUTH-04**: Shaxsiy ma'lumotlar (Obyektivka):
+  - Tashqi tizimdan (ONE ID / IIV) olingan maydonlar (`pinfl`, `passportSeriesNumber`, `fullName`, `birthDate` va h.k.) o'zgarmas (read-only).
+  - Ruxsat etilgan maydonlar (`phone`, `email`, `address`) foydalanuvchi tomonidan tahrirlanadi va har bir o'zgarish auditga yoziladi.
+- **FT-AUTH-06 / AUTH-05**: Seans xavfsizligi. Faolsizlik muddati sozlanadi (standart: 30 daqiqa); muddat tugasa avtomatik tizimdan chiqariladi. Refresh token va chiqish (`logout`).
+
+### 2. ADM Moduli (Administrator paneli)
+- **FT-ADM-01 / ADM-01**: Tashkilotlar boshqaruvi va bo'ysunish ierarxiyasi (daraxt ko'rinishida).
+- **FT-ADM-02, FT-ADM-03 / ADM-02**: Foydalanuvchilar va rollarni boshqarish, huquqlarni (permissions) sozlash.
+- **FT-ADM-05 / ADM-03**: Spravochniklar boshqaruvi (hududlar, ixtisosliklar, jazo turlari, ish holatlari). Faolsizlantirilgan yozuvlar arxivda saqlanadi.
+- **FT-ADM-06 / ADM-04**: Audit jurnali (o'zgarmas / immutable, foydalanuvchi, sana va amal bo'yicha filtr).
+- **FT-ADM-07 / ADM-05**: Tizim sozlamalari (taymerlar, fayl cheklovlari, xabar shablonlari).
+- **FT-ADM-04 / ADM-06**: Kontent boshqaruvi (ko'p tilli yangiliklar, huquqiy baza, namunalar, FAQ, e'lonlar, nashr qilish).
 
 ---
 
-## 🔌 API Endpoints (20 ta rasmiy API + Auth)
+## 🔌 API Endpoints (AUTH va ADM)
 
-### 1. Autentifikatsiya (AUTH)
-- `POST /auth/login` — Tizimga kirish va JWT token olish
-- `GET /auth/me` — Joriy kirgan foydalanuvchi ma'lumotlari, rollari va huquqlari
+### 1. AUTH Moduli API lari (8 ta rasmiy API)
+| Metod | Yo'l | Vazifasi | Kim ishlatadi |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/oneid/login` | ONE ID orqali kirish (kodni almashtirish) | Ochiq (kirishsiz) |
+| `POST` | `/auth/esign/login` | E-imzo orqali kirish (PKCS#7) | Ochiq (kirishsiz) |
+| `POST` | `/auth/mobile-id/login` | Mobil ID orqali kirish (SMS kod) | Ochiq (kirishsiz) |
+| `POST` | `/auth/refresh` | Seansni yangilash (Refresh token) | Barcha kabinetlar |
+| `POST` | `/auth/logout` | Tizimdan chiqish (seansni yopish) | Barcha kabinetlar |
+| `GET` | `/auth/me` | Joriy foydalanuvchi, rollari va kabinet turi | Barcha kabinetlar |
+| `GET` | `/users/me` | Shaxsiy ma'lumotlarni (obyektivka) olish | Barcha kabinetlar |
+| `PATCH` | `/users/me` | Ruxsat etilgan maydonlarni tahrirlash (phone, email, address) | Barcha kabinetlar |
 
-### 2. Tashkilotlar boshqaruvi (FT-ADM-01)
-- `GET /admin/organizations` — Tashkilotlar ro'yxati (yoki `?asTree=true` ierarxiya daraxti)
-- `POST /admin/organizations` — Yangi tashkilot qo'shish
-- `GET /admin/organizations/{id}` — Tashkilot tafsiloti (sub-tashkilotlari bilan)
-- `PATCH /admin/organizations/{id}` — Tashkilotni tahrirlash / faolsizlantirish
-
-### 3. Foydalanuvchilar va rollar (FT-ADM-02, FT-ADM-03)
-- `GET /admin/users` — Foydalanuvchilar ro'yxati (tashkilot, rol, holat filtrlari)
-- `POST /admin/users` — Foydalanuvchi yaratish va tashkilot/rollarga biriktirish
-- `PATCH /admin/users/{id}` — Foydalanuvchini tahrirlash
-- `PUT /admin/users/{id}/roles` — Foydalanuvchini rollarga biriktirish (Audit log yoziladi)
-- `GET /admin/roles` — Rollar ro'yxati va ularning huquqlari
-- `GET /admin/roles/permissions` — Tizimdagi mavjud barcha huquqlar spravochnigi
-- `PUT /admin/roles/{id}/permissions` — Rol huquqlarini (permissions) sozlash
-
-### 4. Spravochniklar (FT-ADM-05)
-- `GET /admin/dictionaries` — Barcha spravochnik toifalari ro'yxati
-- `GET /admin/dictionaries/{name}` — Ko'rsatilgan spravochnik elementlari (`regions`, `specializations`, `penalty_types`, `case_statuses`, va h.k.)
-- `POST /admin/dictionaries/{name}` — Spravochnikka yangi qiymat qo'shish
-- `PATCH /admin/dictionaries/{name}/{id}` — Qiymatni tahrirlash yoki faolsizlantirish (`isActive: false`)
-
-### 5. Audit jurnali (FT-ADM-06)
-- `GET /admin/audit-log` — Audit jurnali (o'chirish/tahrirlash imkonsiz; sana, foydalanuvchi, amal bo'yicha filtr)
-
-### 6. Tizim sozlamalari (FT-ADM-07)
-- `GET /admin/settings` — Taymer muddatlari, fayl cheklovlari va bildirishnoma sozlamalari
-- `PUT /admin/settings` — Tizim sozlamalarini yangilash (Audit log yoziladi)
-
-### 7. Kontent boshqaruvi (FT-ADM-04)
-- `GET /admin/content/{type}` — Kontentlar ro'yxati (`news`, `legal_framework`, `templates`, `faq`, `manuals`, `announcements`)
-- `GET /admin/content/{type}/{id}` — Bitta kontent tafsiloti
-- `POST /admin/content/{type}` — Yangi kontent qo'shish (ko'p tilli)
-- `PUT /admin/content/{type}/{id}` — Kontentni tahrirlash
-- `DELETE /admin/content/{type}/{id}` — Kontentni o'chirish
-- `POST /admin/content/{type}/{id}/publish` — Kontentni nashr qilish (`PUBLISHED`)
+### 2. ADM Moduli API lari (20 ta rasmiy API)
+| Metod | Yo'l | Vazifasi | Ruxsat |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/admin/organizations` | Tashkilotlar ro'yxati (yoki `?asTree=true`) | Admin |
+| `POST` | `/admin/organizations` | Tashkilot qo'shish | Admin |
+| `GET` | `/admin/organizations/{id}` | Tashkilot tafsiloti (ierarxiya bilan) | Admin |
+| `PATCH` | `/admin/organizations/{id}` | Tashkilotni tahrirlash / faolsizlantirish | Admin |
+| `GET` | `/admin/users` | Foydalanuvchilar ro'yxati | Admin |
+| `POST` | `/admin/users` | Foydalanuvchi qo'shish | Admin |
+| `PATCH` | `/admin/users/{id}` | Foydalanuvchini tahrirlash | Admin |
+| `PUT` | `/admin/users/{id}/roles` | Foydalanuvchini rollarga biriktirish | Admin |
+| `GET` | `/admin/roles` | Rollar ro'yxati | Admin |
+| `PUT` | `/admin/roles/{id}/permissions` | Rol huquqlarini sozlash | Admin |
+| `GET` | `/admin/dictionaries/{name}` | Spravochnik qiymatlari | Admin |
+| `POST` | `/admin/dictionaries/{name}` | Spravochnikka qiymat qo'shish | Admin |
+| `PATCH` | `/admin/dictionaries/{name}/{id}` | Qiymatni tahrirlash yoki faolsizlantirish | Admin |
+| `GET` | `/admin/audit-log` | Audit jurnali (o'zgarmas, filtrlash) | Admin |
+| `GET` | `/admin/settings` | Tizim sozlamalari | Admin |
+| `PUT` | `/admin/settings` | Sozlamalarni saqlash | Admin |
+| `POST` | `/admin/content/{type}` | Kontent qo'shish | Admin, Vazirlik xodimi |
+| `PUT` | `/admin/content/{type}/{id}` | Kontentni tahrirlash | Admin, Vazirlik xodimi |
+| `DELETE` | `/admin/content/{type}/{id}` | Kontentni olib tashlash | Admin, Vazirlik xodimi |
+| `POST` | `/admin/content/{type}/{id}/publish` | Kontentni nashr qilish | Admin, Vazirlik xodimi |
 
 ---
 
@@ -86,7 +94,8 @@ PostgreSQL server ishlayotganligini tekshiring va `.env` faylini sozlang:
 PORT=3000
 DATABASE_URL="postgresql://postgres@localhost:5432/nizolar_admin_db?schema=public"
 JWT_SECRET="nizolarni_hal_qilish_secret_key_2026_adliya"
-JWT_EXPIRES_IN="7d"
+JWT_EXPIRES_IN="1h"
+SESSION_INACTIVITY_MINUTES="30"
 ```
 
 ### 3. Migratsiya va dastlabki ma'lumotlarni yuklash (Seed)
@@ -94,7 +103,7 @@ JWT_EXPIRES_IN="7d"
 # Bazani sinxronlashtirish
 npx prisma db push
 
-# Dastlabki ma'lumotlarni kiritish (Vazirlik, Boshqarmalar, Rollar, Spravochniklar, Admin foydalanuvchi)
+# 9 ta rol, test foydalanuvchilar va spravochniklarni kiritish
 npm run prisma:seed
 ```
 
@@ -108,20 +117,30 @@ npm run build
 npm run start:prod
 ```
 
-### 5. Testlarni ishga tushirish
-Loyiha ichida barcha 20 ta API endpointlarini avtomatik tekshiruvchi test mavjud:
+### 5. Avtomatlashtirilgan testlarni ishga tushirish
 ```bash
+# ADM modulining barcha 20 ta API testi:
 npx ts-node test/test-all-apis.ts
+
+# AUTH modulining barcha 8 ta API va qabul mezonlari testi:
+npx ts-node test/test-auth-apis.ts
 ```
 
 ---
 
-## 🔑 Dastlabki test foydalanuvchilari (Seed Data)
+## 🔑 Dastlabki test foydalanuvchilari (9 ta rol va kabinetlar)
 
-| Foydalanuvchi (login) | Parol | Rol | Tashkilot |
+| Login / Test PINFL | Rol | Ochiladigan kabinet | Tashkilot / Tavsif |
 | :--- | :--- | :--- | :--- |
-| `admin` | `Admin@12345` | **ADMIN** (Super Administrator) | O'zbekiston Respublikasi Adliya vazirligi |
-| `vazirlik` | `Vazirlik@12345` | **MINISTRY_STAFF** (Vazirlik xodimi) | O'zbekiston Respublikasi Adliya vazirligi |
+| `admin` | **ADMIN** | `ADMIN` (Admin paneli) | Bosh administrator |
+| `vazirlik` | **MINISTRY_STAFF** | `MINISTRY_STAFF` | Adliya vazirligi mas'ul xodimi |
+| `hudud_toshkent` | **REGIONAL_STAFF** | `REGIONAL_STAFF` | Toshkent shahar adliya boshqarmasi |
+| `komissiya_azosi` | **COMMISSION** | `COMMISSION` | Malaka komissiyasi |
+| `mediator_karim` (`31201851230011`) | **MEDIATOR** | `MEDIATOR` | Reyestrdagi professional mediator |
+| `sudya_akrom` (`31201851230022`) | **ARBITRATION_JUDGE** | `ARBITRATION_JUDGE` | Hakamlik sudyasi |
+| `arbitr_dilshod` (`31201851230033`) | **ARBITRATOR** | `ARBITRATOR` | Arbitr |
+| `talabgor_nodir` (`31201851230044`) | **TALABGOR** | `APPLICANT` (Talabgor kabineti) | Nizo ishtirokchisi (ONE ID orqali kirgan) |
+| `operator_aziz` | **OPERATOR** | `OPERATOR` | Texnik operator |
 
 ---
 
@@ -129,9 +148,3 @@ npx ts-node test/test-all-apis.ts
 
 Server ishga tushgandan so'ng, brauzerda quyidagi manzilni oching:
 👉 **`http://localhost:3000/api/docs`**
-
-Swagger interfeysi orqali:
-1. `POST /auth/login` orqali `admin` foydalanuvchi bilan kiring.
-2. Qaytgan `accessToken` ni nusxalang.
-3. Yuqori o'ng burchakdagi **"Authorize"** tugmasini bosib, tokenni joylashtiring (`Bearer <token>`).
-4. Barcha 20 ta endpointni to'g'ridan-to'g'ri interaktiv sinab ko'ring!
