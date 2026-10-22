@@ -1,0 +1,210 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationType {
+  MINISTRY              // Vazirlik
+  REGIONAL_DEPARTMENT   // Hududiy boshqarma
+  TRAINING_CENTER       // O'quv markazi
+}
+
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Organization {
+  id          String           @id @default(uuid())
+  name        String
+  type        OrganizationType
+  parentId    String?          @map("parent_id")
+  parent      Organization?    @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Organization[]   @relation("OrganizationHierarchy")
+  region      String?
+  status      EntityStatus     @default(ACTIVE)
+  code        String?
+  address     String?
+  phone       String?
+  email       String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  users       User[]
+
+  @@map("organizations")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  displayName String           @map("display_name")
+  description String?
+  isSystem    Boolean          @default(false) @map("is_system")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  name        String
+  module      String           @default("ADM")
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String      @id @default(uuid())
+  roleId       String      @map("role_id")
+  permissionId String      @map("permission_id")
+
+  role         Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  username       String        @unique
+  email          String?       @unique
+  phone          String?       @unique
+  passwordHash   String        @map("password_hash")
+  fullName       String        @map("full_name")
+  organizationId String?       @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  status         UserStatus    @default(ACTIVE)
+  pinfl          String?
+  position       String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  userRoles      UserRole[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  roleId    String   @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model DictionaryItem {
+  id          String       @id @default(uuid())
+  category    String       // e.g., regions, specializations, penalty_types, case_statuses, contract_templates, exam_questions
+  code        String
+  nameUz      String       @map("name_uz")
+  nameRu      String?      @map("name_ru")
+  nameEn      String?      @map("name_en")
+  description String?
+  sortOrder   Int          @default(0) @map("sort_order")
+  isActive    Boolean      @default(true) @map("is_active")
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@unique([category, code])
+  @@index([category])
+  @@map("dictionary_items")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  username     String?
+  userFullName String?  @map("user_full_name")
+  action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, PUBLISH, ROLE_ASSIGN
+  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS
+  entityId     String?  @map("entity_id")
+  oldValues    Json?    @map("old_values")
+  newValues    Json?    @map("new_values")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  group       String   @default("GENERAL") // TIMERS, NOTIFICATIONS, FILE_LIMITS, GENERAL
+  value       Json
+  description String?
+  updatedBy   String?  @map("updated_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model Content {
+  id          String        @id @default(uuid())
+  type        String        // news, legal_framework, templates, faq, manuals, video_manuals, announcements
+  titleUz     String        @map("title_uz")
+  titleRu     String?       @map("title_ru")
+  titleEn     String?       @map("title_en")
+  summaryUz   String?       @map("summary_uz")
+  summaryRu   String?       @map("summary_ru")
+  summaryEn   String?       @map("summary_en")
+  bodyUz      String?       @map("body_uz")
+  bodyRu      String?       @map("body_ru")
+  bodyEn      String?       @map("body_en")
+  fileUrl     String?       @map("file_url")
+  videoUrl    String?       @map("video_url")
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?     @map("published_at")
+  authorId    String?       @map("author_id")
+  viewCount   Int           @default(0) @map("view_count")
+  metadata    Json?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([status])
+  @@map("contents")
+}
