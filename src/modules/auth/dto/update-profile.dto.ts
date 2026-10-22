@@ -27,19 +27,22 @@ export class UpdateProfileDto {
   address?: string;
 
   // The following fields are explicitly checked and disallowed in the service:
-  @ApiPropertyOptional({ description: 'Tahrirlash taqiqlangan maydon (JShShIR)' })
+  // `never` has no runtime design:type metadata. Tell Swagger these are
+  // string fields explicitly so it does not try to resolve `undefined` as a
+  // model reference while building the OpenAPI document.
+  @ApiPropertyOptional({ type: String, description: 'Tahrirlash taqiqlangan maydon (JShShIR)' })
   @IsOptional()
   pinfl?: never;
 
-  @ApiPropertyOptional({ description: 'Tahrirlash taqiqlangan maydon (Pasport)' })
+  @ApiPropertyOptional({ type: String, description: 'Tahrirlash taqiqlangan maydon (Pasport)' })
   @IsOptional()
   passportSeriesNumber?: never;
 
-  @ApiPropertyOptional({ description: 'Tahrirlash taqiqlangan maydon (F.I.SH)' })
+  @ApiPropertyOptional({ type: String, description: 'Tahrirlash taqiqlangan maydon (F.I.SH)' })
   @IsOptional()
   fullName?: never;
 
-  @ApiPropertyOptional({ description: 'Tahrirlash taqiqlangan maydon (Tug\'ilgan sana)' })
+  @ApiPropertyOptional({ type: String, description: 'Tahrirlash taqiqlangan maydon (Tug\'ilgan sana)' })
   @IsOptional()
   birthDate?: never;
 }
