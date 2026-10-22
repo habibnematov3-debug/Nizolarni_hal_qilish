@@ -493,6 +493,25 @@ model QuarterlyReport {
   @@map("quarterly_reports")
 }
 
+// ─── Fayl Saqlash Modeli (INFRA-06) ──────────────────────────────────────────
+model FileRecord {
+  id           String   @id @default(uuid())
+  originalName String   @map("original_name")
+  storedName   String   @unique @map("stored_name")
+  mimeType     String   @map("mime_type")
+  sizeBytes    Int      @map("size_bytes")
+  filePath     String   @map("file_path")
+  accessLevel  String   @default("PRIVATE") @map("access_level") // PRIVATE, INTERNAL, PUBLIC
+  uploadedById String   @map("uploaded_by_id")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([uploadedById])
+  @@index([accessLevel])
+  @@map("file_records")
+}
+
 model ReportSummary {
   id             String              @id @default(uuid())
   organizationId String              @map("organization_id")
