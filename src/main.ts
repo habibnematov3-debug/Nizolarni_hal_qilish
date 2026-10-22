@@ -1,12 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express = require('express');
+import { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+async function createApp(expressInstance?: express.Express) {
+  const app = expressInstance
+    ? await NestFactory.create(AppModule, new ExpressAdapter(expressInstance))
+    : await NestFactory.create(AppModule);
 
   // Enable CORS
   app.enableCors({
@@ -66,12 +71,28 @@ Ushbu modul orqali quyidagi funksiyalar boshqariladi:
     customSiteTitle: 'Nizolarni hal qilish — ADM API Docs',
   });
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  return app;
+}
+
+let appPromise: ReturnType<typeof createApp> | undefined;
+
+async function handler(req: Request, res: Response) {
+  const app = await (appPromise ??= createApp(express()));
+  const instance = app.getHttpAdapter().getInstance();
+  return instance(req, res);
+}
+
+export default handler;
+
+// Keep `nest start` and `node dist/main` usable for local and non-Vercel runs.
+if (require.main === module) {
+  createApp().then(async (app) => {
+    const port = process.env.PORT || 3000;
+    await app.listen(port);
   console.log(`\n======================================================`);
   console.log(`🚀 Administrator paneli (ADM) serveri ishga tushdi:`);
   console.log(`🌐 Server manzili:  http://localhost:${port}`);
   console.log(`📚 Swagger OpenAPI:  http://localhost:${port}/api/docs`);
   console.log(`======================================================\n`);
+  });
 }
-bootstrap();

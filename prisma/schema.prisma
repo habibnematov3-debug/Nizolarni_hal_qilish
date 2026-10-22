@@ -59,6 +59,27 @@ enum AuthProvider {
   LOCAL
 }
 
+enum NotificationChannel {
+  CABINET
+  SMS
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum TimerUnit {
+  MINUTES
+  HOURS
+  DAYS
+  MONTHS
+}
+
 model Organization {
   id          String           @id @default(uuid())
   name        String
@@ -156,6 +177,7 @@ model User {
 
   userRoles            UserRole[]
   auditLogs            AuditLog[]
+  notifications        Notification[]
 
   @@map("users")
 }
@@ -199,7 +221,7 @@ model AuditLog {
   username     String?
   userFullName String?  @map("user_full_name")
   action       String   // CREATE, UPDATE, DELETE, STATUS_CHANGE, LOGIN, LOGOUT, REFRESH, PUBLISH, ROLE_ASSIGN
-  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS, AUTH
+  entityType   String   @map("entity_type") // ORGANIZATION, USER, ROLE, DICTIONARY, CONTENT, SETTINGS, AUTH, NOTIFICATION, TIMER
   entityId     String?  @map("entity_id")
   oldValues    Json?    @map("old_values")
   newValues    Json?    @map("new_values")
@@ -252,4 +274,67 @@ model Content {
   @@index([type])
   @@index([status])
   @@map("contents")
+}
+
+model Notification {
+  id             String              @id @default(uuid())
+  userId         String              @map("user_id")
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel        NotificationChannel @default(CABINET)
+  templateCode   String?             @map("template_code")
+  title          String
+  content        String
+  metadata       Json?
+  status         NotificationStatus  @default(PENDING)
+  isRead         Boolean             @default(false) @map("is_read")
+  readAt         DateTime?           @map("read_at")
+  sentAt         DateTime?           @map("sent_at")
+  failedReason   String?             @map("failed_reason")
+  retryCount     Int                 @default(0) @map("retry_count")
+  idempotencyKey String?             @unique @map("idempotency_key")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([channel])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  id                 String   @id @default(uuid())
+  code               String   @unique // APPLICATION_STATUS, EXAM_INVITATION, EXAM_RESULT, CONTRACT_STATUS, REPORT_SUBMISSION_DEADLINE, QUALIFICATION_UPGRADE_REMINDER, OBLIGATION_EXECUTION_DEADLINE, CALENDAR_EVENT
+  name               String
+  category           String   @default("GENERAL") // APPLICATION, EXAM, CONTRACT, REPORT, QUALIFICATION, OBLIGATION, CALENDAR
+  titleUz            String   @map("title_uz")
+  titleRu            String?  @map("title_ru")
+  titleEn            String?  @map("title_en")
+  bodyUz             String   @map("body_uz")
+  bodyRu             String?  @map("body_ru")
+  bodyEn             String?  @map("body_en")
+  smsTextUz          String?  @map("sms_text_uz")
+  smsTextRu          String?  @map("sms_text_ru")
+  availableVariables Json?    @map("available_variables") // ['caseNumber', 'fullName', 'deadline', 'examDate']
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_templates")
+}
+
+model TimerSetting {
+  id            String    @id @default(uuid())
+  key           String    @unique // e.g. CASE_REGISTRATION_TIMEOUT, MEDIATOR_ASSIGNMENT_TIMEOUT, etc.
+  name          String
+  description   String?
+  durationValue Int       @map("duration_value")
+  durationUnit  TimerUnit @default(DAYS) @map("duration_unit")
+  targetModule  String?   @map("target_module") // MK, MTS, SHA, HIS, MON
+  isActive      Boolean   @default(true) @map("is_active")
+  updatedBy     String?   @map("updated_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("timer_settings")
 }
