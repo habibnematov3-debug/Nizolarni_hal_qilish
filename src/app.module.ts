@@ -10,6 +10,7 @@ import { DictionariesModule } from './modules/dictionaries/dictionaries.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ContentModule } from './modules/content/content.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { IntegrationModule } from './modules/integration/integration.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     SettingsModule,
     ContentModule,
     NotificationsModule,
+    IntegrationModule,
   ],
 })
 export class AppModule {}
