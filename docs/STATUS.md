@@ -20,7 +20,7 @@
 | MON | 3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | REY | 3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | INT | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
-| OKM | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
+| OKM | 3 | 5 / 5 | 9 / 9 | Yo'q | Bajarildi |
 | TOL | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | BIL | 1 | aniq emas / aniq emas | 9 / 9 | Ha | Bajarildi |
 | ADM | 1 | aniq emas / aniq emas | 20 / 20 | Yo'q | Bajarilmoqda |

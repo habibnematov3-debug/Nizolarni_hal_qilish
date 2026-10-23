@@ -143,6 +143,16 @@ enum CertificateDeliveryMethod {
   POST
 }
 
+enum TrainingCertificateType {
+  SPECIAL_COURSE
+  QUALIFICATION_UPGRADE
+}
+
+enum TrainingApplicationStatus {
+  SUBMITTED
+  CONTRACT_CREATED
+}
+
 enum MkApplicationStatus {
   SUBMITTED
   CHECKING
@@ -314,6 +324,8 @@ model User {
   userRoles              UserRole[]
   auditLogs              AuditLog[]
   notifications          Notification[]
+  trainingCertificates   TrainingCertificate[]
+  trainingApplications   TrainingApplication[]
   quarterlyReports       QuarterlyReport[]
   createdReportSummaries ReportSummary[]   @relation("ReportSummaryCreator")
 
@@ -508,23 +520,64 @@ model CourtClaim {
 }
 
 model TrainingCertificate {
-  id                 String   @id @default(uuid())
-  certificateNumber  String   @unique @map("certificate_number")
-  pinfl              String
-  fullName           String   @map("full_name")
-  trainingCenterCode String   @map("training_center_code") // YUMOM, TDYU, etc.
-  courseName         String   @map("course_name")
-  issuedDate         DateTime @map("issued_date")
-  expiryDate         DateTime @map("expiry_date")
-  status             String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
-  documentUrl        String?  @map("document_url")
-  metadata           Json?
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                    String                  @id @default(uuid())
+  certificateNumber     String                  @unique @map("certificate_number")
+  userId                String?                 @map("user_id")
+  user                  User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  pinfl                 String
+  fullName              String                  @map("full_name")
+  certificateType       TrainingCertificateType @default(SPECIAL_COURSE) @map("certificate_type")
+  trainingCenterCode    String                  @map("training_center_code") // YUMOM, TDYU, etc.
+  courseName            String                  @map("course_name")
+  issuedDate            DateTime                @map("issued_date")
+  expiryDate            DateTime                @map("expiry_date")
+  nextQualificationDate DateTime?               @map("next_qualification_date")
+  status                String                  @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
+  documentUrl           String?                 @map("document_url")
+  metadata              Json?
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedAt             DateTime                @updatedAt @map("updated_at")
 
   @@index([pinfl])
+  @@index([userId])
+  @@index([certificateType, issuedDate])
+  @@index([nextQualificationDate])
   @@index([certificateNumber])
   @@map("training_certificates")
+}
+
+model TrainingApplication {
+  id                 String                    @id @default(uuid())
+  userId             String                    @map("user_id")
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingCenterCode String                    @map("training_center_code")
+  courseName         String                    @map("course_name")
+  note               String?
+  status             TrainingApplicationStatus @default(SUBMITTED)
+  contract           TrainingContract?
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("training_applications")
+}
+
+model TrainingContract {
+  id                 String              @id @default(uuid())
+  applicationId      String              @unique @map("application_id")
+  application        TrainingApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  contractNumber     String              @unique @map("contract_number")
+  trainingCenterCode String              @map("training_center_code")
+  trainingCenterName String              @map("training_center_name")
+  mediatorName       String              @map("mediator_name")
+  mediatorPinfl      String              @map("mediator_pinfl")
+  courseName         String              @map("course_name")
+  status             String              @default("GENERATED")
+  createdAt          DateTime            @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("training_contracts")
 }
 
 model BillingTransaction {
@@ -988,4 +1041,27 @@ model MediationSession {
 
   @@index([mediationId, scheduledAt])
   @@map("mediation_sessions")
+}
+
+model AnnouncementAcknowledgement {
+  id             String   @id @default(uuid())
+  announcementId String   @map("announcement_id")
+  userId         String   @map("user_id")
+  acknowledgedAt DateTime @default(now()) @map("acknowledged_at")
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@map("announcement_acknowledgements")
+}
+
+model PublicPreference {
+  id           String   @id @default(uuid())
+  visitorId    String   @unique @map("visitor_id")
+  language     String   @default("uz")
+  largeText    Boolean  @default(false) @map("large_text")
+  highContrast Boolean  @default(false) @map("high_contrast")
+  keyboardNav  Boolean  @default(false) @map("keyboard_nav")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("public_preferences")
 }

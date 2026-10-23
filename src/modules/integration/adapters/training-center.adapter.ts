@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { IntegrationLoggerService } from '../services/integration-logger.service';
 import { TrainingCertificateDto } from '../dto/training-certificate.dto';
-import { IntegrationDirection, IntegrationStatus } from '@prisma/client';
+import { IntegrationDirection, IntegrationStatus, TrainingCertificateType } from '@prisma/client';
 
 export interface ITrainingCenterPort {
   receiveCertificate(dto: TrainingCertificateDto): Promise<any>;
@@ -22,25 +22,41 @@ export class TrainingCenterIntegrationAdapter implements ITrainingCenterPort {
   async receiveCertificate(dto: TrainingCertificateDto) {
     const startTime = Date.now();
     try {
+      const user = await this.prisma.user.findUnique({
+        where: { pinfl: dto.pinfl },
+        select: { id: true },
+      });
+      const certificateType = dto.certificateType || TrainingCertificateType.SPECIAL_COURSE;
+      const nextQualificationDate = dto.nextQualificationDate
+        ? new Date(dto.nextQualificationDate)
+        : certificateType === TrainingCertificateType.QUALIFICATION_UPGRADE
+          ? new Date(dto.expiryDate)
+          : null;
       const certificate = await this.prisma.trainingCertificate.upsert({
         where: { certificateNumber: dto.certificateNumber },
         update: {
+          ...(user ? { userId: user.id } : {}),
           pinfl: dto.pinfl,
           fullName: dto.fullName,
+          certificateType,
           trainingCenterCode: dto.trainingCenterCode,
           courseName: dto.courseName,
           issuedDate: new Date(dto.issuedDate),
           expiryDate: new Date(dto.expiryDate),
+          nextQualificationDate,
           documentUrl: dto.documentUrl,
         },
         create: {
           certificateNumber: dto.certificateNumber,
+          ...(user ? { userId: user.id } : {}),
           pinfl: dto.pinfl,
           fullName: dto.fullName,
+          certificateType,
           trainingCenterCode: dto.trainingCenterCode,
           courseName: dto.courseName,
           issuedDate: new Date(dto.issuedDate),
           expiryDate: new Date(dto.expiryDate),
+          nextQualificationDate,
           documentUrl: dto.documentUrl,
           status: 'ACTIVE',
         },

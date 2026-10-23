@@ -80,6 +80,25 @@ Authorization: Bearer <access_token>
 }
 ```
 
+## OKM moduli — o'quv va malaka oshirish
+
+Barcha OKM kabinet endpointlari JWT bilan himoyalangan. Hududiy adliya, vazirlik va admin rollari reyestrlarni ko'radi; mediator, hakamlik sudyasi va arbitr o'z sertifikatlari hamda arizalarini ko'radi.
+
+| Metod | Yo'l | Vazifasi |
+| :--- | :--- | :--- |
+| `GET` | `/staff/training/certified` | Maxsus kurs sertifikatlari reyestri. `page`, `limit`, `search`, `region`, `gender` filtrlari mavjud. |
+| `GET` | `/staff/training/qualified` | Malaka oshirish sertifikatlari reyestri va keyingi muddat. |
+| `GET` | `/staff/training/overdue` | Malaka muddati o'tgan yoki malaka sertifikati bo'lmagan mediatorlar. |
+| `GET` | `/cabinet/certificates` | Joriy foydalanuvchining sertifikatlari. |
+| `GET` | `/certificates/{id}/file` | Foydalanuvchi o'ziga tegishli sertifikatni, xodim esa vakolat doirasida sertifikat faylini ochadi. Manzil HTTPS bo'lishi kerak. |
+| `POST` | `/cabinet/training/applications` | `trainingCenterCode`, `courseName`, ixtiyoriy `note` bilan malaka oshirish arizasi yaratadi. |
+| `GET` | `/cabinet/training/applications` | Joriy foydalanuvchining arizalari va shartnoma holati. |
+| `POST` | `/cabinet/training/applications/{id}/contract` | Ariza bo'yicha o'quv markazi va mediator ma'lumotlaridan shartnoma yozuvini yaratadi. Takroriy chaqiruv mavjud shartnomani qaytaradi. |
+| `POST` | `/external/training-centers/certificates` | YUMOM, TDYU yoki integratsiyalangan markazdan sertifikat qabul qiladi. `certificateType`: `SPECIAL_COURSE` yoki `QUALIFICATION_UPGRADE`. |
+| `POST` | `/admin/training/reminders/run` | Administrator yoki tashqi scheduler malaka muddati eslatmalarini tekshiradi. Lokal backend jarayoni bu tekshiruvni kuniga bir marta ham ishga tushiradi. |
+
+Malaka eslatmasi `QUALIFICATION_UPGRADE_ALERT_DAYS` taymeridagi muddat ichida yuboriladi. Sertifikat va muddat bo'yicha idempotency kaliti takroriy bildirishnomalarni oldini oladi.
+
 ---
 
 ## 4. Pagination

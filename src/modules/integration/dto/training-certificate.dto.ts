@@ -1,5 +1,6 @@
+import { TrainingCertificateType } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class TrainingCertificateDto {
   @ApiProperty({ example: 'MED-YMOM-2026-0042', description: 'Sertifikat unikal raqami' })
@@ -27,6 +28,11 @@ export class TrainingCertificateDto {
   @IsString()
   courseName: string;
 
+  @ApiPropertyOptional({ enum: TrainingCertificateType, default: TrainingCertificateType.SPECIAL_COURSE })
+  @IsOptional()
+  @IsEnum(TrainingCertificateType)
+  certificateType?: TrainingCertificateType;
+
   @ApiProperty({ example: '2026-10-15', description: 'Sertifikat berilgan sana' })
   @IsNotEmpty({ message: 'Berilgan sana kiritilishi shart' })
   @IsDateString()
@@ -36,6 +42,11 @@ export class TrainingCertificateDto {
   @IsNotEmpty({ message: 'Amal qilish muddati kiritilishi shart' })
   @IsDateString()
   expiryDate: string;
+
+  @ApiPropertyOptional({ example: '2029-10-15', description: 'Keyingi malaka oshirish sanasi' })
+  @IsOptional()
+  @IsDateString()
+  nextQualificationDate?: string;
 
   @ApiPropertyOptional({ example: 'https://yumom.uz/certificates/MED-2026-0042.pdf', description: 'Elektron sertifikat fayl havolasi' })
   @IsOptional()
