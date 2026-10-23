@@ -15,10 +15,10 @@
 | PUB | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | REG | 1-3 | 9 / 9 | 17 / 14 | Yo'q | Bajarildi |
 | TAL | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
-| SHA | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
+| SHA | 2 | 7 / 7 | 21 / 20 | Yo'q | Bajarildi |
 | MTS | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | MON | 3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
-| REY | 3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
+| REY | 3 | 2 / 2 | 7 / 5 | Yo'q | Bajarildi |
 | INT | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | OKM | 3 | 5 / 5 | 9 / 9 | Yo'q | Bajarildi |
 | TOL | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
@@ -159,10 +159,9 @@
 - **PUB (Ochiq portal)**: src/modules/ katalogida yo'q
 - **REG (Reyestr)**: implemented in `src/modules/reg/` — public/staff registry, Excel import/export, status history, regional access and my.gov.uz sync queue
 - **TAL (Talabgor kabineti)**: src/modules/ katalogida yo'q
-- **SHA (Shartnomalar)**: src/modules/ katalogida yo'q
 - **MTS (Mediatsiya seanslari)**: src/modules/ katalogida yo'q
 - **MON (Monitoring)**: Platform monitoring module bor, lekin MON moduli alohida yo'q
-- **REY (Reytinglar)**: src/modules/ katalogida yo'q
+- **REY (Reytinglar)**: `src/modules/rey/` — configurable methodology, public rankings, scheduled and manual calculation
 - **INT (Ichki integratsiya)**: ENT module bor, INT alohida yo'q
 - **OKM (Malaka komissiyasi)**: MK module qisman qamraydi, OKM alohida yo'q
 - **TOL (To'lovlar)**: ENT module qisman qamraydi, TOL alohida yo'q
@@ -224,11 +223,11 @@ OpenAPI spec fayli topilmagani uchun:
 - **Dalil**: Hozircha faqat README.md bor, kod yo'q
 - **Test**: Frontend unit va E2E testlar
 
-### 4. Bosqich 2: SHA (Shartnomalar) — Yuqori prioritet
-- **Nima qilish kerak**: src/modules/contracts/ modulini yaratish
-- **Endpointlar**: Shartnomalar yaratish, imzolash, holatni kuzatish
-- **Dalil**: Hozircha yo'q, yangi yaratish kerak
-- **Test**: test/test-contracts-apis.ts yaratish
+### 4. Bosqich 2: SHA (Shartnomalar) — Bajarildi
+- **Modul**: `src/modules/sha/` — shartnomalar, taraflarning E-imzosi, versiyali namunalar, provayder invoyslari, bank rekvizitlari va kvitansiyalar
+- **Endpointlar**: `docs/API_GUIDE.md` dagi SHA bo‘limida hujjatlashtirilgan
+- **Ma’lumotlar bazasi**: `prisma/migrations/202610230004_add_sha_contracts`
+- **Integratsiyalar**: E-imzo tekshiruvi va billing webhooklari uchun konfiguratsiya `.env.example` da ko‘rsatilgan
 
 ## Teknik ma'lumotlar
 

@@ -21,6 +21,8 @@ import { MtsModule } from './modules/mts/mts.module';
 import { OkmModule } from './modules/okm/okm.module';
 import { PubModule } from './modules/pub/pub.module';
 import { RegModule } from './modules/reg/reg.module';
+import { ReyModule } from './modules/rey/rey.module';
+import { ShaModule } from './modules/sha/sha.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -50,6 +52,8 @@ import { AppController } from './app.controller';
     OkmModule,
     PubModule,
     RegModule,
+    ReyModule,
+    ShaModule,
   ],
   controllers: [AppController],
 })

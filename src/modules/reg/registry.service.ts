@@ -81,6 +81,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         where,
         skip: (page - 1) * limit,
         take: limit,
+        include: { ratings: { orderBy: [{ periodYear: 'desc' }, { calculatedAt: 'desc' }], take: 1 } },
         orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
       }),
     ]);
@@ -98,6 +99,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         publicProfile: true,
         deletedAt: null,
       },
+      include: { ratings: { orderBy: [{ periodYear: 'desc' }, { calculatedAt: 'desc' }], take: 1 } },
     });
     if (!entry) throw new NotFoundException('Ochiq reyestr yozuvi topilmadi');
     return this.publicProjection(entry);
@@ -857,6 +859,14 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       certificateExpiresAt: entry.certificateExpiresAt,
       registeredAt: entry.registeredAt,
       profileUrl: `/public/mediators/${entry.id}`,
+      rating: entry.ratings?.[0]
+        ? {
+            score: entry.ratings[0].score,
+            periodYear: entry.ratings[0].periodYear,
+            metrics: entry.ratings[0].metrics,
+            calculatedAt: entry.ratings[0].calculatedAt,
+          }
+        : null,
     };
   }
 

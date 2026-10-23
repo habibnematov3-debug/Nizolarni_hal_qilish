@@ -36,6 +36,50 @@ The existing `GET /external/mygov/mediators` endpoint serves the active public m
 
 The schema change is in `prisma/migrations/202610230002_add_registry_module`.
 
+## REY — Reyting
+
+Public rating endpoints expose active, public registry profiles and their latest calculated rating for the requested year (`periodYear`, defaults to the current year). Ratings sort from highest to lowest; a profile with no calculation yet has a null rating.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/public/ratings` | Ranked public profiles; supports `page`, `limit`, `periodYear`, `type`, and `region` |
+| GET | `/public/ratings/methodology` | Public explanation of the rating indicators, weights, and provisional status |
+| GET | `/public/mediators/:id/rating` | A public profile's rating by registry-entry UUID or linked user UUID |
+| GET | `/ministry/rating/methodology` | Read methodology; JWT required (`ADMIN`, `MINISTRY_STAFF`) |
+| PUT | `/ministry/rating/methodology` | Set indicator weights, which must total 100 |
+| POST | `/ministry/rating/recalculate?periodYear=2026` | Recalculate the requested year |
+| GET | `/internal/cron/ratings` | Daily Vercel Cron endpoint; requires `CRON_SECRET` bearer token |
+
+The initial weights are provisional: report compliance 30%, settlement rate 40%, and agreement-obligation fulfillment 30%. Quarterly reports, mediation outcomes, and monitoring obligations are used because the current database has no separate mediation-contract records. Methodology is returned with `status: DRAFT` until the buyer confirms the final criteria. Long-running hosts calculate on startup and daily at 02:00 UTC; Vercel invokes the secured cron route daily at 02:00 UTC and requires `CRON_SECRET` to be configured.
+
+## SHA — Xizmat shartnomalari va invoyslar
+
+SHA contract endpoints require JWT authentication. Users can access contracts where they are the creator, provider, or a listed party; administrators can access all contracts. Providers must have the active registry role matching the contract type. Create a draft from a published template, add an invoice, then send it for signing.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/contracts` | List accessible contracts; filters: `status`, `type`, `search`, `page`, `limit` |
+| POST | `/contracts` | Create a draft from a published template |
+| GET | `/contracts/statistics` | Accessible contract counts by status and expired signed contracts |
+| GET, PUT | `/contracts/:id` | Read or update a draft/returned contract |
+| POST | `/contracts/:id/invoice` | Create and send a provider invoice for the draft |
+| POST | `/contracts/:id/send` | Send the invoiced contract to parties for signing |
+| POST | `/contracts/:id/sign` | Party signs with a PKCS#7 E-imzo value |
+| POST | `/contracts/:id/reject` | Reject the contract with an optional reason |
+| POST | `/contracts/:id/return-for-edit` | Return the contract for changes |
+| POST | `/contracts/:id/approve` | Provider signs last; finalizes and stores the signed PDF |
+| GET | `/contracts/:id/document` | Download draft PDF or immutable signed PDF |
+| GET | `/contracts/:id/signatures` | Read signer status, verification result, serial and timestamp |
+| GET | `/contract-templates?type=MEDIATION` | List published templates |
+| GET, PUT | `/cabinet/bank-details` | Read or update the authenticated provider's bank details |
+| GET | `/invoices/:id` | Read invoice and payment status |
+| GET | `/invoices/:id/receipt` | Download receipt PDF after confirmed payment |
+| GET, POST, PUT | `/admin/contract-templates` and `/admin/contract-templates/:id` | Admin template version listing, creation, editing, publishing, and archiving |
+
+Contract states are `DRAFT`, `PENDING_PARTIES`, `AWAITING_PROVIDER_APPROVAL`, `SIGNED`, `REJECTED`, and `RETURNED_FOR_EDIT`. When returned for edits, the parties sign the updated draft again. E-imzo verification requires `ESIGN_VERIFY_URL`; optionally set `ESIGN_API_TOKEN`. Billing can use a provider configured with `BILLING_API_URL` and `BILLING_API_TOKEN`. In production, billing callbacks require `BILLING_WEBHOOK_SECRET` and a hexadecimal HMAC-SHA256 signature over the newline-joined values `invoiceNumber`, `transactionId`, `amount` (two decimals), `paymentStatus`, `paymentProvider`, `paidAt` (or empty string), `payerPinfl` (or empty string), and `payerName` (or empty string). The E-imzo verification API must accept `{ pkcs7, documentHash }` and return `{ valid, pinfl, serialNumber? }`; the billing invoice API must return `{ invoiceNumber, qrCodeUrl }`.
+
+The schema change is in `prisma/migrations/202610230004_add_sha_contracts`.
+
 ---
 
 ## 2. Autentifikatsiya

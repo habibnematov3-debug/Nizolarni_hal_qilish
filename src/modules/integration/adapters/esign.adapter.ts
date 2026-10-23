@@ -17,7 +17,7 @@ export interface EsignSignResult {
 }
 
 export interface IEsignPort {
-  verifyPkcs7(pkcs7Base64: string): Promise<EsignVerifyResult>;
+  verifyPkcs7(pkcs7Base64: string, documentHash?: string): Promise<EsignVerifyResult>;
   signDocument(documentHash: string, pinfl: string): Promise<EsignSignResult>;
 }
 
@@ -25,29 +25,40 @@ export interface IEsignPort {
 export class EsignIntegrationAdapter implements IEsignPort {
   constructor(private readonly loggerService: IntegrationLoggerService) {}
 
-  async verifyPkcs7(pkcs7Base64: string): Promise<EsignVerifyResult> {
+  async verifyPkcs7(pkcs7Base64: string, documentHash?: string): Promise<EsignVerifyResult> {
+    const endpoint = process.env.ESIGN_VERIFY_URL;
     return this.loggerService.executeWithResilience(
       async () => {
-        const pinfl = pkcs7Base64.startsWith('pinfl_')
-          ? pkcs7Base64.replace('pinfl_', '')
-          : '31201851230011';
-
+        if (!endpoint) throw new Error('ESIGN_VERIFY_URL sozlanmagan; imzo tekshiruvchisi sozlanmaguncha imzo qabul qilinmaydi');
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(process.env.ESIGN_API_TOKEN ? { authorization: `Bearer ${process.env.ESIGN_API_TOKEN}` } : {}),
+          },
+          body: JSON.stringify({ pkcs7: pkcs7Base64, documentHash }),
+        });
+        if (!response.ok) throw new Error(`E-imzo tekshiruvi ${response.status} javobini qaytardi`);
+        const result = await response.json() as Partial<EsignVerifyResult>;
+        if (typeof result.valid !== 'boolean' || !result.pinfl || !result.serialNumber || !result.signedAt) {
+          throw new Error('E-imzo tekshiruvchisining javobi noto‘g‘ri formatda');
+        }
         return {
-          valid: true,
-          pinfl,
-          fullName: 'Karimov Alisher Baxtiyorovich',
-          serialNumber: `ESIGN_${pinfl.slice(-6)}`,
-          tin: '304598124',
-          signedAt: new Date().toISOString(),
+          valid: result.valid,
+          pinfl: result.pinfl,
+          fullName: result.fullName || '',
+          serialNumber: result.serialNumber,
+          tin: result.tin,
+          signedAt: result.signedAt,
         };
       },
       {
         serviceName: 'E_SIGN',
-        endpoint: '/api/v1/pkcs7/verify',
+        endpoint: endpoint || '/api/v1/pkcs7/verify',
         timeoutMs: 4000,
         maxRetries: 2,
       },
-      { pkcs7: pkcs7Base64.slice(0, 50) + '...' },
+      { pkcs7: pkcs7Base64.slice(0, 50) + '...', documentHash },
     );
   }
 
