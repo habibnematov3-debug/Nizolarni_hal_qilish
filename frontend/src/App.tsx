@@ -1,306 +1,339 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
 import {
-  Activity,
-  BookOpen,
-  Building2,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  FileClock,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  PenLine,
-  Plus,
-  Search,
-  Settings,
-  ShieldCheck,
-  Trash2,
-  Users,
-  X,
+  Activity, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Bell, BookOpen,
+  BriefcaseBusiness, Building2, CalendarDays, Check, CheckCheck, ChevronDown,
+  ChevronRight, CircleHelp, ClipboardList, FileCheck2, FileClock, FilePlus2,
+  FileText, Filter, Fingerprint, Gavel, GraduationCap, Handshake, Landmark,
+  LayoutDashboard, LogIn, MapPin, Menu, MessageSquare, Newspaper, Pencil, Search,
+  Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
-import Login from './Login'
-import { AdminUser, clearSession, createOrganization, getCurrentAdmin, getOrganizations, hasSession, logout, OrganizationRecord, updateOrganization } from './api'
 
-type OrganizationType = 'MINISTRY' | 'REGIONAL_DEPARTMENT' | 'TRAINING_CENTER'
-type Organization = {
-  id: string
-  name: string
-  type: OrganizationType
-  parent: string
-  region: string
-  status: 'ACTIVE' | 'INACTIVE'
-  code: string
-  parentId: string | null
-}
+type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
+type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string }
+type Role = { key: RoleKey; title: string; summary: string; icon: typeof UserRound }
+type Metric = [string, number, string, typeof UserRound]
 
-const navItems = [
-  { label: 'Tashkilotlar', icon: Building2 },
-  { label: 'Foydalanuvchilar va rollar', icon: Users },
-  { label: 'Spravochniklar', icon: BookOpen },
-  { label: 'Audit jurnali', icon: FileClock },
-  { label: 'Tizim sozlamalari', icon: Settings },
-  { label: 'Kontent', icon: FileText },
+const roles: Role[] = [
+  { key: 'CITIZEN', title: 'Fuqaro kabineti', summary: 'Mediatorga murojaat, mediatsiya va shartnomalar', icon: UserRound },
+  { key: 'BUSINESS', title: 'Tadbirkor / yuridik shaxs', summary: 'Tashkilot nomidan nizolarni boshqarish', icon: BriefcaseBusiness },
+  { key: 'APPLICANT', title: 'Mediator-talabgor', summary: 'Ariza, imtihon va mediatorlik maqomi', icon: FileCheck2 },
+  { key: 'MEDIATOR', title: 'Mediator kabineti', summary: 'Ishlar, portfolio, hisobot va malaka', icon: Handshake },
+  { key: 'JUDGE', title: 'Hakamlik sudyasi', summary: 'Hakamlik ishlari va elektron hujjatlar', icon: Gavel },
+  { key: 'ARBITRATOR', title: 'Xalqaro tijorat arbitraji', summary: 'Nizolar, arbitrlar va masofaviy shartnomalar', icon: Landmark },
+  { key: 'COMMISSION', title: 'Malaka komissiyasi', summary: 'Nomzodlar va elektron imtihon byulleteni', icon: GraduationCap },
+  { key: 'REGIONAL', title: 'Hududiy adliya organi', summary: 'Hududiy reyestr va hisobotlarni ko‘rib chiqish', icon: Building2 },
+  { key: 'MINISTRY', title: 'Adliya vazirligi', summary: 'Respublika miqyosida tahlil va boshqaruv', icon: Landmark },
+  { key: 'ADMIN', title: 'Administrator', summary: 'Foydalanuvchilar, kontent va tizim sozlamalari', icon: Settings },
 ]
 
-const typeLabels: Record<OrganizationType, string> = {
-  MINISTRY: 'Vazirlik',
-  REGIONAL_DEPARTMENT: 'Hududiy boshqarma',
-  TRAINING_CENTER: 'O‘quv markazi',
+const registrySeed = [
+  { id: 'm1', name: 'Dilnoza Karimova', specialty: 'Oilaviy va fuqarolik nizolari', region: 'Toshkent shahri', experience: '8 yil', rating: '4.9', status: 'Faol', initials: 'DK' },
+  { id: 'm2', name: 'Jasur Raximov', specialty: 'Tadbirkorlik va shartnoma nizolari', region: 'Samarqand viloyati', experience: '11 yil', rating: '4.8', status: 'Faol', initials: 'JR' },
+  { id: 'm3', name: 'Madina Usmonova', specialty: 'Mehnat va fuqarolik nizolari', region: 'Buxoro viloyati', experience: '6 yil', rating: '4.7', status: 'Faol', initials: 'MU' },
+  { id: 'm4', name: 'Azizbek Tursunov', specialty: 'Oilaviy nizolar', region: 'Farg‘ona viloyati', experience: '9 yil', rating: '4.9', status: 'Faol', initials: 'AT' },
+  { id: 'm5', name: 'Shahnoza Ismoilova', specialty: 'Tijorat va korporativ nizolar', region: 'Toshkent shahri', experience: '13 yil', rating: '5.0', status: 'Faol', initials: 'SI' },
+]
+const judgesSeed = [
+  { id: 'j1', name: 'Otabek Yusupov', specialty: 'Hakamlik sudi raisi', region: 'Toshkent shahri', experience: '15 yil', rating: '4.9', status: 'Faol', initials: 'OY' },
+  { id: 'j2', name: 'Zuhra Axmedova', specialty: 'Hakamlik sudyasi', region: 'Samarqand viloyati', experience: '12 yil', rating: '4.8', status: 'Faol', initials: 'ZA' },
+]
+const arbitratorsSeed = [
+  { id: 'a1', name: 'Kamoliddin Saidov', specialty: 'Xalqaro tijorat arbitraji', region: 'Toshkent shahri', experience: '14 yil', rating: '4.9', status: 'Faol', initials: 'KS' },
+  { id: 'a2', name: 'Nargiza Aliyeva', specialty: 'Investitsiya va savdo arbitraji', region: 'Toshkent shahri', experience: '10 yil', rating: '4.8', status: 'Faol', initials: 'NA' },
+]
+
+const initialCases: PortalRecord[] = [
+  { id: 'MED-2026-0084', title: 'Shartnomaviy nizo', status: 'Mediator tanlash', detail: 'Taraflar: A. S. va “Baraka servis” MCHJ', region: 'Toshkent shahri', createdAt: '21.10.2026' },
+  { id: 'MED-2026-0081', title: 'Oilaviy nizo', status: 'Uchrashuv belgilangan', detail: 'Mediator: Dilnoza Karimova', region: 'Samarqand viloyati', createdAt: '18.10.2026' },
+  { id: 'MED-2026-0077', title: 'Mehnat nizosi', status: 'Kelishuv monitoringi', detail: 'Keyingi muddat: 30.10.2026', region: 'Buxoro viloyati', createdAt: '12.10.2026' },
+]
+const initialApplications: PortalRecord[] = [
+  { id: 'ARZ-2026-0142', title: 'Mediator maqomini olish', status: 'Ko‘rib chiqilmoqda', detail: 'Komissiya ko‘rib chiqishi kutilmoqda', region: 'Toshkent shahri', createdAt: '22.10.2026' },
+  { id: 'ARZ-2026-0138', title: 'Mediator maqomini olish', status: 'Imtihonga ruxsat', detail: 'To‘lov va imtihon chaqiruvi bosqichi', region: 'Samarqand viloyati', createdAt: '20.10.2026' },
+]
+const initialReports: PortalRecord[] = [
+  { id: 'HIS-2026-Q3', title: '2026-yil III chorak hisoboti', status: 'Hududiy ko‘rib chiqishda', detail: 'Mediatsiya ishlari: 24 · Yakunlangan: 18', region: 'Toshkent shahri', createdAt: '10.10.2026' },
+]
+const navByRole: Record<RoleKey, string[]> = {
+  CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Shartnomalar', 'Xabarnomalar'],
+  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Tashkilot nizolari', 'Mediatsiyalarim', 'Shartnomalar'],
+  APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'Imtihon', 'Shartnomalar', 'Xabarnomalar'],
+  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Yozishmalar', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'E’lonlar'],
+  REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
+  MINISTRY: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Hisobotlar tahlili', 'Statistika', 'Malaka oshirish', 'Kontent'],
+  COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'],
+  JUDGE: ['Umumiy ko‘rsatkich', 'Hakamlik ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar'],
+  ARBITRATOR: ['Umumiy ko‘rsatkich', 'Arbitraj ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar'],
+  ADMIN: ['Umumiy ko‘rsatkich', 'Tashkilotlar', 'Foydalanuvchilar va rollar', 'Spravochniklar', 'Audit jurnali', 'Tizim sozlamalari', 'Kontent'],
+}
+const mediationSteps = ['Yangi murojaat', 'Mediator tanlash', 'Kelishuv imzolash', 'Uchrashuv belgilash', 'Mediatsiya sessiyasi', 'Kelishuv monitoringi', 'Yakunlandi']
+const applicationSteps = ['Yangi yuborildi', 'Ko‘rib chiqilmoqda', 'Imtihonga ruxsat', 'To‘lov kutilmoqda', 'Imtihonga chaqirildi', 'Imtihon topshirildi', 'Komissiya bahosi', 'Reyestrga kiritildi']
+const demoNotice = { title: 'Platformadagi yangiliklar', text: 'Mediatorlar uchun hisobot topshirish muddati va malaka oshirish kurslariga ariza qabul qilish boshlandi. E’lon bilan tanishganingizdan so‘ng kabinet bo‘limlari ochiladi.' }
+
+function loadRecords(key: string, initial: PortalRecord[]): PortalRecord[] {
+  try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) as PortalRecord[] : initial }
+  catch { return initial }
 }
 
-const emptyForm = { name: '', type: 'REGIONAL_DEPARTMENT' as OrganizationType, parent: '', region: '', code: '', status: 'ACTIVE' as Organization['status'] }
-
-function toOrganization(record: OrganizationRecord): Organization {
-  return {
-    id: record.id,
-    name: record.name,
-    type: record.type,
-    parent: record.parent?.name || '—',
-    parentId: record.parentId || record.parent?.id || null,
-    region: record.region || '',
-    status: record.status,
-    code: record.code || '',
-  }
-}
-
-function App() {
-  const [organizations, setOrganizations] = useState<Organization[]>([])
-  const [admin, setAdmin] = useState<AdminUser | null>(null)
-  const [authChecking, setAuthChecking] = useState(true)
-  const [loadingOrganizations, setLoadingOrganizations] = useState(false)
+export default function App() {
+  const [role, setRole] = useState<RoleKey | null>(() => (localStorage.getItem('nizolar.demo.role') as RoleKey | null) || null)
+  const [publicPage, setPublicPage] = useState('Bosh sahifa')
+  const [showLogin, setShowLogin] = useState(false)
+  const [loginMethod, setLoginMethod] = useState('')
+  const [chooseRole, setChooseRole] = useState(false)
+  const [mobileNav, setMobileNav] = useState(false)
+  const [activePage, setActivePage] = useState(() => localStorage.getItem('nizolar.demo.role') === 'ADMIN' ? 'Tashkilotlar' : 'Umumiy ko‘rsatkich')
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('ALL')
-  const [activePage, setActivePage] = useState('Tashkilotlar')
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [dialog, setDialog] = useState<'create' | 'edit' | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState(emptyForm)
-  const [deleteTarget, setDeleteTarget] = useState<Organization | null>(null)
-  const [notice, setNotice] = useState('')
+  const [region, setRegion] = useState('Barcha hududlar')
+  const [registryKind, setRegistryKind] = useState('Mediatorlar')
+  const [modal, setModal] = useState('')
+  const [toast, setToast] = useState('')
+  const [cases, setCases] = useState(() => loadRecords('nizolar.demo.cases', initialCases))
+  const [applications, setApplications] = useState(() => loadRecords('nizolar.demo.applications', initialApplications))
+  const [reports, setReports] = useState(() => loadRecords('nizolar.demo.reports', initialReports))
+  const [genericItems, setGenericItems] = useState(() => loadRecords('nizolar.demo.items', []))
+  const [announcementsAccepted, setAnnouncementsAccepted] = useState(() => localStorage.getItem('nizolar.demo.notice.read') === 'yes')
+  const [formName, setFormName] = useState('')
+  const [formDetail, setFormDetail] = useState('')
+  const [announcementGate, setAnnouncementGate] = useState(false)
 
-  const loadOrganizations = async () => {
-    setLoadingOrganizations(true)
-    try {
-      const rows = await getOrganizations()
-      setOrganizations(rows.map(toOrganization))
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Tashkilotlarni yuklab bo‘lmadi')
-    } finally { setLoadingOrganizations(false) }
+  useEffect(() => { localStorage.setItem('nizolar.demo.cases', JSON.stringify(cases)) }, [cases])
+  useEffect(() => { localStorage.setItem('nizolar.demo.applications', JSON.stringify(applications)) }, [applications])
+  useEffect(() => { localStorage.setItem('nizolar.demo.reports', JSON.stringify(reports)) }, [reports])
+  useEffect(() => { localStorage.setItem('nizolar.demo.items', JSON.stringify(genericItems)) }, [genericItems])
+  useEffect(() => { if (role) localStorage.setItem('nizolar.demo.role', role); else localStorage.removeItem('nizolar.demo.role') }, [role])
+  useEffect(() => { if (!toast) return; const t = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(t) }, [toast])
+  useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
+
+  const currentRole = roles.find((item) => item.key === role)
+  const registryRows = useMemo(() => registrySeed.filter((item) => {
+    const q = query.trim().toLocaleLowerCase('uz')
+    return (!q || [item.name, item.specialty, item.region].join(' ').toLocaleLowerCase('uz').includes(q)) && (region === 'Barcha hududlar' || item.region === region)
+  }), [query, region])
+
+  const goHome = () => { setRole(null); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false) }
+  const startRole = (key: RoleKey) => {
+    setRole(key); setActivePage(key === 'ADMIN' ? 'Tashkilotlar' : navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
+    if (key === 'MEDIATOR' && !announcementsAccepted) setAnnouncementGate(true)
   }
+  const signOut = () => { goHome(); setToast('Demo kabinetdan chiqdingiz') }
 
-  useEffect(() => {
-    if (!hasSession()) { setAuthChecking(false); return }
-    getCurrentAdmin()
-      .then((user) => { setAdmin(user); return loadOrganizations() })
-      .catch(() => clearSession())
-      .finally(() => setAuthChecking(false))
-  }, [])
-
-  const handleLogin = async (user: AdminUser) => {
-    setAdmin(user)
-    await loadOrganizations()
+  const showPublicRegistry = () => { setRole(null); setPublicPage('Mediatorlar reyestri'); setShowLogin(false) }
+  const createCase = (title: string, detail = '') => {
+    const item = { id: `MED-2026-${String(Date.now()).slice(-4)}`, title, status: mediationSteps[0], detail: detail || 'Demo rejimida yaratilgan murojaat', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
+    setCases((items) => [item, ...items]); setModal(''); setFormName(''); setFormDetail(''); setToast('Mediatsiya murojaati yaratildi')
   }
-
-  const handleLogout = async () => {
-    await logout().catch(() => clearSession())
-    setAdmin(null)
-    setOrganizations([])
+  const createApplication = (title: string, detail = '') => {
+    const item = { id: `ARZ-2026-${String(Date.now()).slice(-4)}`, title, status: applicationSteps[0], detail: detail || 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
+    setApplications((items) => [item, ...items]); setModal(''); setFormName(''); setFormDetail(''); setToast('Ariza yuborildi')
   }
-
-  const activeCount = organizations.filter((item) => item.status === 'ACTIVE').length
-  const filteredOrganizations = useMemo(() => organizations.filter((item) => {
-    const matchesQuery = [item.name, item.region, item.parent, item.code, typeLabels[item.type]].join(' ').toLocaleLowerCase('uz').includes(query.toLocaleLowerCase('uz').trim())
-    const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter
-    return matchesQuery && matchesStatus
-  }), [organizations, query, statusFilter])
-
-  useEffect(() => {
-    if (!dialog && !deleteTarget) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setDialog(null); setDeleteTarget(null) }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [dialog, deleteTarget])
-
-  useEffect(() => {
-    if (!notice) return
-    const timer = window.setTimeout(() => setNotice(''), 3000)
-    return () => window.clearTimeout(timer)
-  }, [notice])
-
-  const openCreate = () => {
-    setForm(emptyForm)
-    setEditingId(null)
-    setDialog('create')
+  const createReport = (title: string, detail = '') => {
+    const item = { id: `HIS-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`, title, status: 'Qoralama', detail: detail || 'Yangi hisobot qoralamasi', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
+    setReports((items) => [item, ...items]); setModal(''); setFormName(''); setFormDetail(''); setToast('Hisobot qoralamasi yaratildi')
   }
-
-  const openEdit = (organization: Organization) => {
-    setForm({ name: organization.name, type: organization.type, parent: organization.parent === '—' ? '' : organization.parent, region: organization.region, code: organization.code, status: organization.status })
-    setEditingId(organization.id)
-    setDialog('edit')
-  }
-
-  const saveOrganization = async (event: FormEvent<HTMLFormElement>) => {
+  const saveGeneric = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const parentId = organizations.find((item) => item.name === form.parent)?.id || null
-    const payload = { name: form.name, type: form.type, parentId, region: form.region || undefined, code: form.code || undefined, status: form.status }
-    try {
-      if (dialog === 'edit' && editingId) {
-        await updateOrganization(editingId, payload)
-        setNotice('Tashkilot ma’lumotlari saqlandi')
-      } else {
-        await createOrganization(payload)
-        setNotice('Yangi tashkilot qo‘shildi')
-      }
-      await loadOrganizations()
-      setDialog(null)
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Ma’lumotni saqlab bo‘lmadi')
-    }
+    const item = { id: `DOC-${String(Date.now()).slice(-5)}`, title: formName || modal, status: 'Yangi', detail: formDetail || 'Demo ma’lumot', createdAt: new Date().toLocaleDateString('uz-UZ') }
+    setGenericItems((items) => [item, ...items]); setModal(''); setFormName(''); setFormDetail(''); setToast('Ma’lumot saqlandi')
   }
 
-  const removeOrganization = async () => {
-    if (!deleteTarget) return
-    try {
-      await updateOrganization(deleteTarget.id, { status: 'INACTIVE' })
-      setNotice('Tashkilot faolsizlantirildi')
-      setDeleteTarget(null)
-      await loadOrganizations()
-    } catch (error) { setNotice(error instanceof Error ? error.message : 'Tashkilotni faolsizlantirib bo‘lmadi') }
-  }
+  const advanceCase = (id: string) => setCases((items) => items.map((item) => {
+    if (item.id !== id) return item
+    const at = mediationSteps.indexOf(item.status)
+    const next = mediationSteps[Math.min(at + 1, mediationSteps.length - 1)]
+    setToast(next === 'Yakunlandi' ? 'Mediatsiya yakunlandi' : `Jarayon bosqichi: ${next}`)
+    return { ...item, status: next }
+  }))
+  const advanceApplication = (id: string) => setApplications((items) => items.map((item) => {
+    if (item.id !== id) return item
+    const at = applicationSteps.indexOf(item.status)
+    const next = applicationSteps[Math.min(at + 1, applicationSteps.length - 1)]
+    setToast(`Ariza holati yangilandi: ${next}`)
+    return { ...item, status: next }
+  }))
+  const advanceReport = (id: string) => setReports((items) => items.map((item) => {
+    if (item.id !== id) return item
+    const sequence = ['Qoralama', 'Hududiy ko‘rib chiqishda', 'Vazirlikka yuborildi', 'Ko‘rib chiqildi']
+    const at = sequence.indexOf(item.status)
+    const next = sequence[Math.min(at + 1, sequence.length - 1)]
+    setToast(`Hisobot bosqichi: ${next}`)
+    return { ...item, status: next }
+  }))
 
-  if (authChecking) return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">Seans tekshirilmoqda...</div>
-  if (!admin) return <Login onLogin={handleLogin} />
+  if (!role) return <>
+    <PublicSite page={publicPage} setPage={setPublicPage} onLogin={() => { setLoginMethod(''); setShowLogin(true) }} onRegistry={showPublicRegistry} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={(name) => { setFormName('Mediator bilan mediatsiya'); setFormDetail(`Tanlangan mutaxassis: ${name}`); setModal('mediatsiya') }} onToast={setToast} />
+    {showLogin && <ModalShell onClose={() => setShowLogin(false)}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={() => setShowLogin(false)} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
+      {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
+      {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
+      {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
+    </div></ModalShell>}
+    {chooseRole && <RolePicker onClose={() => setChooseRole(false)} onChoose={startRole} />}
+    {modal === 'mediatsiya' && <FormModal title="Mediatorga murojaat" description="Mediatsiya bo‘yicha murojaat ma’lumotlarini kiriting." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel="Murojaat yuborish" onClose={() => setModal('')} onSubmit={(e) => { e.preventDefault(); createCase(formName || 'Mediator bilan mediatsiya', formDetail) }} />}
+    {toast && <Toast text={toast} />}
+  </>
 
-  const sidebar = (
-    <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
-      <div className="flex h-full flex-col">
-        <div className="flex items-center gap-3 px-6 py-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500 text-sm font-bold text-white shadow-lg shadow-blue-950/30"><ShieldCheck size={21} /></div>
-          <div><p className="text-[15px] font-semibold leading-tight text-white">Nizolarni hal etish</p><p className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Ma’muriy panel</p></div>
-          <button className="ml-auto rounded-lg p-1 text-slate-400 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Menyuni yopish"><X size={19} /></button>
-        </div>
-        <div className="mx-5 border-t border-slate-800" />
-        <nav className="flex-1 space-y-1 px-3 py-6" aria-label="Asosiy navigatsiya">
-          <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Boshqaruv</p>
-          {navItems.map(({ label, icon: Icon }) => {
-            const active = activePage === label
-            return <button key={label} className={`nav-item ${active ? 'nav-item-active' : ''}`} onClick={() => { setActivePage(label); setMobileOpen(false) }} aria-current={active ? 'page' : undefined}>
-              <Icon size={18} strokeWidth={active ? 2.2 : 1.8} /><span>{label}</span>{active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400" />}
-            </button>
-          })}
-        </nav>
-        <div className="mx-5 mb-5 rounded-xl border border-slate-800 bg-slate-800/45 p-4">
-          <div className="mb-2 flex items-center gap-2 text-slate-300"><Activity size={15} /><span className="text-xs font-medium">Tizim holati</span></div>
-          <div className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${loadingOrganizations ? 'animate-pulse bg-amber-400' : 'bg-emerald-400'}`} /><span className="text-xs text-slate-400">{loadingOrganizations ? 'Ma’lumot yuklanmoqda' : 'API bilan ulangan'}</span></div>
-        </div>
-      </div>
-    </aside>
-  )
-
+  const nav = navByRole[role]
+  const restricted = role === 'MEDIATOR' && !announcementsAccepted
   return <div className="min-h-screen bg-slate-50 text-slate-900">
-    {sidebar}
-    {mobileOpen && <button className="fixed inset-0 z-20 bg-slate-950/40 md:hidden" aria-label="Menyuni yopish" onClick={() => setMobileOpen(false)} />}
-    <div className="md:pl-[260px]">
-      <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 md:px-8">
-        <button className="mr-3 rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" onClick={() => setMobileOpen(true)} aria-label="Menyuni ochish"><Menu size={21} /></button>
-        <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input className="h-10 w-full rounded-lg border border-transparent bg-slate-50 pl-10 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-50" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tashkilotlarni qidirish..." aria-label="Tashkilotlarni qidirish" />
-        </div>
-        <div className="ml-4 flex items-center gap-3">
-          <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-          <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">{(admin.fullName || admin.username).slice(0, 2).toLocaleUpperCase('uz')}</div><div className="hidden sm:block"><p className="text-sm font-semibold text-slate-800">{admin.fullName || admin.username}</p><p className="text-xs text-slate-400">Administrator</p></div><ChevronDown size={16} className="hidden text-slate-400 sm:block" /></div>
-          <button onClick={handleLogout} className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500" aria-label="Tizimdan chiqish"><LogOut size={18} /></button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 md:px-8 md:py-8">
-        {activePage === 'Tashkilotlar' ? <>
-          <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div><p className="mb-2 text-xs font-medium text-slate-400">ADM / Boshqaruv</p><h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-[28px]">Tashkilotlar</h1><p className="mt-1.5 text-sm text-slate-500">Platformadagi tashkilotlar ro‘yxatini boshqaring</p></div>
-            <button onClick={openCreate} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"><Plus size={18} strokeWidth={2.5} />Qo‘shish</button>
-          </div>
-
-          <section className="mb-6 grid gap-4 sm:grid-cols-3" aria-label="Tashkilotlar statistikasi">
-            <StatCard label="Jami tashkilotlar" value={organizations.length} icon={Building2} detail="Ro‘yxatdagi barcha tashkilotlar" />
-            <StatCard label="Faol tashkilotlar" value={activeCount} icon={Check} detail="Hozirda faol holatda" tone="green" />
-            <StatCard label="Faolsiz tashkilotlar" value={organizations.length - activeCount} icon={Activity} detail="Faollashtirish mumkin" tone="slate" />
-          </section>
-
-          <section className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70" aria-labelledby="organizations-heading">
-            <div className="flex flex-col justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center md:px-6">
-              <div className="flex items-center gap-3"><div><h2 id="organizations-heading" className="text-sm font-semibold text-slate-800">Barcha tashkilotlar</h2><p className="mt-0.5 text-xs text-slate-400">Tashkilotlar va ularning hududiy bo‘linmalari</p></div><span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{filteredOrganizations.length}</span></div>
-              <label className="relative flex items-center gap-2 self-start text-xs font-medium text-slate-500 sm:self-auto"><span className="sr-only">Holat bo‘yicha filtrlash</span><span>Holati:</span><select className="h-9 rounded-lg border border-slate-200 bg-white pl-3 pr-8 text-xs text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="ALL">Barchasi</option><option value="ACTIVE">Faol</option><option value="INACTIVE">Faolsiz</option></select></label>
-            </div>
-            <div className="overflow-x-auto"><table className="w-full min-w-[780px] text-left"><thead className="bg-slate-50"><tr>{['Nomi', 'Turi', 'Yuqori tashkilot', 'Hudud', 'Holati', 'Amallar'].map((heading) => <th key={heading} scope="col" className="px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500 md:px-6">{heading}</th>)}</tr></thead>
-              <tbody className="divide-y divide-slate-100">{filteredOrganizations.map((organization) => <tr key={organization.id} className="transition-colors hover:bg-slate-50/80">
-                <td className="px-5 py-4 md:px-6"><div className="flex items-center gap-3"><OrgMark name={organization.name} /><div><span className="block text-sm font-semibold text-slate-800">{organization.name}</span><span className="mt-0.5 block text-xs text-slate-400">STIR: {organization.code || '—'}</span></div></div></td>
-                <td className="px-5 py-4 text-sm text-slate-500 md:px-6">{typeLabels[organization.type]}</td><td className="max-w-[220px] truncate px-5 py-4 text-sm text-slate-500 md:px-6" title={organization.parent}>{organization.parent}</td><td className="px-5 py-4 text-sm text-slate-500 md:px-6">{organization.region || '—'}</td>
-                <td className="px-5 py-4 md:px-6"><StatusBadge active={organization.status === 'ACTIVE'} /></td>
-                <td className="px-5 py-4 md:px-6"><div className="flex items-center gap-1"><button onClick={() => openEdit(organization)} className="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200" aria-label={`${organization.name}ni tahrirlash`}><PenLine size={16} /></button><button onClick={() => setDeleteTarget(organization)} className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200" aria-label={`${organization.name}ni o‘chirish`}><Trash2 size={16} /></button></div></td>
-              </tr>)}</tbody>
-            </table></div>
-            {filteredOrganizations.length === 0 && <div className="px-6 py-14 text-center"><Search className="mx-auto mb-3 text-slate-300" size={28} /><p className="text-sm font-medium text-slate-700">{loadingOrganizations ? 'Tashkilotlar yuklanmoqda' : 'Tashkilot topilmadi'}</p><p className="mt-1 text-xs text-slate-400">{loadingOrganizations ? 'API dan ma’lumot olinmoqda' : 'Qidiruv yoki filtrni o‘zgartirib ko‘ring'}</p></div>}
-            <div className="flex flex-col items-start justify-between gap-3 border-t border-slate-100 px-5 py-4 text-xs text-slate-500 sm:flex-row sm:items-center md:px-6"><span>Jami <strong className="font-semibold text-slate-700">{filteredOrganizations.length}</strong> ta tashkilot</span><div className="flex items-center gap-1"><button disabled className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-slate-400 disabled:cursor-not-allowed"><ChevronLeft size={14} />Oldingi</button><span className="rounded-md bg-blue-50 px-2.5 py-1.5 font-semibold text-blue-600">1</span><button disabled className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-slate-400 disabled:cursor-not-allowed">Keyingi<ChevronRight size={14} /></button></div></div>
-          </section>
-        </> : <section className="rounded-xl bg-white px-6 py-16 text-center shadow-sm ring-1 ring-slate-200/70"><div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><LayoutDashboard size={22} /></div><h1 className="text-xl font-semibold text-slate-900">{activePage}</h1><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Ushbu bo‘lim interfeysi navbatdagi bosqichda ishlab chiqiladi. Hozirda tashkilotlarni boshqarish moduli tayyorlanmoqda.</p><button onClick={() => setActivePage('Tashkilotlar')} className="mt-5 text-sm font-semibold text-blue-600 hover:text-blue-700">Tashkilotlarga qaytish</button></section>}
-        <footer className="mt-6 flex flex-col justify-between gap-2 text-xs text-slate-400 sm:flex-row"><span>© 2026 Nizolarni muqobil hal etish platformasi</span><span>Ma’muriy boshqaruv paneli</span></footer>
+    <aside className={`fixed inset-y-0 left-0 z-30 flex w-[264px] flex-col ${role === 'ADMIN' ? 'bg-slate-900' : 'bg-slate-950'} text-white transition-transform md:translate-x-0 ${mobileNav ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className="flex items-center gap-3 px-5 py-6"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-300 text-slate-950"><Handshake size={22} /></div><div><p className="text-sm font-semibold">Nizolarni hal etish</p><p className="mt-1 text-[10px] uppercase tracking-[.18em] text-slate-400">Elektron platforma</p></div><button onClick={() => setMobileNav(false)} className="ml-auto p-2 text-slate-400 md:hidden" aria-label="Menyuni yopish"><X size={18} /></button></div>
+      <div className="mx-5 border-t border-white/10"/><div className="mx-4 mt-5 rounded-xl bg-white/[.06] p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="text-xs text-slate-300">Demo kabinet</span></div><p className="mt-2 text-sm font-semibold">{currentRole?.title}</p></div>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Kabinet bo‘limlari">{nav.map((item, index) => { const Icon = navIcon(item); const active = activePage === item; return <button key={item} onClick={() => { setActivePage(item); setMobileNav(false) }} aria-current={active ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${active ? role === 'ADMIN' ? 'bg-blue-500/20 text-blue-100 shadow-[inset_3px_0_0_#60a5fa]' : 'bg-emerald-300/15 text-emerald-200 shadow-[inset_3px_0_0_#6ee7b7]' : 'text-slate-400 hover:bg-white/[.06] hover:text-white'}`}><Icon size={17}/><span>{item}</span>{index === nav.length - 1 && <ChevronRight className="ml-auto" size={14}/>}</button> })}</nav>
+      <div className="border-t border-white/10 p-4"><button onClick={goHome} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[.06]"><ArrowLeft size={17}/>Ochiq sahifaga qaytish</button><button onClick={signOut} className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-white/[.06] hover:text-white"><LogIn size={17}/>Demo kabinetdan chiqish</button></div>
+    </aside>
+    <div className="md:pl-[264px]">
+      <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Menyuni ochish"><Menu size={20}/></button>{role === 'ADMIN' ? <label className="relative hidden max-w-sm flex-1 sm:block"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input aria-label="Dashboard bo‘ylab qidirish" placeholder="Qidirish..." className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"/></label> : <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{activePage}</p><p className="hidden text-xs text-slate-400 sm:block">{currentRole?.title} · Demo rejim</p></div>}</div><div className="flex items-center gap-3">{role !== 'ADMIN' && <button onClick={() => setActivePage(nav.includes('Xabarnomalar') ? 'Xabarnomalar' : nav[nav.length - 1])} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Xabarnomalar"><Bell size={18}/><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"/></button>}<span className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="flex items-center gap-2.5"><div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white ${role === 'ADMIN' ? 'bg-blue-600' : 'bg-slate-950'}`}>{role === 'ADMIN' ? 'A' : currentRole?.title.slice(0,1)}</div><div className="hidden sm:block"><p className="text-xs font-semibold">{role === 'ADMIN' ? 'Admin' : 'Demo foydalanuvchi'}</p><p className="text-[11px] text-slate-400">{currentRole?.title}</p></div></div>{role === 'ADMIN' && <button onClick={signOut} aria-label="Chiqish" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogIn size={18}/></button>}<ChevronDown size={15} className="text-slate-400"/></div></header>
+      <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
+        {restricted ? <section className="mx-auto mt-12 max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Newspaper size={25}/></div><p className="mt-5 text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Tanishish talab qilinadi</p><h1 className="mt-2 text-2xl font-semibold">{demoNotice.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{demoNotice.text}</p><button onClick={() => { setAnnouncementsAccepted(true); localStorage.setItem('nizolar.demo.notice.read', 'yes'); setAnnouncementGate(false); setToast('E’lon bilan tanishilgan deb belgilandi') }} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-800"><CheckCheck size={17}/>Tanishdim</button></section> : <WorkspaceContent role={role} page={activePage} cases={cases} applications={applications} reports={reports} genericItems={genericItems} onOpenModal={(key) => { setFormName(''); setFormDetail(''); setModal(key) }} onAdvanceCase={advanceCase} onAdvanceApplication={advanceApplication} onAdvanceReport={advanceReport} onToast={setToast} onPublicRegistry={() => setActivePage(nav.includes('Mediatorlar reyestri') ? 'Mediatorlar reyestri' : nav[1])} />}
       </main>
     </div>
-
-    {dialog && <OrganizationDialog mode={dialog} form={form} organizations={organizations} setForm={setForm} onClose={() => setDialog(null)} onSubmit={saveOrganization} />}
-    {deleteTarget && <ConfirmDialog organization={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={removeOrganization} />}
-    {notice && <div role="status" className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg"><Check size={17} className="text-emerald-400" />{notice}</div>}
+    {mobileNav && <button aria-label="Menyuni yopish" onClick={() => setMobileNav(false)} className="fixed inset-0 z-20 bg-slate-950/40 md:hidden"/>}
+    {modal && modal !== 'mediatsiya' && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
+    {announcementGate && <div className="sr-only" aria-live="polite">Mediator kabinetini ochish uchun e’lon bilan tanishing.</div>}
+    {toast && <Toast text={toast} />}
   </div>
 }
 
-function StatCard({ label, value, icon: Icon, detail, tone = 'blue' }: { label: string; value: number; icon: typeof Building2; detail: string; tone?: 'blue' | 'green' | 'slate' }) {
-  const colors = { blue: 'bg-blue-50 text-blue-600', green: 'bg-emerald-50 text-emerald-600', slate: 'bg-slate-100 text-slate-600' }
-  return <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{value}</p></div><div className={`flex h-10 w-10 items-center justify-center rounded-lg ${colors[tone]}`}><Icon size={19} /></div></div><p className="mt-3 text-xs text-slate-400">{detail}</p></div>
+function PublicSite({ page, setPage, onLogin, onRegistry, registryRows, query, setQuery, region, setRegion, registryKind, setRegistryKind, onContact, onToast }: { page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; registryRows: typeof registrySeed; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; onContact: (name: string) => void; onToast: (text: string) => void }) {
+  const links = ['Bosh sahifa', 'Mediatorlar reyestri', 'Hakamlik va arbitraj', 'AI tavsiya', 'Reyting', 'Statistika', 'Hududlar', 'Qonunchilik']
+  return <div className="min-h-screen overflow-hidden bg-[#eef3f6] text-slate-950">
+    <div className="bg-black px-4 py-2 text-white"><div className="mx-auto flex max-w-[1600px] justify-end gap-5 text-xs"><span className="text-slate-300">Ishonch telefoni: 1008</span><button onClick={() => onToast('Til sozlamasi: O‘zbekcha')} className="rounded bg-white/10 px-2 py-0.5 font-semibold">O‘zbekcha⌄</button></div></div>
+    <header className="relative z-10 border-b border-slate-200/70 bg-white/60 px-4 backdrop-blur-lg"><div className="mx-auto flex min-h-[76px] max-w-[1600px] items-center justify-between gap-5"><button onClick={() => setPage('Bosh sahifa')} className="flex shrink-0 items-center gap-3 text-left"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-black text-emerald-300"><Handshake size={25}/></span><span><strong className="block text-[12px] font-bold uppercase leading-4 tracking-tight sm:text-sm">“Nizolarni muqobil hal etish”</strong><span className="text-[10px] uppercase tracking-wide text-slate-500">Yagona elektron platformasi</span></span></button><nav className="hidden items-center gap-1 xl:flex">{links.map((link) => <button key={link} onClick={() => link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link)} className={`whitespace-nowrap rounded-full px-3 py-2 text-[13px] transition ${page === link ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:bg-white/80 hover:text-slate-950'}`}>{link}</button>)}</nav><button onClick={onLogin} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-black py-2 pl-2 pr-4 text-sm font-semibold text-white transition hover:bg-slate-800"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-200 text-black"><LogIn size={18}/></span><span className="hidden sm:inline">Tizimga kirish</span></button></div><nav className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto pb-3 xl:hidden">{links.map((link) => <button key={link} onClick={() => link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link)} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs ${page === link ? 'bg-white font-semibold shadow-sm' : 'text-slate-600'}`}>{link}</button>)}</nav></header>
+    {page === 'Bosh sahifa' ? <>
+      <section className="relative"><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_10%,rgba(220,255,207,.95),transparent_40%),radial-gradient(ellipse_at_82%_12%,rgba(199,216,255,.9),transparent_37%),radial-gradient(ellipse_at_72%_95%,rgba(246,202,222,.72),transparent_38%)]"/><div className="relative mx-auto grid max-w-[1420px] gap-8 px-5 pb-12 pt-10 md:grid-cols-[1.02fr_.98fr] md:items-center md:px-10 md:pb-16 md:pt-14"><div><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/90 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm"><span className="h-2 w-2 rounded-full bg-emerald-500"/>Yagona elektron platforma</div><h1 className="max-w-[760px] text-[42px] font-semibold leading-[1.06] tracking-[-.045em] text-slate-950 sm:text-5xl md:text-[64px] lg:text-[72px]">Nizolarni tinch va samarali hal qiling</h1><p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">Mediatorlar reyestrini toping, mediatsiya xizmatlariga murojaat qiling va jarayonni yagona platformada kuzating.</p><div className="mt-7 flex flex-wrap gap-3"><button onClick={onRegistry} className="inline-flex h-12 items-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white transition hover:bg-slate-800">Mediator topish<ArrowRight size={17}/></button><button onClick={onLogin} className="inline-flex h-12 items-center gap-2 rounded-full border border-slate-300/80 bg-white/70 px-6 text-sm font-semibold hover:bg-white">Kabinetga kirish<LogIn size={16}/></button></div><div className="mt-10 flex items-center gap-3"><div className="flex -space-x-2">{['bg-emerald-200','bg-blue-200','bg-amber-200','bg-rose-200'].map((c,i)=><span key={i} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#eef3f6] ${c}`}><UserRound size={14}/></span>)}</div><span className="text-xs text-slate-500">Fuqarolar va tashkilotlar uchun qulay xizmat</span></div></div><div className="relative mx-auto min-h-[350px] w-full max-w-[590px] md:min-h-[475px]"><div className="absolute left-[8%] top-[7%] w-[61%] rounded-[30px] bg-white p-6 shadow-[0_25px_65px_rgba(15,23,42,.12)] sm:p-7"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Mediatsiya jarayoni</span><span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Faol</span></div><p className="mt-5 text-[27px] font-semibold leading-tight tracking-tight">№ MED-2026-0084</p><p className="mt-1 text-sm text-slate-500">Shartnomaviy nizo · Toshkent</p><div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full w-[72%] rounded-full bg-slate-950"/></div><p className="mt-2 text-xs text-slate-400">5 / 7 bosqich</p></div><div className="absolute right-[0%] top-[40%] w-[53%] rounded-[28px] bg-black p-6 text-white shadow-[0_25px_60px_rgba(15,23,42,.22)] sm:p-7"><FileCheck2 size={26} className="text-emerald-300"/><p className="mt-4 text-lg font-semibold">Kelishuv imzolandi</p><p className="mt-1 text-sm text-slate-400">Elektron hujjatlar xavfsiz saqlanadi</p></div><div className="absolute bottom-[1%] left-[2%] flex items-center gap-3 rounded-[24px] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(15,23,42,.12)]"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100"><ShieldCheck size={22}/></span><span><strong className="block text-sm">86 mediator</strong><span className="text-xs text-slate-500">yagona reyestrda</span></span></div><div className="absolute bottom-[17%] right-[1%] flex h-12 w-12 items-center justify-center rounded-full border border-white bg-white/80 shadow-lg"><Activity size={20}/></div></div></div></section>
+      <RegistrySearchBox query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} onSearch={onRegistry}/>
+      <section className="mx-auto max-w-[1420px] px-5 py-14 md:px-10"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Platforma imkoniyatlari</p><h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Nizoni hal qilishning yangi yo‘li</h2></div><p className="max-w-md text-sm leading-6 text-slate-500">Masofadan murojaat qiling, vakolatli mutaxassisni tanlang va jarayon bosqichlarini kuzatib boring.</p></div><div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[['Mediator topish','Reyestrdagi mutaxassislarni hudud va yo‘nalish bo‘yicha qidiring',Search],['Onlayn mediatsiya','Mediatsiya jarayonini elektron boshlang va kelishuvga erishing',Video],['Elektron hujjatlar','Shartnoma va kelishuvlarni kabinetda boshqaring',FileText],['Jarayon nazorati','Uchrashuvlar, muddatlar va xabarnomalarni kuzating',Activity]].map(([title,desc,Icon])=><button key={String(title)} onClick={String(title)==='Mediator topish'?onRegistry:onLogin} className="rounded-2xl border border-white bg-white/70 p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800"><Icon size={20}/></span><strong className="mt-5 block text-base">{String(title)}</strong><span className="mt-2 block text-sm leading-6 text-slate-500">{String(desc)}</span><span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold">Batafsil<ArrowRight size={14}/></span></button>)}</div></section>
+      <PublicFooter onLogin={onLogin} setPage={setPage}/>
+    </> : <PublicInfoPage page={page} registryKind={registryKind} setRegistryKind={setRegistryKind} onRegistry={onRegistry} onLogin={onLogin} onToast={onToast} onContact={onContact}/>}
+  </div>
 }
 
-function OrgMark({ name }: { name: string }) {
-  const colors = ['bg-blue-100 text-blue-700', 'bg-violet-100 text-violet-700', 'bg-amber-100 text-amber-700', 'bg-emerald-100 text-emerald-700', 'bg-rose-100 text-rose-700']
-  const index = name.length % colors.length
-  const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('uz')
-  return <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${colors[index]}`}>{initials}</div>
+function RegistrySearchBox({ query, setQuery, region, setRegion, kind, setKind, onSearch }: { query: string; setQuery: (v: string) => void; region: string; setRegion: (v: string) => void; kind: string; setKind: (v: string) => void; onSearch: () => void }) {
+  return <section className="relative z-10 mx-auto -mt-3 max-w-[1260px] px-4 md:-mt-6"><div className="rounded-[26px] bg-white p-4 shadow-[0_22px_60px_rgba(15,23,42,.14)] sm:p-5"><div className="mb-3 flex w-fit gap-1 rounded-full bg-slate-100 p-1">{['Mediatorlar','Hakamlik sudyalari','Arbitrlar'].map((tab)=><button key={tab} onClick={()=>setKind(tab)} className={`rounded-full px-4 py-2 text-xs font-medium transition ${kind===tab?'bg-black text-white shadow-sm':'text-slate-600 hover:bg-white'}`}>{tab}</button>)}</div><div className="grid gap-2 md:grid-cols-[1fr_220px_auto]"><label className="relative"><Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"/><input value={query} onChange={(e)=>setQuery(e.target.value)} onKeyDown={(e)=>e.key==='Enter'&&onSearch()} placeholder="F.I.Sh. yoki ixtisoslik bo‘yicha qidiring" className="h-14 w-full rounded-full bg-slate-100 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-emerald-200"/></label><label className="relative"><MapPin size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"/><select value={region} onChange={(e)=>setRegion(e.target.value)} className="h-14 w-full appearance-none rounded-full bg-slate-100 pl-11 pr-9 text-sm outline-none focus:ring-2 focus:ring-emerald-200"><option>Barcha hududlar</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map((r)=><option key={r}>{r}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2"/></label><button onClick={onSearch} className="inline-flex h-14 items-center justify-center gap-3 rounded-full bg-black px-7 text-sm font-semibold text-white hover:bg-slate-800">Qidirish<ArrowRight size={18}/></button></div></div></section>
 }
 
-function StatusBadge({ active }: { active: boolean }) {
-  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}><span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-400'}`} />{active ? 'Faol' : 'Faolsiz'}</span>
+function PublicInfoPage({ page, registryKind, setRegistryKind, onRegistry, onLogin, onToast, onContact }: { page: string; registryKind: string; setRegistryKind: (value: string) => void; onRegistry: () => void; onLogin: () => void; onToast: (text: string) => void; onContact: (name: string) => void }) {
+  const [q, setQ] = useState('')
+  const [selectedRegion, setSelectedRegion] = useState('Barcha hududlar')
+  const source = registryKind === 'Hakamlik sudyalari' ? judgesSeed : registryKind === 'Arbitrlar' ? arbitratorsSeed : registrySeed
+  const results = source.filter((item) => [item.name, item.specialty, item.region].join(' ').toLowerCase().includes(q.toLowerCase()) && (selectedRegion === 'Barcha hududlar' || item.region === selectedRegion))
+  if (page === 'Mediatorlar reyestri') return <section className="relative min-h-[calc(100vh-130px)] bg-[radial-gradient(ellipse_at_20%_10%,rgba(220,255,207,.9),transparent_38%),radial-gradient(ellipse_at_80%_0%,rgba(202,221,255,.75),transparent_35%)] px-4 py-10 sm:px-8"><div className="mx-auto max-w-6xl"><button onClick={onRegistry} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"><ArrowLeft size={16}/>Bosh sahifa</button><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Ochiq ma’lumotlar</p><h1 className="mt-2 text-4xl font-semibold tracking-tight">{registryKind}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Reyestr mutaxassislarini ism, ixtisoslik va hudud bo‘yicha toping.</p></div><button onClick={onLogin} className="inline-flex h-11 items-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white">Kabinetga kirish<LogIn size={16}/></button></div><div className="mt-7 flex gap-2">{['Mediatorlar','Hakamlik sudyalari','Arbitrlar'].map(kind=><button key={kind} onClick={()=>setRegistryKind(kind)} className={`rounded-full px-4 py-2 text-xs font-semibold ${registryKind===kind?'bg-black text-white':'bg-white/80 text-slate-600'}`}>{kind}</button>)}</div><div className="mt-4 grid gap-3 sm:grid-cols-[1fr_240px]"><label className="relative"><Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/><input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="F.I.Sh., hudud yoki ixtisoslik" className="h-12 w-full rounded-xl border border-white bg-white/80 pl-11 pr-4 text-sm shadow-sm outline-none focus:ring-2 focus:ring-emerald-200"/></label><select value={selectedRegion} onChange={(e)=>setSelectedRegion(e.target.value)} className="h-12 rounded-xl border border-white bg-white/80 px-4 text-sm shadow-sm outline-none"><option>Barcha hududlar</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map((r)=><option key={r}>{r}</option>)}</select></div><div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{results.map((person)=><article key={person.id} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-sm font-semibold text-emerald-900">{person.initials}</span><div><h2 className="font-semibold">{person.name}</h2><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500"/>{person.status}</span></div></div><span className="inline-flex items-center gap-1 text-xs font-semibold"><Star size={14} className="fill-amber-400 text-amber-400"/>{person.rating}</span></div><p className="mt-5 text-sm font-medium text-slate-700">{person.specialty}</p><div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500"><span className="inline-flex items-center gap-1"><MapPin size={13}/>{person.region}</span><span>{person.experience} tajriba</span></div><div className="mt-5 flex gap-2 border-t border-slate-100 pt-4"><button onClick={()=>onToast(`${person.name} profili ochildi`)} className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold hover:bg-slate-50">Profilni ko‘rish</button><button onClick={()=>onContact(person.name)} className="flex-1 rounded-lg bg-black py-2 text-xs font-semibold text-white hover:bg-slate-800">Murojaat qilish</button></div></article>)}</div>{results.length===0&&<EmptyState title="Mutaxassis topilmadi" detail="Qidiruv so‘zini o‘zgartirib ko‘ring."/>}<div className="mt-7 rounded-2xl bg-slate-900 p-5 text-white"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="font-semibold">Xaritada ko‘rish</p><p className="mt-1 text-xs text-slate-400">Hududingizdagi reyestr mutaxassislarini xarita ko‘rinishida izlang.</p></div><button onClick={()=>onToast('Xarita demo ko‘rinishi — geolokatsiya integratsiyasi keyin ulanadi')} className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-2.5 text-xs font-semibold hover:bg-white/20"><MapPin size={15}/>Xaritani ochish</button></div></div></div></section>
+  const descriptions: Record<string,string> = { 'Hakamlik va arbitraj':'Hakamlik sudi va arbitraj tartib-taomillari, elektron hujjatlar va mutaxassislar reyestri haqida.', 'AI tavsiya':'Nizo turi va hudud bo‘yicha mos mutaxassislarni topishga yordam beruvchi tavsiya bo‘limi.', 'Reyting':'Mutaxassislar faoliyati bo‘yicha ochiq reyting ko‘rsatkichlari. Reyting mezonlari tasdiqlangach hisob-kitob ulanadi.', 'Statistika':'Platformadagi mediatsiya murojaatlari va yakunlangan jarayonlar bo‘yicha umumiy ko‘rsatkichlar.', 'Hududlar':'Hududlar kesimida mediatorlar va muqobil nizolarni hal etish xizmatlari.', 'Qonunchilik':'Mediatsiya va nizolarni muqobil hal etishga oid normativ-huquqiy hujjatlar, namunalar va yo‘riqnomalar.' }
+  return <div className="relative min-h-[calc(100vh-130px)] px-5 py-14 sm:px-10"><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,rgba(220,255,207,.85),transparent_38%),radial-gradient(ellipse_at_85%_10%,rgba(205,219,255,.85),transparent_36%)]"/><div className="relative mx-auto max-w-5xl"><p className="text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Ochiq platforma</p><h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{page}</h1><p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">{descriptions[page] || 'Platforma xizmatlari va foydali ma’lumotlar.'}</p><div className="mt-9 grid gap-4 sm:grid-cols-3">{[['Mediatorlar reyestri',Users],['Onlayn mediatsiya',Video],['Huquqiy ma’lumotlar',BookOpen]].map(([title,Icon])=><button key={String(title)} onClick={String(title)==='Mediatorlar reyestri'?onRegistry:onLogin} className="rounded-2xl bg-white/80 p-5 text-left shadow-sm ring-1 ring-white transition hover:bg-white hover:shadow-md"><Icon size={22} className="text-emerald-700"/><strong className="mt-4 block text-sm">{String(title)}</strong><span className="mt-2 block text-xs leading-5 text-slate-500">Kerakli xizmatga o‘tish va ma’lumot bilan tanishish.</span><span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold">Ochish<ArrowRight size={14}/></span></button>)}</div><div className="mt-8 rounded-2xl bg-white/80 p-6 shadow-sm"><h2 className="font-semibold">Xizmatlar haqida</h2><p className="mt-2 text-sm leading-6 text-slate-500">Interfeys demo rejimida ishlaydi. OneID, ERI, billing, SMS, sud va videokonferensiya bilan ulanishlar integratsiya hujjatlari taqdim etilgach ulanadi.</p><button onClick={onLogin} className="mt-4 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white">Kabinetga kirish</button></div></div></div>
 }
 
-function OrganizationDialog({ mode, form, organizations, setForm, onClose, onSubmit }: { mode: 'create' | 'edit'; form: typeof emptyForm; organizations: Organization[]; setForm: (value: typeof emptyForm) => void; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void> }) {
-  const update = (field: keyof typeof emptyForm, value: string) => setForm({ ...form, [field]: value })
-  return <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <section role="dialog" aria-modal="true" aria-labelledby="organization-dialog-title" className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl">
-      <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5"><div><h2 id="organization-dialog-title" className="text-lg font-semibold text-slate-900">{mode === 'create' ? 'Tashkilot qo‘shish' : 'Tashkilotni tahrirlash'}</h2><p className="mt-1 text-sm text-slate-500">Tashkilot ma’lumotlarini kiriting</p></div><button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Oynani yopish"><X size={18} /></button></div>
-      <form onSubmit={onSubmit}>
-        <div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
-          <Field label="Tashkilot nomi" required className="sm:col-span-2"><input autoFocus required maxLength={180} value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="Masalan, Adliya vazirligi" className="form-control" /></Field>
-          <Field label="Tashkilot turi" required><select required value={form.type} onChange={(event) => update('type', event.target.value)} className="form-control"><option value="MINISTRY">Vazirlik</option><option value="REGIONAL_DEPARTMENT">Hududiy boshqarma</option><option value="TRAINING_CENTER">O‘quv markazi</option></select></Field>
-          <Field label="Yuqori tashkilot"><select value={form.parent} onChange={(event) => update('parent', event.target.value)} className="form-control"><option value="">Yuqori tashkilot yo‘q</option>{organizations.filter((item) => item.name !== form.name).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
-          <Field label="Hudud"><input value={form.region} onChange={(event) => update('region', event.target.value)} placeholder="Masalan, Toshkent shahri" className="form-control" /></Field>
-          <Field label="STIR / kodi"><input value={form.code} onChange={(event) => update('code', event.target.value)} maxLength={32} placeholder="Tashkilot kodi" className="form-control" /></Field>
-          <Field label="Holati"><select value={form.status} onChange={(event) => update('status', event.target.value)} className="form-control"><option value="ACTIVE">Faol</option><option value="INACTIVE">Faolsiz</option></select></Field>
-        </div>
-        <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-6 py-4"><button type="button" onClick={onClose} className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50">Bekor qilish</button><button type="submit" className="h-10 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">{mode === 'create' ? 'Qo‘shish' : 'Saqlash'}</button></div>
-      </form>
+function PublicFooter({ onLogin, setPage }: { onLogin: () => void; setPage: (p: string) => void }) {
+  return <footer className="bg-slate-950 px-5 py-10 text-white md:px-10"><div className="mx-auto grid max-w-[1420px] gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]"><div><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-300 text-slate-950"><Handshake size={22}/></span><strong className="text-sm">Nizolarni muqobil hal etish</strong></div><p className="mt-4 max-w-sm text-xs leading-5 text-slate-400">Fuqarolar va tashkilotlar uchun nizolarni tinch yo‘l bilan hal etishning yagona elektron platformasi.</p></div>{[['Platforma','Bosh sahifa','Mediatorlar reyestri','Statistika'],['Foydali ma’lumotlar','Qonunchilik','Hududlar','Reyting'],['Kabinetlar','Tizimga kirish','Administrator','Mediator']].map(([title,...items])=><div key={title}><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</p><div className="mt-3 space-y-2">{items.map((item)=><button key={item} onClick={item==='Tizimga kirish'||item==='Administrator'||item==='Mediator'?onLogin:()=>setPage(item)} className="block text-left text-sm text-slate-300 hover:text-white">{item}</button>)}</div></div>)}</div><div className="mx-auto mt-8 max-w-[1420px] border-t border-white/10 pt-5 text-xs text-slate-500">© 2026 Nizolarni muqobil hal etish elektron platformasi</div></footer>
+}
+
+function RolePicker({ onClose, onChoose }: { onClose: () => void; onChoose: (role: RoleKey) => void }) {
+  return <ModalShell onClose={onClose}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-300">Demo ko‘rinishi</p><h2 className="mt-2 text-2xl font-semibold">Kabinet turini tanlang</h2><p className="mt-1 text-sm text-slate-400">Haqiqiy tizimda ruxsatlar tasdiqlangan rolingiz bo‘yicha ochiladi.</p><button onClick={onClose} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20}/></button></div><div className="grid max-h-[65vh] gap-2 overflow-y-auto p-5 sm:grid-cols-2 sm:p-7">{roles.map(({key,title,summary,icon:Icon})=><button key={key} onClick={()=>onChoose(key)} className="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 text-left transition hover:border-emerald-300 hover:bg-emerald-50/60"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800 group-hover:bg-emerald-100"><Icon size={20}/></span><span className="min-w-0 flex-1"><strong className="block text-sm font-semibold text-slate-900">{title}</strong><span className="mt-1 block text-xs leading-4 text-slate-500">{summary}</span></span><ArrowRight size={15} className="shrink-0 text-slate-400 group-hover:text-emerald-700"/></button>)}</div><div className="border-t border-slate-100 px-6 py-3 text-center text-[11px] text-slate-400">Bu tanlov faqat interfeysni ko‘rish uchun. Haqiqiy rol identifikatsiyadan olinadi.</div></ModalShell>
+}
+
+type Organization = { id: string; name: string; type: string; parent: string; region: string; active: boolean }
+function OrganizationsAdmin({ onToast }: { onToast: (text: string) => void }) {
+  const [rows, setRows] = useState<Organization[]>(() => {
+    try { const saved = localStorage.getItem('nizolar.demo.organizations'); return saved ? JSON.parse(saved) as Organization[] : [
+      { id: 'ORG-001', name: 'Adliya vazirligi', type: 'Vazirlik', parent: '—', region: 'Toshkent shahri', active: true },
+      { id: 'ORG-002', name: 'Toshkent shahar adliya boshqarmasi', type: 'Hududiy boshqarma', parent: 'Adliya vazirligi', region: 'Toshkent shahri', active: true },
+      { id: 'ORG-003', name: 'Samarqand viloyat adliya boshqarmasi', type: 'Hududiy boshqarma', parent: 'Adliya vazirligi', region: 'Samarqand viloyati', active: true },
+      { id: 'ORG-004', name: 'Mediatorlar malakasini oshirish markazi', type: 'Ta’lim muassasasi', parent: 'Adliya vazirligi', region: 'Toshkent shahri', active: false },
+    ] } catch { return [] }
+  })
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('Barchasi')
+  const [editing, setEditing] = useState<Organization | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', type: 'Hududiy boshqarma', parent: 'Adliya vazirligi', region: 'Toshkent shahri', active: true })
+  useEffect(() => { localStorage.setItem('nizolar.demo.organizations', JSON.stringify(rows)) }, [rows])
+  const visible = rows.filter(row => (!query || [row.name,row.type,row.parent,row.region].join(' ').toLocaleLowerCase('uz').includes(query.toLocaleLowerCase('uz'))) && (statusFilter === 'Barchasi' || (statusFilter === 'Faol') === row.active))
+  const openForm = (row?: Organization) => { setEditing(row ?? null); setFormOpen(true); setForm(row ? { name: row.name, type: row.type, parent: row.parent, region: row.region, active: row.active } : { name: '', type: 'Hududiy boshqarma', parent: 'Adliya vazirligi', region: 'Toshkent shahri', active: true }) }
+  const closeForm = () => { setFormOpen(false); setEditing(null) }
+  const save = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (editing) { setRows(items => items.map(row => row.id === editing.id ? { ...row, ...form } : row)); onToast('Tashkilot ma’lumotlari yangilandi') } else { setRows(items => [{ id: `ORG-${String(Date.now()).slice(-4)}`, ...form }, ...items]); onToast('Tashkilot qo‘shildi') } closeForm() }
+  const remove = (row: Organization) => { setRows(items => items.filter(item => item.id !== row.id)); onToast(`${row.name} ro‘yxatdan o‘chirildi`) }
+  return <>
+    <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h1 className="text-2xl font-semibold tracking-tight text-slate-900">Tashkilotlar</h1><p className="mt-1 text-sm text-slate-500">Platformaga ulangan tashkilotlar va ularning holati.</p></div><button onClick={() => openForm()} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"><span className="text-lg leading-none">+</span> Qo‘shish</button></div>
+    <div className="mb-5 grid gap-4 sm:grid-cols-3">{[['Jami tashkilotlar', rows.length], ['Faol', rows.filter(row=>row.active).length], ['Faolsiz', rows.filter(row=>!row.active).length]].map(([label,value])=><div key={String(label)} className="rounded-xl bg-white p-4 shadow-sm"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p></div>)}</div>
+    <section className="overflow-hidden rounded-xl bg-white shadow-sm"><div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center"><div><h2 className="text-sm font-semibold text-slate-900">Tashkilotlar ro‘yxati</h2><p className="mt-1 text-xs text-slate-500">{visible.length} ta tashkilot</p></div><div className="flex flex-col gap-2 sm:flex-row"><label className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input value={query} onChange={event=>setQuery(event.target.value)} aria-label="Tashkilotlarni qidirish" placeholder="Tashkilotni qidirish" className="h-9 w-full rounded-lg border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-blue-400 sm:w-64"/></label><select value={statusFilter} onChange={event=>setStatusFilter(event.target.value)} aria-label="Holat bo‘yicha filtr" className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600 outline-none focus:border-blue-400"><option>Barchasi</option><option>Faol</option><option>Faolsiz</option></select></div></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left"><thead className="bg-slate-50"><tr>{['Nomi','Turi','Yuqori tashkilot','Hudud','Holati','Amallar'].map(column=><th key={column} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{column}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{visible.map(row=><tr key={row.id} className="transition-colors hover:bg-slate-50"><td className="px-5 py-4"><p className="text-sm font-medium text-slate-900">{row.name}</p><p className="mt-0.5 text-xs text-slate-400">{row.id}</p></td><td className="px-5 py-4 text-sm text-slate-600">{row.type}</td><td className="px-5 py-4 text-sm text-slate-600">{row.parent}</td><td className="px-5 py-4 text-sm text-slate-600">{row.region}</td><td className="px-5 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${row.active?'bg-green-100 text-green-700':'bg-slate-100 text-slate-600'}`}>{row.active?'Faol':'Faolsiz'}</span></td><td className="px-5 py-4"><div className="flex items-center gap-1"><button onClick={()=>openForm(row)} aria-label={`${row.name} tahrirlash`} className="rounded-md p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"><Pencil size={16}/></button><button onClick={()=>remove(row)} aria-label={`${row.name} o‘chirish`} className="rounded-md p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"><Trash2 size={16}/></button></div></td></tr>)}</tbody></table>{visible.length===0&&<EmptyState title="Tashkilot topilmadi" detail="Qidiruv so‘zi yoki holat filtrini o‘zgartiring."/>}</div>
+      <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500"><span>{rows.length} ta tashkilotdan {visible.length} tasi ko‘rsatilmoqda</span><span>Demo ma’lumotlar</span></div>
     </section>
-  </div>
+    {formOpen && <ModalShell onClose={closeForm}><div className="border-b border-slate-100 px-6 py-5"><button onClick={closeForm} aria-label="Yopish" className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18}/></button><h2 className="text-lg font-semibold">{editing?'Tashkilotni tahrirlash':'Tashkilot qo‘shish'}</h2><p className="mt-1 text-sm text-slate-500">Tashkilot ma’lumotlarini kiriting.</p></div><form onSubmit={save} className="space-y-4 p-6"><label className="block text-xs font-semibold text-slate-600">Tashkilot nomi<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="form-control mt-1.5" placeholder="Masalan, Toshkent shahar adliya boshqarmasi"/></label><div className="grid gap-4 sm:grid-cols-2"><label className="block text-xs font-semibold text-slate-600">Turi<select value={form.type} onChange={e=>setForm({...form,type:e.target.value})} className="form-control mt-1.5"><option>Vazirlik</option><option>Hududiy boshqarma</option><option>Ta’lim muassasasi</option><option>Komissiya</option><option>Boshqa</option></select></label><label className="block text-xs font-semibold text-slate-600">Hudud<select value={form.region} onChange={e=>setForm({...form,region:e.target.value})} className="form-control mt-1.5">{['Toshkent shahri','Toshkent viloyati','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati','Qoraqalpog‘iston Respublikasi'].map(region=><option key={region}>{region}</option>)}</select></label></div><label className="block text-xs font-semibold text-slate-600">Yuqori tashkilot<input value={form.parent} onChange={e=>setForm({...form,parent:e.target.value})} className="form-control mt-1.5"/></label><label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"/> Faol tashkilot</label><div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" onClick={closeForm} className="h-10 rounded-lg border border-slate-200 px-4 text-sm">Bekor qilish</button><button type="submit" className="h-10 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Saqlash</button></div></form></ModalShell>}
+  </>
 }
 
-function Field({ label, required, className = '', children }: { label: string; required?: boolean; className?: string; children: ReactNode }) {
-  return <label className={`block ${className}`}><span className="mb-1.5 block text-xs font-semibold text-slate-600">{label}{required && <span className="ml-1 text-red-500">*</span>}</span>{children}</label>
+function WorkspaceContent({ role, page, cases, applications, reports, genericItems, onOpenModal, onAdvanceCase, onAdvanceApplication, onAdvanceReport, onToast, onPublicRegistry }: { role: RoleKey; page: string; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; genericItems: PortalRecord[]; onOpenModal: (key: string) => void; onAdvanceCase: (id: string) => void; onAdvanceApplication: (id: string) => void; onAdvanceReport: (id: string) => void; onToast: (text: string) => void; onPublicRegistry: () => void }) {
+  if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
+  if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onPublicRegistry={onPublicRegistry}/>
+  if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside onToast={onToast}/></section>
+  if (/mediatsiya|tashkilot nizolari|arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
+  if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
+  if (/hisobot|statistika tahlili/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
+  if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
+  if (/portfolio|profil/i.test(page)) return <ProfilePage onToast={onToast} onCreate={()=>onOpenModal('portfolio')}/>
+  if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingPage onCreate={()=>onOpenModal('malaka arizasi')} onToast={onToast}/>
+  if (/shartnoma|hujjat/i.test(page)) return <GenericModule title={page} description="Elektron shartnomalar va hujjatlar holati." icon={FileText} items={genericItems} onCreate={()=>onOpenModal('shartnoma')} onToast={onToast} action="Ko‘rish / imzolash"/>
+  if (/yozishma/i.test(page)) return <GenericModule title={page} description="Fuqarolar va mediatorlar o‘rtasidagi murojaatlar va xabarlar." icon={MessageSquare} items={genericItems} onCreate={()=>onOpenModal('yangi yozishma')} onToast={onToast} action="Xabar yuborish"/>
+  if (/kalendar/i.test(page)) return <CalendarPage onToast={onToast} onCreate={()=>onOpenModal('uchrashuv')}/>
+  if (/kontent|e’lon/i.test(page)) return <GenericModule title={page} description="Yangiliklar, huquqiy ma’lumotlar va foydalanuvchi e’lonlari." icon={Newspaper} items={genericItems} onCreate={()=>onOpenModal('yangi e’lon')} onToast={onToast} action="Tahrirlash"/>
+  if (/tashkilot|foydalanuvchi|spravochnik|audit|sozlam/i.test(page)) return <GenericModule title={page} description="Ma’muriy boshqaruv bo‘limi. O‘zgarishlar demo holatda saqlanadi." icon={Settings} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action={page==='Audit jurnali'?'Tafsilotlar':'Tahrirlash'}/>
+  if (/bildirish|xabarnoma/i.test(page)) return <GenericModule title={page} description="Jarayonlar va platforma yangiliklari bo‘yicha xabarnomalar." icon={Bell} items={[{id:'XAB-01',title:'Yangi e’lon: malaka oshirish kurslari',status:'O‘qilmagan',createdAt:'Bugun'},{id:'XAB-02',title:'Ariza holati yangilandi',status:'O‘qilgan',createdAt:'Kecha'}]} onCreate={()=>onToast('Barcha xabarlar o‘qildi deb belgilandi')} onToast={onToast} action="O‘qildi"/>
+  return <GenericModule title={page} description="Ushbu bo‘limdagi amallar demo rejimida ishlaydi." icon={LayoutDashboard} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action="Batafsil"/>
 }
 
-function ConfirmDialog({ organization, onClose, onConfirm }: { organization: Organization; onClose: () => void; onConfirm: () => void }) {
-  return <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section role="alertdialog" aria-modal="true" aria-labelledby="delete-title" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"><div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600"><Trash2 size={20} /></div><h2 id="delete-title" className="text-lg font-semibold text-slate-900">Tashkilotni faolsizlantirasizmi?</h2><p className="mt-2 text-sm leading-6 text-slate-500"><strong className="font-semibold text-slate-700">{organization.name}</strong> faol tashkilotlar ro‘yxatidan chiqariladi. Uni keyin qayta faollashtirish mumkin.</p><div className="mt-6 flex justify-end gap-2"><button onClick={onClose} className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50">Bekor qilish</button><button onClick={onConfirm} className="h-10 rounded-lg bg-amber-600 px-4 text-sm font-semibold text-white hover:bg-amber-700">Faolsizlantirish</button></div></section></div>
+function Overview({ role, cases, applications, reports, onOpenModal, onPublicRegistry }: { role: RoleKey; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; onOpenModal: (key: string) => void; onPublicRegistry: () => void }) {
+  const roleTitle = roles.find(r=>r.key===role)?.title || 'Kabinet'
+  const stats: Metric[] = role==='MEDIATOR'||role==='CITIZEN'||role==='BUSINESS' ? [['Ochiq ishlar',cases.filter(x=>x.status!=='Yakunlandi').length,'faol jarayon',Handshake],['Yakunlangan',cases.filter(x=>x.status==='Yakunlandi').length,'muvaffaqiyatli ishlar',Check],['Xabarnomalar',2,'yangi xabarlar',Bell]] : role==='APPLICANT'||role==='COMMISSION' ? [['Arizalar',applications.length,'jarayonlarda',FileCheck2],['Imtihon bosqichi',applications.filter(x=>x.status.includes('Imtihon')).length,'ko‘rib chiqish kerak',GraduationCap],['Reyestr',registrySeed.length,'demo mutaxassis',Users]] : [['Reyestr mutaxassislari',registrySeed.length,'ochiq reyestr',Users],['Faol mediatsiyalar',cases.filter(x=>x.status!=='Yakunlandi').length,'joriy jarayon',Handshake],['Hisobotlar',reports.length,'hisobotlar oqimi',ClipboardList]]
+  const shortcuts: [string, string, typeof UserRound][] = [['Mediatorni tanlash','Mediatorlar reyestriga o‘tish',Users],['Mediatsiya boshlash','Yangi ish ochish',Handshake],['Uchrashuv belgilash','Kalendarni ko‘rish',CalendarDays]]
+  return <><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Shaxsiy kabinet" title="Xush kelibsiz" description={`${roleTitle} uchun ish maydoni va asosiy ko‘rsatkichlar.`}/><div className="flex flex-wrap gap-2"><button onClick={()=>onOpenModal(role==='APPLICANT'?'ariza':'mediatsiya')} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"><FilePlus2 size={16}/>{role==='APPLICANT'?'Ariza topshirish':'Yangi murojaat'}</button><button onClick={()=>onOpenModal('hisobot')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ClipboardList size={16}/>Hisobot</button></div></div><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{stats.map(([label,value,detail,Icon])=><div key={String(label)} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-slate-500">{String(label)}</p><p className="mt-2 text-3xl font-semibold tracking-tight">{String(value).padStart(2,'0')}</p></div><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Icon size={20}/></span></div><p className="mt-3 text-xs text-slate-400">{String(detail)}</p></div>)}</section><div className="mt-6 grid gap-5 xl:grid-cols-[1.35fr_.8fr]"><section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center justify-between"><div><h2 className="font-semibold">So‘nggi faoliyat</h2><p className="mt-1 text-xs text-slate-400">Platformadagi joriy jarayonlar</p></div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Jonli demo</span></div><div className="mt-4 divide-y divide-slate-100">{[...cases.slice(0,2),...applications.slice(0,1)].map((item)=><div key={item.id} className="flex items-start gap-3 py-4"><span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><FileClock size={17}/></span><div className="min-w-0 flex-1"><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-slate-500">{item.id} · {item.status}</p></div><span className="text-[11px] text-slate-400">{item.createdAt}</span></div>)}</div></section><section className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Tezkor amallar</p><p className="mt-1 text-xs text-slate-400">Ishni davom ettiring</p></div><Sparkles size={18} className="text-emerald-300"/></div><div className="mt-4 space-y-2">{shortcuts.map(([title,sub,Icon])=><button key={title} onClick={()=>title==='Mediatorni tanlash'?onPublicRegistry():onOpenModal(title.includes('Mediatsiya')?'mediatsiya':'uchrashuv')} className="flex w-full items-center gap-3 rounded-xl bg-white/[.07] p-3 text-left transition hover:bg-white/[.12]"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-300/15 text-emerald-200"><Icon size={17}/></span><span className="flex-1"><strong className="block text-xs font-semibold">{title}</strong><span className="mt-1 block text-[11px] text-slate-400">{sub}</span></span><ArrowUpRight size={15} className="text-slate-400"/></button>)}</div></section></div><div className="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4"><CircleHelp size={18} className="mt-0.5 shrink-0 text-blue-700"/><p className="text-xs leading-5 text-blue-900">Demo rejimida kiritilgan o‘zgarishlar faqat ushbu brauzerda saqlanadi. Davlat tizimlari, billing, SMS, OneID va ERI integratsiyalari ulanmagan.</p></div></>
 }
 
-export default App
+function RecordPage({ title, subtitle, items, actionLabel, onCreate, onAdvance, actionText, progressSteps, onToast }: { title: string; subtitle: string; items: PortalRecord[]; actionLabel: string; onCreate: () => void; onAdvance: (id: string) => void; actionText: string; progressSteps: string[]; onToast: (text: string) => void }) {
+  const [filter, setFilter] = useState('Barchasi')
+  const visible = items.filter(i=>filter==='Barchasi'||i.status===filter)
+  const finalStep = progressSteps[progressSteps.length - 1]
+  return <><div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Jarayonlar" title={title} description={subtitle}/><button onClick={onCreate} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"><FilePlus2 size={16}/>{actionLabel}</button></div><div className="mb-4 flex flex-wrap gap-2">{['Barchasi',...Array.from(new Set(items.map(i=>i.status)))].map(status=><button key={status} onClick={()=>setFilter(status)} className={`rounded-full px-3 py-1.5 text-xs font-medium ${filter===status?'bg-slate-950 text-white':'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100'}`}>{status}</button>)}</div><section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="divide-y divide-slate-100">{visible.map((item)=><article key={item.id} className="p-5 transition hover:bg-slate-50/70"><div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center"><div className="flex min-w-0 items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Handshake size={19}/></span><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold">{item.title}</h2><StatusPill status={item.status}/></div><p className="mt-1 text-xs text-slate-500">{item.id} · {item.region || 'Hudud ko‘rsatilmagan'} · {item.createdAt}</p><p className="mt-2 text-sm text-slate-600">{item.detail}</p></div></div><button onClick={()=>item.status===finalStep?onToast('Jarayon yakunlangan'):onAdvance(item.id)} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50">{item.status===finalStep?'Tafsilotlar':actionText}<ArrowRight size={14}/></button></div><div className="mt-4 flex items-center overflow-x-auto pb-1">{progressSteps.map((step,index)=>{const active=progressSteps.indexOf(item.status)>=index; return <div key={step} className="flex min-w-max items-center"><span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${active?'bg-emerald-600 text-white':'bg-slate-100 text-slate-400'}`}>{active?<Check size={13}/>:index+1}</span><span className={`ml-1.5 mr-2 text-[10px] ${active?'font-medium text-slate-700':'text-slate-400'}`}>{step}</span>{index<progressSteps.length-1&&<span className={`mr-2 h-px w-5 ${active?'bg-emerald-400':'bg-slate-200'}`}/>}</div>})}</div></article>)}</div>{visible.length===0&&<EmptyState title="Jarayon topilmadi" detail="Filtrni o‘zgartiring yoki yangi yozuv qo‘shing."/>}<div className="border-t border-slate-100 px-5 py-3 text-xs text-slate-400">{visible.length} ta yozuv · holat bosqichini tugma orqali yangilash mumkin</div></section></>
+}
+
+function ReportsPage({ title, items, onCreate, onAdvance, role }: { title: string; items: PortalRecord[]; onCreate: () => void; onAdvance: (id: string) => void; role: RoleKey }) {
+  return <><div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Tahlil va hisobot" title={title} description="Mediator hisobotlari hududiy bosqichdan vazirlik tahliligacha yuboriladi."/><button onClick={onCreate} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white"><FilePlus2 size={16}/>Hisobot yaratish</button></div><div className="mb-5 grid gap-4 sm:grid-cols-3">{[['Hisobot davri','2026 · III chorak'],['Mediatsiyalar soni',String(items.length*24)],['Muvaffaqiyatli yakun',`${Math.max(1,items.length*18)} ta`]].map(([label,value])=><div key={label} className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">{label}</p><p className="mt-2 text-xl font-semibold">{value}</p></div>)}</div><section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="border-b border-slate-100 p-5"><h2 className="font-semibold">Hisobotlar oqimi</h2><p className="mt-1 text-xs text-slate-400">Mediator → hududiy adliya → vazirlik</p></div><div className="divide-y divide-slate-100">{items.map((item)=><div key={item.id} className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center"><div><h3 className="text-sm font-semibold">{item.title}</h3><p className="mt-1 text-xs text-slate-500">{item.id} · {item.detail}</p><div className="mt-3 flex gap-2">{['Mediator','Hududiy organ','Vazirlik'].map((step,i)=><span key={step} className={`rounded-full px-2.5 py-1 text-[10px] ${item.status.includes('Vazirlik')&&i<2||item.status==='Ko‘rib chiqildi'||item.status==='Hududiy ko‘rib chiqishda'&&i===0?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-500'}`}>{step}</span>)}</div></div><button onClick={()=>role==='MEDIATOR'&&item.status==='Qoralama'?onAdvance(item.id):onAdvance(item.id)} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold hover:bg-slate-50">{item.status==='Qoralama'?'Hududga yuborish':item.status.includes('Hududiy')?'Vazirlikka yuborish':item.status.includes('Vazirlik')?'Ko‘rib chiqish':'Tafsilotlar'}</button></div>)}</div></section></>
+}
+
+function ExamPage({ role, page, onToast }: { role: RoleKey; page: string; onToast: (text: string) => void }) {
+  const [answer, setAnswer] = useState('')
+  const [score, setScore] = useState('')
+  return <><PageHeading eyebrow="Malaka va baholash" title={page} description="Mediator maqomi uchun imtihon va komissiya baholashining demo jarayoni."/><div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_.9fr]"><section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">ARZ-2026-0138</p><h2 className="mt-2 text-xl font-semibold">Mediatorlik malaka imtihoni</h2><p className="mt-1 text-sm text-slate-500">Nomzod: Demo foydalanuvchi · Toshkent shahri</p></div><StatusPill status="Imtihonga ruxsat"/></div><div className="mt-6 rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Keyingi bosqich</p><p className="mt-1 text-sm font-semibold">{role==='APPLICANT'?'Imtihon to‘lovini demo tarzida qayd etish':'Nomzodga imtihon bo‘yicha qaror berish'}</p></div>{role==='APPLICANT'?<div className="mt-4 flex flex-wrap gap-2"><button onClick={()=>onToast('Demo to‘lov muvaffaqiyatli qayd etildi; billing ulanishi keyin qo‘shiladi')} className="rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">To‘lovni demo tasdiqlash</button><button onClick={()=>onToast('Imtihon taklifnomasi demo rejimida yaratildi')} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold">Taklifnomani ko‘rish</button></div>:<div className="mt-4 flex gap-2"><button onClick={()=>onToast('Nomzod imtihonga ruxsat etildi')} className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white">Ruxsat berish</button><button onClick={()=>onToast('Rad etish sababi kiritish uchun forma ochildi')} className="rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700">Rad etish</button></div>}</section><section className="rounded-2xl bg-slate-950 p-6 text-white"><div className="flex items-center gap-2"><GraduationCap size={18} className="text-emerald-300"/><h2 className="font-semibold">{role==='COMMISSION'?'Elektron baholash byulleteni':'Random savol'}</h2></div>{role==='COMMISSION'?<><p className="mt-4 text-sm leading-6 text-slate-300">Nomzod javoblari va imtihon natijasiga ball qo‘ying. Yakuniy bayonnoma demo tarzida shakllanadi.</p><label className="mt-4 block text-xs text-slate-400">Umumiy ball<input type="number" min="0" max="100" value={score} onChange={e=>setScore(e.target.value)} className="mt-1.5 h-11 w-full rounded-lg border border-white/10 bg-white/10 px-3 text-white" placeholder="0–100"/></label><button onClick={()=>onToast(score?'Ball saqlandi, bayonnoma tayyor':'Avval ballni kiriting')} className="mt-3 rounded-lg bg-emerald-300 px-4 py-2.5 text-sm font-semibold text-slate-950">Bahoni saqlash</button></>:<><p className="mt-4 text-sm leading-6 text-slate-300">Mediatorlikda taraflarning teng huquqliligi va maxfiylik tamoyili qanday ta’minlanadi?</p><textarea value={answer} onChange={e=>setAnswer(e.target.value)} className="mt-4 min-h-28 w-full rounded-lg border border-white/10 bg-white/10 p-3 text-sm text-white placeholder:text-slate-500" placeholder="Javobingizni yozing"/><button onClick={()=>onToast(answer?'Javob yuborildi. Imtihon jarayoni demo rejimida.':'Javobni kiriting')} className="mt-3 rounded-lg bg-emerald-300 px-4 py-2.5 text-sm font-semibold text-slate-950">Javobni yuborish</button></>}</section></div></>
+}
+
+function ProfilePage({ onToast, onCreate }: { onToast: (text: string) => void; onCreate: () => void }) {
+  return <><PageHeading eyebrow="Mutaxassis profili" title="Profil va portfolio" description="Ochiq reyestrda ko‘rsatiladigan ma’lumotlar va kasbiy tajriba."/><div className="mt-6 grid gap-5 lg:grid-cols-[.8fr_1.2fr]"><section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center gap-4"><span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-xl font-semibold text-emerald-900">DF</span><div><h2 className="text-lg font-semibold">Demo Foydalanuvchi</h2><p className="mt-1 text-sm text-slate-500">Faol mediator · Toshkent shahri</p></div></div><div className="mt-6 space-y-3 text-sm"><InfoRow label="Ixtisoslik" value="Fuqarolik va shartnomaviy nizolar"/><InfoRow label="Tajriba" value="8 yil"/><InfoRow label="Reyestr holati" value="Faol"/></div><button onClick={()=>onToast('Profil ma’lumotlarini tahrirlash formasi ochildi')} className="mt-5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">Profilni tahrirlash</button></section><section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center justify-between"><div><h2 className="font-semibold">Kasbiy portfolio</h2><p className="mt-1 text-xs text-slate-500">Mutaxassislik, tajriba va yutuqlar</p></div><button onClick={onCreate} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white">+ Qo‘shish</button></div><div className="mt-4 space-y-3">{[['Mediatsiya bo‘yicha malaka guvohnomasi','2022'],['Fuqarolik nizolari bo‘yicha tajriba','8 yil'],['Malaka oshirish kursi','2025']].map(([title,year])=><div key={title} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-emerald-700"><FileCheck2 size={17}/></span><span className="flex-1"><strong className="block text-xs">{title}</strong><span className="mt-1 block text-[11px] text-slate-500">{year}</span></span><Check size={16} className="text-emerald-600"/></div>)}</div></section></div></>
+}
+
+function TrainingPage({ onCreate, onToast }: { onCreate: () => void; onToast: (text: string) => void }) {
+  return <><div className="mb-6 flex justify-between gap-4"><PageHeading eyebrow="Kasbiy rivojlanish" title="Malaka oshirish" description="O‘quv kurslari, ariza, shartnoma va sertifikatlar."/><button onClick={onCreate} className="h-10 shrink-0 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Ariza berish</button></div><div className="grid gap-4 lg:grid-cols-2">{[['Mediatsiyada muzokara olib borish','72 soat · Yuristlar malakasini oshirish markazi','Qabul davom etmoqda'],['Elektron mediatsiya amaliyoti','36 soat · TDYU','Rejalashtirilgan']].map(([title,sub,status])=><article key={title} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><GraduationCap size={20}/></span><StatusPill status={status}/></div><h2 className="mt-4 font-semibold">{title}</h2><p className="mt-1 text-sm text-slate-500">{sub}</p><button onClick={()=>onToast('Kursga ariza demo rejimida yuborildi')} className="mt-5 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold hover:bg-slate-50">Kurs haqida</button></article>)}</div><section className="mt-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><h2 className="font-semibold">Sertifikatlarim</h2><div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 p-4"><FileCheck2 size={20} className="text-emerald-700"/><div className="flex-1"><p className="text-sm font-medium">Mediator malaka sertifikati</p><p className="mt-1 text-xs text-slate-500">Demo · 2025</p></div><button onClick={()=>onToast('Sertifikat demo hujjati ochildi')} className="text-xs font-semibold text-blue-700">Ko‘rish</button></div></section></>
+}
+
+function CalendarPage({ onToast, onCreate }: { onToast: (text: string) => void; onCreate: () => void }) {
+  return <><div className="mb-6 flex justify-between"><PageHeading eyebrow="Uchrashuvlar" title="Kalendar" description="Mediatsiya uchrashuvlari va muhim muddatlar."/><button onClick={onCreate} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Uchrashuv belgilash</button></div><div className="grid gap-5 lg:grid-cols-[1fr_320px]"><section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center justify-between"><h2 className="font-semibold">2026-yil oktyabr</h2><div className="flex gap-2"><button onClick={()=>onToast('Oldingi oy')} className="rounded-lg border px-2 py-1"><ArrowLeft size={15}/></button><button onClick={()=>onToast('Keyingi oy')} className="rounded-lg border px-2 py-1"><ArrowRight size={15}/></button></div></div><div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs">{['Du','Se','Ch','Pa','Ju','Sh','Ya'].map(x=><span key={x} className="py-2 font-semibold text-slate-400">{x}</span>)}{Array.from({length:35},(_,i)=><button key={i} onClick={()=>onToast(`${i+1} oktyabr sanasi tanlandi`)} className={`relative h-10 rounded-lg text-sm ${i===22?'bg-slate-950 font-semibold text-white':i===17||i===29?'bg-emerald-50 font-semibold text-emerald-800':'text-slate-600 hover:bg-slate-100'}`}>{i<3?'':i-2}{(i===17||i===22||i===29)&&<span className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${i===22?'bg-white':'bg-emerald-500'}`}/>}</button>)}</div></section><section className="rounded-2xl bg-slate-950 p-5 text-white"><h2 className="font-semibold">Yaqin uchrashuvlar</h2><div className="mt-4 space-y-3">{[['Bugun · 14:00','Shartnoma nizosi','Onlayn mediatsiya'],['29-oktyabr · 10:30','Oilaviy nizo','Toshkent shahri']].map(([date,title,sub])=><div key={date} className="rounded-xl bg-white/[.08] p-3"><span className="text-[11px] text-emerald-200">{date}</span><p className="mt-1 text-sm font-semibold">{title}</p><p className="mt-1 text-xs text-slate-400">{sub}</p></div>)}</div></section></div></>
+}
+
+function GenericModule({ title, description, icon: Icon, items, onCreate, onToast, action }: { title: string; description: string; icon: typeof FileText; items: PortalRecord[]; onCreate: () => void; onToast: (text: string) => void; action: string }) {
+  return <><div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Platforma bo‘limi" title={title} description={description}/><button onClick={onCreate} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white"><FilePlus2 size={16}/>{title.includes('Bildirish')||title.includes('Xabarnoma')?'Barchasini o‘qish':'Yangi qo‘shish'}</button></div><div className="mb-5 grid gap-4 sm:grid-cols-3"><div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">Jami yozuvlar</p><p className="mt-2 text-2xl font-semibold">{items.length}</p></div><div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">Faol</p><p className="mt-2 text-2xl font-semibold">{items.filter(i=>!i.status.includes('o‘qilgan')).length}</p></div><div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">Yangilangan</p><p className="mt-2 text-2xl font-semibold">Bugun</p></div></div><section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center gap-3 border-b border-slate-100 p-5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Icon size={19}/></span><div><h2 className="text-sm font-semibold">{title} ro‘yxati</h2><p className="mt-1 text-xs text-slate-400">Yozuvlarni ko‘rish va amallarni bajarish</p></div></div>{items.length===0?<EmptyState title="Hozircha ma’lumot yo‘q" detail="Yangi yozuv qo‘shish orqali demo oqimini ko‘ring."/>:<div className="divide-y divide-slate-100">{items.map(item=><div key={item.id} className="flex items-center gap-3 p-4 sm:p-5"><span className="hidden h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-600 sm:flex"><Icon size={17}/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{item.title}</p><p className="mt-1 truncate text-xs text-slate-500">{item.id} · {item.detail}</p></div><StatusPill status={item.status}/><button onClick={()=>onToast(`${item.title}: tafsilotlar ochildi`)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50">{action}</button></div>)}</div>}</section></>
+}
+
+function RegistryInside({ onToast }: { onToast: (text: string) => void }) {
+  const [q,setQ]=useState(''); const [filter,setFilter]=useState('Barchasi')
+  const rows=registrySeed.filter(r=>(!q||[r.name,r.region,r.specialty].join(' ').toLowerCase().includes(q.toLowerCase()))&&(filter==='Barchasi'||r.region===filter))
+  return <><div className="mt-6 flex flex-col gap-3 sm:flex-row"><label className="relative flex-1"><Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="F.I.Sh. yoki ixtisoslik" className="form-control pl-10"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} className="form-control sm:w-60"><option>Barchasi</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map(x=><option key={x}>{x}</option>)}</select><button onClick={()=>onToast('Hudud, yosh va jins filtrlari qo‘llandi')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm"><Filter size={15}/>Qo‘shimcha filtr</button></div><div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="divide-y divide-slate-100">{rows.map(row=><div key={row.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xs font-bold text-emerald-800">{row.initials}</span><div><p className="text-sm font-semibold">{row.name}</p><p className="mt-1 text-xs text-slate-500">{row.specialty} · {row.region}</p></div></div><div className="flex items-center gap-3"><span className="text-xs text-slate-500">★ {row.rating}</span><button onClick={()=>onToast(`${row.name} profili ochildi`)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">Profil</button><button onClick={()=>onToast(`${row.name} profili tahrirlash uchun ochildi`)} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Tafsilotlar</button></div></div>)}</div></div></>
+}
+
+function PageHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) { return <div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">{eyebrow}</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">{title}</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">{description}</p></div> }
+function InfoRow({label,value}:{label:string;value:string}) { return <div className="flex justify-between gap-4 border-b border-slate-100 pb-3"><span className="text-slate-500">{label}</span><span className="text-right font-medium">{value}</span></div> }
+function StatusPill({status}:{status:string}) { const green=/Faol|Yakun|imzol|Ko‘rib chiqildi|Kiritildi/i.test(status); const amber=/kutil|jarayon|yubor|belgil|ruxsat|qoralama/i.test(status); return <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[10px] font-medium ${green?'bg-emerald-50 text-emerald-700':amber?'bg-amber-50 text-amber-700':'bg-slate-100 text-slate-600'}`}>{status}</span> }
+function EmptyState({title,detail}:{title:string;detail:string}) { return <div className="px-6 py-14 text-center"><Search className="mx-auto mb-3 text-slate-300" size={27}/><p className="text-sm font-semibold text-slate-700">{title}</p><p className="mt-1 text-xs text-slate-400">{detail}</p></div> }
+function Toast({text}:{text:string}) { return <div role="status" className="fixed bottom-5 right-5 z-[70] flex max-w-[calc(100vw-40px)] items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-xl"><Check size={17} className="shrink-0 text-emerald-300"/>{text}</div> }
+function ModalShell({children,onClose}:{children:React.ReactNode;onClose:()=>void}) { return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section role="dialog" aria-modal="true" className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">{children}</section></div> }
+function FormModal({title,description,name,setName,detail,setDetail,submitLabel,onClose,onSubmit}:{title:string;description:string;name:string;setName:(v:string)=>void;detail:string;setDetail:(v:string)=>void;submitLabel:string;onClose:()=>void;onSubmit:(e:FormEvent<HTMLFormElement>)=>void}) { return <ModalShell onClose={onClose}><div className="border-b border-slate-100 px-6 py-5"><button onClick={onClose} className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="Yopish"><X size={18}/></button><h2 className="pr-8 text-lg font-semibold">{title}</h2><p className="mt-1 text-sm text-slate-500">{description}</p></div><form onSubmit={onSubmit} className="space-y-4 p-6"><label className="block text-xs font-semibold text-slate-600">Nomi yoki mavzu<input required maxLength={160} value={name} onChange={e=>setName(e.target.value)} className="form-control mt-1.5" placeholder="Qisqa nom kiriting"/></label><label className="block text-xs font-semibold text-slate-600">Izoh va tafsilotlar<textarea value={detail} onChange={e=>setDetail(e.target.value)} maxLength={1000} className="mt-1.5 min-h-28 w-full rounded-lg border border-slate-200 p-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100" placeholder="Kerakli ma’lumotlarni yozing"/></label><div className="rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">Demo: bu amal tashqi tizimga yuborilmaydi, faqat brauzerda saqlanadi.</div><div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" onClick={onClose} className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-medium">Bekor qilish</button><button type="submit" className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">{submitLabel}</button></div></form></ModalShell> }
+function navIcon(label:string) { if(/Umumiy/.test(label))return LayoutDashboard;if(/reyestr|nomzod|foydalanuvchi/i.test(label))return Users;if(/mediatsiya|ishlari|nizo/i.test(label))return Handshake;if(/hisobot|statistika/i.test(label))return ClipboardList;if(/imtihon|komissiya|malaka/i.test(label))return GraduationCap;if(/shartnoma|hujjat/i.test(label))return FileText;if(/yozishma/i.test(label))return MessageSquare;if(/kalendar/i.test(label))return CalendarDays;if(/kontent|e’lon/i.test(label))return Newspaper;if(/audit/i.test(label))return FileClock;if(/sozlama|spravochnik/i.test(label))return Settings;if(/profil/i.test(label))return User;return BriefcaseBusiness }
+function modalTitle(key:string) { if(/ariza|talabgor/.test(key))return 'Ariza yaratish';if(/hisobot/.test(key))return 'Hisobot yaratish';if(/mediatsiya|murojaat/.test(key))return 'Yangi mediatsiya murojaati';if(/uchrashuv/.test(key))return 'Uchrashuv belgilash';if(/e’lon/.test(key))return 'Yangi e’lon';if(/portfolio/.test(key))return 'Portfolio yozuvi';if(/malaka/.test(key))return 'Malaka oshirish arizasi';if(/shartnoma/.test(key))return 'Shartnoma yaratish';if(/yozishma/.test(key))return 'Yangi yozishma';return 'Yangi yozuv qo‘shish' }
+function modalAction(key:string) { return /ariza/.test(key)?'Arizani yuborish':/hisobot/.test(key)?'Hisobotni saqlash':/mediatsiya|murojaat/.test(key)?'Murojaat yuborish':'Saqlash' }

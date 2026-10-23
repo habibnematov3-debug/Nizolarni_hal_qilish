@@ -18,13 +18,12 @@ npm run preview
 
 ## Hozirgi holat
 
-- Tizimga kirish `/auth/login` endpointi orqali amalga oshadi; panelga `ADMIN` roli bo‘lgan hisob kira oladi.
-- Access va refresh tokenlar joriy brauzer seansida saqlanadi, access token muddati tugaganda yangilanadi.
-- Tashkilotlar `/admin/organizations` dan olinadi. Qo‘shish va tahrirlash API orqali saqlanadi; o‘chirish amali backend endpointi mavjud emasligi sabab faolsizlantirish sifatida bajariladi.
-- Boshqa ADM menyu bo‘limlari keyingi ishlab chiqish bosqichlari uchun joy sifatida ko‘rsatilgan.
-- API manzili `VITE_API_BASE_URL` orqali belgilanadi. Production uchun qiymat `frontend/.env.production` da turibdi.
-
-Backend Vercel loyihasidagi `CORS_ORIGINS` muhit o‘zgaruvchisiga deployed frontend domenini qo‘shing (masalan, `https://frontend-sooty-kappa-37.vercel.app`) va backendni qayta deploy qiling.
+- Ochiq sahifa, mediatorlar/hakamlik sudyalari/arbitrlar reyestri, qidiruv va kabinetga kirish oqimi mavjud.
+- OneID, ERI va Mobil ID tanlovi demo ekranini ochadi; integratsiyalarni tegishli jamoa keyin ulaydi.
+- 10 ta foydalanuvchi roli bo‘yicha demo kabinetlar va rolga mos menyular mavjud.
+- Mediator arizasi va imtihon, mediatsiya bosqichlari, kelishuv monitoringi, mediator hisoboti, malaka oshirish, portfolio va kontent oqimlari demo holatda ishlaydi.
+- Demo yozuvlar `localStorage` da saqlanadi. Hech qanday tashqi to‘lov, SMS, identifikatsiya yoki backend API chaqirilmaydi.
+- Davlat tizimlari, haqiqiy autentifikatsiya, maxfiylik va vakolat nazoratlari integratsiya bosqichida ulanadi.
 
 ## Vercelga joylashtirish
 
