@@ -189,6 +189,18 @@ export class FileStorageService implements IFileStorageService {
       return true;
     }
 
+    // Private chat attachments are readable by the other participant in that chat.
+    const attachedMessages = await this.prisma.medMessage.findMany({
+      where: {
+        senderId: record.uploadedById,
+        attachmentIds: { array_contains: [fileId] },
+      },
+      select: { conversation: { select: { participantA: true, participantB: true } } },
+    });
+    if (attachedMessages.some(({ conversation }) => conversation.participantA === userId || conversation.participantB === userId)) {
+      return true;
+    }
+
     // Internal — tizim foydalanuvchilari uchun
     if (record.accessLevel === FileAccessLevel.INTERNAL) {
       const user = await this.prisma.user.findUnique({

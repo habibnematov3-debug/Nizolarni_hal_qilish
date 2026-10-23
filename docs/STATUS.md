@@ -14,7 +14,7 @@
 | INFRA | 1 | aniq emas / aniq emas | 6 / 6 | Yo'q | Bajarildi |
 | PUB | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | REG | 1-3 | 9 / 9 | 17 / 14 | Yo'q | Bajarildi |
-| TAL | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
+| TAL | 1-2 | 4 / 4 | 9 / 3 | Yo'q | Bajarildi |
 | SHA | 2 | 7 / 7 | 21 / 20 | Yo'q | Bajarildi |
 | MTS | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | MON | 3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
@@ -228,6 +228,11 @@ OpenAPI spec fayli topilmagani uchun:
 - **Endpointlar**: `docs/API_GUIDE.md` dagi SHA bo‘limida hujjatlashtirilgan
 - **Ma’lumotlar bazasi**: `prisma/migrations/202610230004_add_sha_contracts`
 - **Integratsiyalar**: E-imzo tekshiruvi va billing webhooklari uchun konfiguratsiya `.env.example` da ko‘rsatilgan
+
+### TAL (Talabgor kabineti) — Bajarildi
+- **Modul**: `src/modules/tal/` — role-aware cabinet summary/menu, own profile, application/exam summary, course materials, and mediator chats
+- **Qayta ishlatilgan modullar**: AUTH, MK, REG, notifications, MTS, SHA, and platform file storage
+- **API hujjati**: `docs/API_GUIDE.md` dagi TAL bo‘limi
 
 ## Teknik ma'lumotlar
 

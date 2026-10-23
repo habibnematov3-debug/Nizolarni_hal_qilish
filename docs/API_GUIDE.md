@@ -80,6 +80,22 @@ Contract states are `DRAFT`, `PENDING_PARTIES`, `AWAITING_PROVIDER_APPROVAL`, `S
 
 The schema change is in `prisma/migrations/202610230004_add_sha_contracts`.
 
+## TAL — Talabgor kabineti
+
+The applicant cabinet uses existing AUTH profile identity, MK application/exam records, cabinet notifications, REG public mediator entries, MTS mediation, SHA contracts, and platform file uploads. The routes below require JWT authentication; applicant-only actions require `TALABGOR`. The existing `GET /cabinet/notifications` route supplies the notification menu and read/unread state.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/cabinet/tal` | Role-aware cabinet menu, recent MK application statuses, and unread notification count |
+| GET, PATCH | `/cabinet/profile` | Read the user's identity details and update their phone, email, or address; government-verified identity fields are read-only |
+| GET | `/cabinet/training/course-info` | Read published special-course materials |
+| GET | `/cabinet/applications` | Read the applicant's MK application and exam results |
+| GET, POST | `/cabinet/threads` | List own chats or choose an active public mediator and open a chat with an initial message |
+| POST | `/cabinet/threads/:id/messages` | Send a message and up to 10 private uploaded-file attachments |
+| GET | `/cabinet/notifications` | Existing paginated notification list and unread count |
+
+Special-course information is managed as published `manuals` content with metadata `{ "module": "TAL", "topic": "SPECIAL_COURSE" }`. If no such item is published, the API reports that course information has not yet been configured. Chat attachments must first be uploaded as private files through `/platform/files/upload`; the other participant can download an attachment after it is associated with a message in their conversation. The menu links to `/cabinet/mk/applications`, `/contracts` (SHA), and `/cabinet/mts/mediations` (MTS).
+
 ---
 
 ## 2. Autentifikatsiya

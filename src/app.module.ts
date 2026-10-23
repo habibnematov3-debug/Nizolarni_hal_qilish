@@ -20,9 +20,11 @@ import { IntModule } from './modules/int/int.module';
 import { MtsModule } from './modules/mts/mts.module';
 import { OkmModule } from './modules/okm/okm.module';
 import { PubModule } from './modules/pub/pub.module';
+import { TolModule } from './modules/tol/tol.module';
 import { RegModule } from './modules/reg/reg.module';
 import { ReyModule } from './modules/rey/rey.module';
 import { ShaModule } from './modules/sha/sha.module';
+import { TalModule } from './modules/tal/tal.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -51,9 +53,11 @@ import { AppController } from './app.controller';
     MtsModule,
     OkmModule,
     PubModule,
+    TolModule,
     RegModule,
     ReyModule,
     ShaModule,
+    TalModule,
   ],
   controllers: [AppController],
 })

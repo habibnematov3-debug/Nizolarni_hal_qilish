@@ -756,6 +756,7 @@ model BillingTransaction {
   paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
   paidAt          DateTime?     @map("paid_at")
   metadata        Json?
+  idempotencyKey  String?      @map("idempotency_key")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
   serviceInvoice  ServiceInvoice?

@@ -5,6 +5,7 @@ import { IntegrationLoggerService } from '../services/integration-logger.service
 import { BillingCallbackDto } from '../dto/billing-callback.dto';
 import { IntegrationDirection, IntegrationStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { EventsHandlerService } from '../../notifications/services/events-handler.service';
 
 export interface IBillingPort {
   createInvoice(params: {
@@ -13,6 +14,7 @@ export interface IBillingPort {
     serviceType: string;
     payerPinfl?: string;
     payerName?: string;
+    idempotencyKey?: string;
   }): Promise<{ invoiceNumber: string; qrCodeUrl: string }>;
   handleCallback(callback: BillingCallbackDto): Promise<{ success: boolean; message: string }>;
 }
@@ -22,6 +24,7 @@ export class BillingIntegrationAdapter implements IBillingPort {
   constructor(
     private readonly prisma: PrismaService,
     private readonly loggerService: IntegrationLoggerService,
+    private readonly eventsHandler: EventsHandlerService,
   ) {}
 
   async createInvoice(params: {
@@ -30,7 +33,12 @@ export class BillingIntegrationAdapter implements IBillingPort {
     serviceType: string;
     payerPinfl?: string;
     payerName?: string;
+    idempotencyKey?: string;
   }) {
+    if (params.idempotencyKey) {
+      const existing = await this.prisma.billingTransaction.findFirst({ where: { idempotencyKey: params.idempotencyKey } });
+      if (existing) return { invoiceNumber: existing.invoiceNumber, qrCodeUrl: `https://billing.adliya.uz/qr/${existing.invoiceNumber}`, idempotent: true };
+    }
     const localInvoiceNumber = `INV-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
     const endpoint = process.env.BILLING_API_URL;
     return this.loggerService.executeWithResilience(
@@ -65,6 +73,7 @@ export class BillingIntegrationAdapter implements IBillingPort {
             payerPinfl: params.payerPinfl,
             payerName: params.payerName,
             paymentStatus: PaymentStatus.PENDING,
+            idempotencyKey: params.idempotencyKey,
           },
         });
 
@@ -114,6 +123,15 @@ export class BillingIntegrationAdapter implements IBillingPort {
             paidAt: callback.paymentStatus === PaymentStatus.PAID ? (callback.paidAt ? new Date(callback.paidAt) : new Date()) : null,
           },
         });
+
+      if (updatedTransaction.paymentStatus === PaymentStatus.PAID) {
+        void this.eventsHandler.handleEvent({
+          eventName: 'TolovTasdiqlandi',
+          sourceModule: 'TOL',
+          userId: updatedTransaction.userId || '',
+          variables: { invoiceNumber: updatedTransaction.invoiceNumber, amount: updatedTransaction.amount.toString(), serviceType: updatedTransaction.serviceType },
+        }).catch(() => undefined);
+      }
 
       await this.loggerService.log({
         serviceName: 'BILLING_GATEWAY',

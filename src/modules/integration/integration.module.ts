@@ -10,6 +10,7 @@ import { VideoConferenceIntegrationAdapter } from './adapters/video-conference.a
 import { CourtSystemIntegrationAdapter } from './adapters/court-system.adapter';
 import { TrainingCenterIntegrationAdapter } from './adapters/training-center.adapter';
 import { PersonalizationIntegrationAdapter } from './adapters/personalization.adapter';
+import { NotificationsModule } from '../notifications/notifications.module';
 import {
   ExternalIntegrationController,
   AdminIntegrationsController,
@@ -17,6 +18,7 @@ import {
 
 @Global()
 @Module({
+  imports: [NotificationsModule],
   providers: [
     IntegrationLoggerService,
     OneIdIntegrationAdapter,
