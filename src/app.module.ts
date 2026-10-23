@@ -13,6 +13,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { IntegrationModule } from './modules/integration/integration.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { MedModule } from './modules/med/med.module';
+import { MkModule } from './modules/mk/mk.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -34,6 +36,8 @@ import { AppController } from './app.controller';
     ReportsModule,
     // INFRA moduli: monitoring, audit, fayllar, xavfsizlik
     PlatformModule,
+    MedModule,
+    MkModule,
   ],
   controllers: [AppController],
 })

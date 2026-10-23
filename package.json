@@ -37,13 +37,14 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@vercel/node": "^5.3.24",
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.21",
+    "@types/multer": "^2.3.0",
     "@types/node": "^20.17.10",
     "@types/passport-jwt": "^4.0.1",
+    "@vercel/node": "^5.3.24",
     "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"

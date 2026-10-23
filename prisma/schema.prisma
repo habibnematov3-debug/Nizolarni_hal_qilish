@@ -119,6 +119,54 @@ enum ReportSummaryStatus {
   SUBMITTED
 }
 
+enum MedApplicationType {
+  REGISTRY_REMOVAL
+  CERTIFICATE_REPLACEMENT
+}
+
+enum MedApplicationStatus {
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum CertificateReplacementReason {
+  DAMAGED
+  LOST
+  EXPIRED
+  NAME_CHANGED
+}
+
+enum CertificateDeliveryMethod {
+  PICKUP
+  POST
+}
+
+enum MkApplicationStatus {
+  SUBMITTED
+  CHECKING
+  ACCEPTED
+  REJECTED
+  INVITED
+  EXAM_IN_PROGRESS
+  PASSED
+  FAILED
+  REGISTERED
+}
+
+enum MkExamStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MkCommitteeRole {
+  SECRETARY
+  MEMBER
+}
+
 model Organization {
   id        String           @id @default(uuid())
   name      String
@@ -221,6 +269,11 @@ model User {
   notifications          Notification[]
   quarterlyReports       QuarterlyReport[]
   createdReportSummaries ReportSummary[]   @relation("ReportSummaryCreator")
+
+  // INT module relations
+  disciplineCasesAsMediator DisciplineCase[] @relation("MediatorDiscipline")
+  disciplineCasesCreated    DisciplineCase[] @relation("DisciplineCaseCreator")
+  dossier                   MediatorDossier? @relation("MediatorDossier")
 
   @@map("users")
 }
@@ -512,6 +565,166 @@ model FileRecord {
   @@map("file_records")
 }
 
+// ─── INT Moduli: Intizomiy javobgarlik va mediator dosyesi ───────────────────
+
+enum DisciplineStatus {
+  UNDER_REVIEW   // Ko'rib chiqilmoqda
+  SANCTIONED     // Jazo tayinlangan
+  ACQUITTED      // Oqlangan
+  APPEAL_PENDING // Apellatsiya kutilmoqda
+  CLOSED         // Yopilgan
+}
+
+enum DisciplineSanctionType {
+  WARNING          // Ogohlantirish
+  REPRIMAND        // Hayfsan
+  STRICT_REPRIMAND // Og'ir hayfsan
+  SUSPENSION       // Faoliyatni to'xtatish
+  REVOCATION       // Guvohnomani bekor qilish (reyestrdan chiqarish)
+}
+
+enum MediatorRegistryStatus {
+  ACTIVE    // Faol
+  SUSPENDED // To'xtatilgan
+  REVOKED   // Chiqarilgan
+  PENDING   // Kutilmoqda
+}
+
+model DisciplineCase {
+  id              String             @id @default(uuid())
+  caseNumber      String             @unique
+  mediatorId      String
+  mediator        User               @relation("MediatorDiscipline", fields: [mediatorId], references: [id])
+  status          DisciplineStatus   @default(UNDER_REVIEW)
+  openedAt        DateTime           @default(now())
+  closedAt        DateTime?
+  description     String
+  commissionNotes String?
+  createdById     String
+  createdBy       User               @relation("DisciplineCaseCreator", fields: [createdById], references: [id])
+  documents       DisciplineDocument[]
+  decision        DisciplineDecision?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([mediatorId])
+  @@index([status])
+  @@map("discipline_cases")
+}
+
+model DisciplineDocument {
+  id           String         @id @default(uuid())
+  caseId       String
+  case         DisciplineCase @relation(fields: [caseId], references: [id])
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  uploadedById String
+  uploadedAt   DateTime       @default(now())
+
+  @@index([caseId])
+  @@map("discipline_documents")
+}
+
+model DisciplineDecision {
+  id               String                 @id @default(uuid())
+  caseId           String                 @unique
+  case             DisciplineCase         @relation(fields: [caseId], references: [id])
+  sanctionType     DisciplineSanctionType
+  decisionDate     DateTime
+  effectiveFrom    DateTime
+  effectiveTo      DateTime?
+  commissionNotes  String?
+  registryUpdated  Boolean                @default(false)
+  notificationSent Boolean                @default(false)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@map("discipline_decisions")
+}
+
+model MediatorDossier {
+  id                 String                 @id @default(uuid())
+  mediatorId         String                 @unique
+  mediator           User                   @relation("MediatorDossier", fields: [mediatorId], references: [id])
+  registryStatus     MediatorRegistryStatus @default(ACTIVE)
+  registeredYear     Int
+  region             String
+  specialization     String[]
+  workExperience     Json?
+  achievements       Json?
+  trainingCourses    Json?
+  qualificationLevel String?
+  isPublic            Boolean  @default(false) @map("is_public")
+  profileBio          String?  @map("profile_bio")
+  videoUrl            String?  @map("video_url")
+  media              Json?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@map("mediator_dossiers")
+}
+
+model MedCalendarEvent {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  title        String
+  eventDate    DateTime @map("event_date")
+  notes        String?
+  reminderSent Boolean  @default(false) @map("reminder_sent")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, eventDate])
+  @@map("med_calendar_events")
+}
+
+model MedApplication {
+  id                       String                    @id @default(uuid())
+  userId                   String                    @map("user_id")
+  type                     MedApplicationType
+  status                   MedApplicationStatus      @default(SUBMITTED)
+  reason                   CertificateReplacementReason?
+  supportingDocumentId     String?                   @map("supporting_document_id")
+  photoFileId              String?                   @map("photo_file_id")
+  deliveryMethod           CertificateDeliveryMethod? @map("delivery_method")
+  deliveryAddress          String?                   @map("delivery_address")
+  decisionNote             String?                   @map("decision_note")
+  decidedAt                DateTime?                 @map("decided_at")
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+
+  @@index([userId, type, status])
+  @@map("med_applications")
+}
+
+model MedConversation {
+  id            String          @id @default(uuid())
+  participantA  String          @map("participant_a")
+  participantB  String          @map("participant_b")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  messages      MedMessage[]
+
+  @@unique([participantA, participantB])
+  @@map("med_conversations")
+}
+
+model MedMessage {
+  id             String         @id @default(uuid())
+  conversationId String         @map("conversation_id")
+  senderId       String         @map("sender_id")
+  body           String
+  attachmentIds  Json?          @map("attachment_ids")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  conversation MedConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("med_messages")
+}
+
 model ReportSummary {
   id             String              @id @default(uuid())
   organizationId String              @map("organization_id")
@@ -532,4 +745,107 @@ model ReportSummary {
   @@index([periodYear, periodQuarter])
   @@index([status])
   @@map("report_summaries")
+}
+
+model MkApplication {
+  id                 String             @id @default(uuid())
+  applicantId        String             @map("applicant_id")
+  status             MkApplicationStatus @default(SUBMITTED)
+  phone              String
+  email              String?
+  address            String?
+  profession         String?
+  diplomaFileId      String?            @map("diploma_file_id")
+  passportFileId     String?            @map("passport_file_id")
+  courseCertificateId String?           @map("course_certificate_id")
+  passportData       Json?              @map("passport_data")
+  autoCheckResult    Json?              @map("auto_check_result")
+  rejectionReason    String?            @map("rejection_reason")
+  reviewDeadline     DateTime?          @map("review_deadline")
+  reviewedById       String?            @map("reviewed_by_id")
+  reviewedAt         DateTime?          @map("reviewed_at")
+  statusSeen         Boolean            @default(false) @map("status_seen")
+  submittedAt        DateTime           @default(now()) @map("submitted_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  exams              MkExam[]
+
+  @@index([applicantId, status])
+  @@index([status, reviewDeadline])
+  @@map("mk_applications")
+}
+
+model MkExam {
+  id              String       @id @default(uuid())
+  applicationId   String       @map("application_id")
+  scheduledAt     DateTime     @map("scheduled_at")
+  venue           String
+  secretaryPhone  String        @map("secretary_phone")
+  status          MkExamStatus  @default(SCHEDULED)
+  selectedQuestions Json?       @map("selected_questions")
+  protocolFileId  String?       @map("protocol_file_id")
+  streamUrl       String?       @map("stream_url")
+  archiveUrl      String?       @map("archive_url")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  application     MkApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  assignments     MkExamAssignment[]
+  scores          MkExamScore[]
+
+  @@index([applicationId, status])
+  @@map("mk_exams")
+}
+
+model MkQuestion {
+  id          String   @id @default(uuid())
+  text        String
+  options     Json
+  correctOption String? @map("correct_option")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("mk_questions")
+}
+
+model MkCommitteeMember {
+  id        String          @id @default(uuid())
+  userId    String          @map("user_id")
+  role      MkCommitteeRole
+  isActive  Boolean         @default(true) @map("is_active")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  assignments MkExamAssignment[]
+  @@unique([userId, role])
+  @@map("mk_committee_members")
+}
+
+model MkExamAssignment {
+  id          String            @id @default(uuid())
+  examId      String            @map("exam_id")
+  memberId    String            @map("member_id")
+  assignedAt  DateTime          @default(now()) @map("assigned_at")
+  exam        MkExam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  member      MkCommitteeMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  score       MkExamScore?
+
+  @@unique([examId, memberId])
+  @@map("mk_exam_assignments")
+}
+
+model MkExamScore {
+  id           String           @id @default(uuid())
+  assignmentId String           @unique @map("assignment_id")
+  examId       String           @map("exam_id")
+  score        Decimal          @db.Decimal(5, 2)
+  comment      String?
+  submittedAt DateTime         @default(now()) @map("submitted_at")
+  assignment   MkExamAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  exam         MkExam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@map("mk_exam_scores")
 }
