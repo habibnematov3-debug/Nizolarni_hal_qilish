@@ -167,6 +167,13 @@ enum MkCommitteeRole {
   MEMBER
 }
 
+enum ObligationStatus {
+  PENDING
+  DUE_SOON
+  COMPLETED
+  OVERDUE
+}
+
 model Organization {
   id        String           @id @default(uuid())
   name      String
@@ -848,4 +855,30 @@ model MkExamScore {
 
   @@index([examId])
   @@map("mk_exam_scores")
+}
+
+model MonitoringObligation {
+  id                    String           @id @default(uuid())
+  agreementId           String           @map("agreement_id")
+  description           String
+  dueDate               DateTime         @map("due_date")
+  responsiblePartyId    String?          @map("responsible_party_id")
+  responsiblePartyName  String           @map("responsible_party_name")
+  mediatorId            String?          @map("mediator_id")
+  region                String?
+  status                ObligationStatus @default(PENDING)
+  reminderDaysBefore    Int              @default(3) @map("reminder_days_before")
+  reminderIntervalDays  Int              @default(1) @map("reminder_interval_days")
+  lastReminderAt        DateTime?        @map("last_reminder_at")
+  reminderCount         Int              @default(0) @map("reminder_count")
+  completedAt           DateTime?        @map("completed_at")
+  completedById         String?          @map("completed_by_id")
+  createdById           String           @map("created_by_id")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  @@index([agreementId, status])
+  @@index([dueDate, status])
+  @@index([mediatorId, status])
+  @@map("monitoring_obligations")
 }

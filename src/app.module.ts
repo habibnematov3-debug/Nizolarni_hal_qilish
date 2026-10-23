@@ -15,6 +15,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { MedModule } from './modules/med/med.module';
 import { MkModule } from './modules/mk/mk.module';
+import { MonModule } from './modules/mon/mon.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -38,6 +39,7 @@ import { AppController } from './app.controller';
     PlatformModule,
     MedModule,
     MkModule,
+    MonModule,
   ],
   controllers: [AppController],
 })
