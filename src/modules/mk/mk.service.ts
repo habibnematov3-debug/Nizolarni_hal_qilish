@@ -83,6 +83,16 @@ export class MkService {
   async inviteToExam(user: AuthUser, id: string, dto: InviteToExamDto) {
     const item = await this.getApplication(id);
     if (item.status !== MkApplicationStatus.ACCEPTED) throw new ConflictException('Faqat qabul qilingan ariza imtihonga chaqiriladi');
+    const examPayment = await this.prisma.billingTransaction.findFirst({
+      where: {
+        userId: item.applicantId,
+        serviceType: 'QUALIFICATION_EXAM_FEE',
+        paymentStatus: 'PAID',
+        metadata: { path: ['applicationId'], equals: id },
+      },
+      select: { id: true },
+    });
+    if (!examPayment) throw new ConflictException('Imtihonga taklif yuborishdan oldin ariza bo‘yicha to‘lov tasdiqlanishi kerak');
     const questions = await this.prisma.mkQuestion.findMany({ where: { isActive: true }, take: dto.questionCount || 20 });
     const selected = questions.sort(() => Math.random() - 0.5).map((question) => question.id);
     const exam = await this.prisma.mkExam.create({ data: { applicationId: id, scheduledAt: new Date(dto.scheduledAt), venue: dto.venue, secretaryPhone: dto.secretaryPhone, selectedQuestions: selected as unknown as Prisma.InputJsonValue } });

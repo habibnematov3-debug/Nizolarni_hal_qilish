@@ -44,6 +44,13 @@ export class SettingsService {
         supportPhone: '1008',
         supportEmail: 'support@adliya.uz',
       },
+      paymentSettings: {
+        examFeeAmount: process.env.MK_EXAM_FEE_AMOUNT ? Number(process.env.MK_EXAM_FEE_AMOUNT) : null,
+        examFeeBeneficiaryName: null,
+        examFeeBeneficiaryAccount: null,
+        examFeeBeneficiaryBankCode: null,
+        examFeeBeneficiaryRegion: null,
+      },
     };
 
     for (const s of settings) {
@@ -96,6 +103,15 @@ export class SettingsService {
         group: 'GENERAL',
         value: dto.general,
         description: 'Tizimning umumiy sozlamalari',
+      });
+    }
+
+    if (dto.paymentSettings) {
+      updates.push({
+        key: 'paymentSettings',
+        group: 'PAYMENTS',
+        value: dto.paymentSettings,
+        description: 'Imtihon to‘lovi miqdori va oluvchi tashkilot rekvizitlari',
       });
     }
 

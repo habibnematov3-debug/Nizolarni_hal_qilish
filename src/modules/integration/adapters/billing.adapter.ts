@@ -15,6 +15,7 @@ export interface IBillingPort {
     payerPinfl?: string;
     payerName?: string;
     idempotencyKey?: string;
+    metadata?: Record<string, unknown>;
   }): Promise<{ invoiceNumber: string; qrCodeUrl: string }>;
   handleCallback(callback: BillingCallbackDto): Promise<{ success: boolean; message: string }>;
 }
@@ -34,10 +35,17 @@ export class BillingIntegrationAdapter implements IBillingPort {
     payerPinfl?: string;
     payerName?: string;
     idempotencyKey?: string;
+    metadata?: Record<string, unknown>;
   }) {
     if (params.idempotencyKey) {
       const existing = await this.prisma.billingTransaction.findFirst({ where: { idempotencyKey: params.idempotencyKey } });
-      if (existing) return { invoiceNumber: existing.invoiceNumber, qrCodeUrl: `https://billing.adliya.uz/qr/${existing.invoiceNumber}`, idempotent: true };
+      if (existing) {
+        if (existing.userId !== params.userId || !existing.amount.equals(new Prisma.Decimal(params.amount)) || existing.serviceType !== params.serviceType) {
+          throw new ConflictException('Idempotency kaliti boshqa to‘lov so‘rovida ishlatilgan');
+        }
+        const savedQr = (existing.metadata as Record<string, unknown> | null)?.billingQrCodeUrl;
+        return { invoiceNumber: existing.invoiceNumber, qrCodeUrl: typeof savedQr === 'string' ? savedQr : `https://billing.adliya.uz/qr/${existing.invoiceNumber}` };
+      }
     }
     const localInvoiceNumber = `INV-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
     const endpoint = process.env.BILLING_API_URL;
@@ -50,7 +58,7 @@ export class BillingIntegrationAdapter implements IBillingPort {
             method: 'POST',
             headers: {
               'content-type': 'application/json',
-              'idempotency-key': localInvoiceNumber,
+              'idempotency-key': params.idempotencyKey || localInvoiceNumber,
               ...(process.env.BILLING_API_TOKEN ? { authorization: `Bearer ${process.env.BILLING_API_TOKEN}` } : {}),
             },
             body: JSON.stringify({ ...params, invoiceNumber: localInvoiceNumber, currency: 'UZS' }),
@@ -74,6 +82,7 @@ export class BillingIntegrationAdapter implements IBillingPort {
             payerName: params.payerName,
             paymentStatus: PaymentStatus.PENDING,
             idempotencyKey: params.idempotencyKey,
+            metadata: { ...(params.metadata || {}), billingQrCodeUrl: qrCodeUrl },
           },
         });
 
@@ -124,12 +133,12 @@ export class BillingIntegrationAdapter implements IBillingPort {
           },
         });
 
-      if (updatedTransaction.paymentStatus === PaymentStatus.PAID) {
+      if (updatedTransaction.paymentStatus === PaymentStatus.PAID && transaction.paymentStatus !== PaymentStatus.PAID && updatedTransaction.userId) {
         void this.eventsHandler.handleEvent({
           eventName: 'TolovTasdiqlandi',
           sourceModule: 'TOL',
-          userId: updatedTransaction.userId || '',
-          variables: { invoiceNumber: updatedTransaction.invoiceNumber, amount: updatedTransaction.amount.toString(), serviceType: updatedTransaction.serviceType },
+          userId: updatedTransaction.userId,
+          variables: { invoiceNumber: updatedTransaction.invoiceNumber, caseNumber: updatedTransaction.invoiceNumber, amount: updatedTransaction.amount.toString(), serviceType: updatedTransaction.serviceType, metadata: updatedTransaction.metadata },
         }).catch(() => undefined);
       }
 
@@ -161,6 +170,33 @@ export class BillingIntegrationAdapter implements IBillingPort {
       if (err instanceof UnauthorizedException || err instanceof ConflictException || err instanceof BadRequestException) throw err;
       throw new BadRequestException(`Billing callback xatosi: ${err.message}`);
     }
+  }
+
+  async reconcileInvoice(invoiceNumber: string) {
+    const endpoint = process.env.BILLING_STATUS_API_URL;
+    if (!endpoint) {
+      if (process.env.NODE_ENV === 'production') throw new BadRequestException('Production billing holati uchun BILLING_STATUS_API_URL sozlanmagan');
+      const transaction = await this.prisma.billingTransaction.findUnique({ where: { invoiceNumber } });
+      if (!transaction) throw new BadRequestException('Billing invoysi topilmadi');
+      return { invoiceNumber, paymentStatus: transaction.paymentStatus, checkedWithProvider: false };
+    }
+    const url = endpoint.includes(':invoiceNumber')
+      ? endpoint.replace(':invoiceNumber', encodeURIComponent(invoiceNumber))
+      : `${endpoint.replace(/\/$/, '')}/${encodeURIComponent(invoiceNumber)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        ...(process.env.BILLING_API_TOKEN ? { authorization: `Bearer ${process.env.BILLING_API_TOKEN}` } : {}),
+      },
+    });
+    if (!response.ok) throw new BadRequestException(`Billing holati API ${response.status} javobini qaytardi`);
+    const callback = await response.json() as BillingCallbackDto;
+    if (!callback || callback.invoiceNumber !== invoiceNumber || typeof callback.amount !== 'number' || !callback.transactionId || !callback.paymentProvider || !Object.values(PaymentStatus).includes(callback.paymentStatus)) {
+      throw new BadRequestException('Billing holati API javobi yaroqsiz');
+    }
+    await this.handleCallback(callback);
+    return { invoiceNumber, paymentStatus: callback.paymentStatus, checkedWithProvider: true };
   }
 
   private verifyCallbackSignature(callback: BillingCallbackDto) {

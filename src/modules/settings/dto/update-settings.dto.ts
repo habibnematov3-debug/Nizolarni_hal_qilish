@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsInt, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Min, MinLength, ValidateNested } from 'class-validator';
 
 export class TimerSettingsDto {
   @ApiProperty({ example: 3, description: 'Arizani qabul qilish / ro\'yxatdan o\'tkazish muddati (kun)' })
@@ -58,6 +58,23 @@ export class NotificationTemplateDto {
   emailTemplate: string;
 }
 
+export class PaymentSettingsDto {
+  @ApiProperty({ example: 350000, description: 'Malaka imtihoni uchun to‘lov summasi (UZS)' })
+  @IsNumber({ maxDecimalPlaces: 2 }) @Min(1) examFeeAmount: number;
+
+  @ApiProperty({ example: 'Toshkent shahar adliya boshqarmasi' })
+  @IsString() @MinLength(2) examFeeBeneficiaryName: string;
+
+  @ApiProperty({ example: '20208000900123456001' })
+  @IsString() @MinLength(8) examFeeBeneficiaryAccount: string;
+
+  @ApiProperty({ example: '01017' })
+  @IsString() @MinLength(3) examFeeBeneficiaryBankCode: string;
+
+  @ApiPropertyOptional({ example: 'Toshkent shahri' })
+  @IsOptional() @IsString() examFeeBeneficiaryRegion?: string;
+}
+
 export class UpdateSettingsDto {
   @ApiPropertyOptional({ type: TimerSettingsDto })
   @IsOptional()
@@ -85,4 +102,11 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsObject()
   general?: Record<string, any>;
+
+  @ApiPropertyOptional({ type: PaymentSettingsDto, description: 'To‘lov miqdori va imtihon to‘lovi oluvchisi' })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => PaymentSettingsDto)
+  paymentSettings?: PaymentSettingsDto;
 }
