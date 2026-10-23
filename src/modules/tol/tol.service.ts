@@ -50,6 +50,21 @@ export class TolService {
     }
 
     const idempotencyKey = `TOL:EXAM:${application.id}:${dto.idempotencyKey}`;
+    const existingRequest = await this.prisma.billingTransaction.findUnique({ where: { idempotencyKey } });
+    if (existingRequest) {
+      const metadata = existingRequest.metadata as Record<string, any> | null;
+      if (existingRequest.userId !== user.id || existingRequest.serviceType !== 'QUALIFICATION_EXAM_FEE' || metadata?.applicationId !== application.id) {
+        throw new ConflictException('Idempotency kaliti boshqa to‘lov so‘rovida ishlatilgan');
+      }
+      return {
+        invoiceNumber: existingRequest.invoiceNumber,
+        qrCodeUrl: typeof metadata?.billingQrCodeUrl === 'string' ? metadata.billingQrCodeUrl : `https://billing.adliya.uz/qr/${existingRequest.invoiceNumber}`,
+        amount: Number(existingRequest.amount),
+        currency: 'UZS',
+        serviceType: existingRequest.serviceType,
+        beneficiary: metadata?.beneficiary || null,
+      };
+    }
     const existingPaid = await this.prisma.billingTransaction.findFirst({
       where: {
         userId: user.id,
@@ -117,7 +132,6 @@ export class TolService {
       else {
         const users = await this.prisma.user.findMany({ where: { organization: { is: { region } } }, select: { id: true } });
         where.AND = [
-          ...(where.AND || []),
           { OR: [
             { userId: { in: users.map((item) => item.id) } },
             { metadata: { path: ['beneficiaryRegion'], equals: region } },

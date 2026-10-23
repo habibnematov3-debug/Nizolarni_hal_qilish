@@ -35,7 +35,7 @@ export class TolController {
   @ApiOperation({ summary: 'To‘lov holatini billing provayderidan qayta tekshirish' })
   reconcile(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.reconcile(user, id); }
 
-  @Post('cabinet/tol/payments') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Billing orqali to\'lov invoysi yaratish' })
+  @Post('cabinet/tol/payments') @Roles('ADMIN') @ApiOperation({ summary: 'Administrator uchun maxsus billing invoysi yaratish' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreatePaymentDto) { return this.service.createPayment(user, dto); }
 
   @Get('cabinet/tol/payments') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Foydalanuvchi to\'lovlar tarixi' })

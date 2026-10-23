@@ -21,7 +21,7 @@
 | REY | 3 | 2 / 2 | 7 / 5 | Yo'q | Bajarildi |
 | INT | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | OKM | 3 | 5 / 5 | 9 / 9 | Yo'q | Bajarildi |
-| TOL | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
+| TOL | 1-2 | 3 / 3 | 6 / 6 | Yo'q | Bajarildi |
 | BIL | 1 | aniq emas / aniq emas | 9 / 9 | Ha | Bajarildi |
 | ADM | 1 | aniq emas / aniq emas | 20 / 20 | Yo'q | Bajarilmoqda |
 
@@ -158,13 +158,14 @@
 ### Bajarilmagan modullar (kod yo'q)
 - **PUB (Ochiq portal)**: src/modules/ katalogida yo'q
 - **REG (Reyestr)**: implemented in `src/modules/reg/` — public/staff registry, Excel import/export, status history, regional access and my.gov.uz sync queue
-- **TAL (Talabgor kabineti)**: src/modules/ katalogida yo'q
+- **TAL (Talabgor kabineti)**: implemented in `src/modules/tal/`
+- **SHA (Shartnomalar)**: implemented in `src/modules/sha/`
+- **TOL (To'lovlar)**: implemented in `src/modules/tol/`
 - **MTS (Mediatsiya seanslari)**: src/modules/ katalogida yo'q
 - **MON (Monitoring)**: Platform monitoring module bor, lekin MON moduli alohida yo'q
 - **REY (Reytinglar)**: `src/modules/rey/` — configurable methodology, public rankings, scheduled and manual calculation
 - **INT (Ichki integratsiya)**: ENT module bor, INT alohida yo'q
 - **OKM (Malaka komissiyasi)**: MK module qisman qamraydi, OKM alohida yo'q
-- **TOL (To'lovlar)**: ENT module qisman qamraydi, TOL alohida yo'q
 
 ### Frontend
 - **Frontend yo'q**: frontend/ katalogida faqat README.md bor, kod yo'q
@@ -186,7 +187,7 @@ OpenAPI spec fayli topilmagani uchun:
 ### 2. Bosqich 1 modullari to'liq emas
 - PUB (ochiq portal) yo'q — tashqi foydalanuvchilar kirishi mumkin emas
 - REG (reyestr) — implemented in `src/modules/reg/`; verify migration deployment and configure my.gov.uz credentials for outbound delivery
-- TAL (talabgor kabineti) yo'q — arizalar topshirib bo'lmayapti
+- TAL (talabgor kabineti) is implemented in `src/modules/tal/`; frontend screens still need to be built
 
 ### 3. Frontend yo'q
 - Backend API bor, lekin frontend interfeysi yo'q
@@ -211,13 +212,7 @@ OpenAPI spec fayli topilmagani uchun:
 - **Dalil**: Hozircha yo'q, yangi yaratish kerak
 - **Test**: test/test-public-apis.ts yaratish
 
-### 2. Bosqich 1: TAL (Talabgor kabineti) — Kritik
-- **Nima qilish kerak**: src/modules/applicant/ modulini yaratish
-- **Endpointlar**: Ariza yuborish, holatni kuzatish, hujjatlar yuklash
-- **Dalil**: Hozircha yo'q, yangi yaratish kerak
-- **Test**: test/test-applicant-apis.ts yaratish
-
-### 3. Bosqich 1: Frontend — Kritik
+### 2. Bosqich 1: Frontend — Kritik
 - **Nima qilish kerak**: frontend/ katalogiga React yoki Angular ilovasini yaratish
 - **Komponentlar**: Login page, Admin panel, Mediator kabineti, Talabgor kabineti
 - **Dalil**: Hozircha faqat README.md bor, kod yo'q
@@ -233,6 +228,13 @@ OpenAPI spec fayli topilmagani uchun:
 - **Modul**: `src/modules/tal/` — role-aware cabinet summary/menu, own profile, application/exam summary, course materials, and mediator chats
 - **Qayta ishlatilgan modullar**: AUTH, MK, REG, notifications, MTS, SHA, and platform file storage
 - **API hujjati**: `docs/API_GUIDE.md` dagi TAL bo‘limi
+
+### TOL (To‘lovlar) — Bajarildi
+- **Modul**: `src/modules/tol/` — imtihon invoysi, to‘lovlar tarixi/holati, reconciliation va hududiy hisobot eksporti
+- **To‘lov bosqichi**: MK arizasi qabul qilingach va imtihonga taklif yuborilishidan oldin
+- **Sozlamalar**: Admin to‘lov miqdori va oluvchi adliya organi rekvizitlarini `/admin/settings` orqali belgilaydi
+- **Migratsiya**: `prisma/migrations/202610230005_add_tol_payment_idempotency`
+- **API hujjati**: `docs/API_GUIDE.md` dagi TOL bo‘limi
 
 ## Teknik ma'lumotlar
 

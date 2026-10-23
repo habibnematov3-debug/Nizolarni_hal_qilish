@@ -96,6 +96,23 @@ The applicant cabinet uses existing AUTH profile identity, MK application/exam r
 
 Special-course information is managed as published `manuals` content with metadata `{ "module": "TAL", "topic": "SPECIAL_COURSE" }`. If no such item is published, the API reports that course information has not yet been configured. Chat attachments must first be uploaded as private files through `/platform/files/upload`; the other participant can download an attachment after it is associated with a message in their conversation. The menu links to `/cabinet/mk/applications`, `/contracts` (SHA), and `/cabinet/mts/mediations` (MTS).
 
+## TOL — To‘lovlar
+
+| Method | Route | Purpose |
+|---|---|---|
+| POST | `/payments/exam-fee` | Create a configured exam-fee invoice for the applicant's accepted MK application |
+| GET | `/payments` | Paginated payment history for the current account; filter by service, status, and date |
+| GET | `/payments/:id` | Read payment by transaction UUID or invoice number; only the owner or admin can read it |
+| POST | `/payments/:id/reconcile` | Query the billing provider and apply its signed status response |
+| POST | `/external/billing/callback` | Existing billing webhook for payment status updates |
+| GET | `/staff/payments/report?format=json` | Regional, ministry, or admin payment report; `format=csv` downloads an export |
+
+The exam fee is charged after the MK application is accepted and before the committee schedules/invites the applicant to the exam. MK rejects an exam invitation unless a paid `QUALIFICATION_EXAM_FEE` transaction exists for that application. Configure the amount and justice-authority beneficiary in the admin `PUT /admin/settings` body under `paymentSettings` (`examFeeAmount`, `examFeeBeneficiaryName`, `examFeeBeneficiaryAccount`, `examFeeBeneficiaryBankCode`, optional `examFeeBeneficiaryRegion`). `MK_EXAM_FEE_AMOUNT` can supply the amount as a deployment fallback; beneficiary details must still be configured. The billing invoice API receives the beneficiary in transaction metadata and must route the `QUALIFICATION_EXAM_FEE` service to that configured account.
+
+The client supplies an `idempotencyKey` for each logical attempt. A retry with the same key returns the existing invoice; after a failed attempt, a new key may start a new invoice. Payment status is authoritative in the billing transaction. A transition to `PAID` emits the `TolovTasdiqlandi` event once per invoice through the shared event/notification handler; MK and SHA can read the linked transaction status. Reconciliation uses `BILLING_STATUS_API_URL` (either a URL containing `:invoiceNumber` or a base URL with the invoice number appended), and its response must use the signed callback shape documented in the billing integration settings.
+
+The idempotency uniqueness migration is `prisma/migrations/202610230005_add_tol_payment_idempotency`.
+
 ---
 
 ## 2. Autentifikatsiya
