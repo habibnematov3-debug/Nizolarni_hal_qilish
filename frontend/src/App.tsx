@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PenLine,
   Plus,
   Search,
   Settings,
@@ -189,7 +190,7 @@ function App() {
                 <td className="px-5 py-4 md:px-6"><div className="flex items-center gap-3"><OrgMark name={organization.name} /><div><span className="block text-sm font-semibold text-slate-800">{organization.name}</span><span className="mt-0.5 block text-xs text-slate-400">STIR: {organization.code || '—'}</span></div></div></td>
                 <td className="px-5 py-4 text-sm text-slate-500 md:px-6">{typeLabels[organization.type]}</td><td className="max-w-[220px] truncate px-5 py-4 text-sm text-slate-500 md:px-6" title={organization.parent}>{organization.parent}</td><td className="px-5 py-4 text-sm text-slate-500 md:px-6">{organization.region || '—'}</td>
                 <td className="px-5 py-4 md:px-6"><StatusBadge active={organization.status === 'ACTIVE'} /></td>
-                <td className="px-5 py-4 md:px-6"><div className="flex items-center gap-1"><button onClick={() => openEdit(organization)} className="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200" aria-label={`${organization.name}ni tahrirlash`}><PenIcon /></button><button onClick={() => setDeleteTarget(organization)} className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200" aria-label={`${organization.name}ni o‘chirish`}><Trash2 size={16} /></button></div></td>
+                <td className="px-5 py-4 md:px-6"><div className="flex items-center gap-1"><button onClick={() => openEdit(organization)} className="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200" aria-label={`${organization.name}ni tahrirlash`}><PenLine size={16} /></button><button onClick={() => setDeleteTarget(organization)} className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200" aria-label={`${organization.name}ni o‘chirish`}><Trash2 size={16} /></button></div></td>
               </tr>)}</tbody>
             </table></div>
             {filteredOrganizations.length === 0 && <div className="px-6 py-14 text-center"><Search className="mx-auto mb-3 text-slate-300" size={28} /><p className="text-sm font-medium text-slate-700">Tashkilot topilmadi</p><p className="mt-1 text-xs text-slate-400">Qidiruv yoki filtrni o‘zgartirib ko‘ring</p></div>}
@@ -221,8 +222,6 @@ function OrgMark({ name }: { name: string }) {
 function StatusBadge({ active }: { active: boolean }) {
   return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}><span className={`h-1.5 w-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-400'}`} />{active ? 'Faol' : 'Faolsiz'}</span>
 }
-
-function PenIcon() { return <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg> }
 
 function OrganizationDialog({ mode, form, setForm, onClose, onSubmit }: { mode: 'create' | 'edit'; form: typeof emptyForm; setForm: (value: typeof emptyForm) => void; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
   const update = (field: keyof typeof emptyForm, value: string) => setForm({ ...form, [field]: value })
