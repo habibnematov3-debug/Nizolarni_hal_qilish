@@ -15,7 +15,6 @@ import {
   RegistryType,
   RegistryStatus,
 } from '@prisma/client';
-import { randomUUID } from 'crypto';
 import * as ExcelJS from 'exceljs';
 import { AuditService } from '../audit/audit.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
@@ -367,6 +366,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
           },
         });
       }
+      if (entry.userId) await this.syncLinkedUser(tx, entry, entry.userId);
       return entry;
     });
     await this.audit.log({
@@ -437,7 +437,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
     let workbook: ExcelJS.Workbook;
     try {
       workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(file.buffer);
+      await workbook.xlsx.load(file.buffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     } catch {
       throw new BadRequestException('Excel faylini o\'qib bo\'lmadi');
     }
@@ -634,14 +634,21 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
   }
 
   private staffWhere(query: RegistryQueryDto, actor: AuthUser): Prisma.RegistryEntryWhereInput {
-    const region = actor.roles.includes('REGIONAL_STAFF') && !actor.roles.includes('ADMIN')
+    const isRegionScoped = actor.roles.includes('REGIONAL_STAFF') && !actor.roles.includes('ADMIN');
+    const region = isRegionScoped
       ? actor.region || '__NO_REGION__'
       : query.region;
     const where: Prisma.RegistryEntryWhereInput = {
       deletedAt: null,
       ...(query.type ? { type: query.type } : {}),
       ...(query.status ? { status: query.status } : {}),
-      ...(region ? { region: { contains: region, mode: 'insensitive' } } : {}),
+      ...(region
+        ? {
+            region: isRegionScoped
+              ? { equals: region, mode: 'insensitive' }
+              : { contains: region, mode: 'insensitive' },
+          }
+        : {}),
       ...(query.gender ? { gender: { equals: query.gender, mode: 'insensitive' } } : {}),
       ...(query.specialization ? { specialization: { has: query.specialization } } : {}),
       ...(query.registeredYear

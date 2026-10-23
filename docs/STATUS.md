@@ -151,13 +151,13 @@
 
 ### Hujjatlar (jiddiy muammo)
 - **TZ (Texnik topshiriq) topilmadi**: /docs katalogida TZ fayllari yo'q
-- **Per-modul TZ fayllari yo'q**: AUTH, PUB, REG, TAL, MED, MK, SHA, MTS, MON, HIS, REY, INT, OKM, TOL, BIL, ADM, ENT, INFRA modullari uchun TZ fayllari topilmadi
+- **Per-modul TZ fayllari yo'q**: boshqa modullar bo'yicha TZ fayllari topilmadi; REG (`TZ-REG.docx`) va OKM (`TZ-OKM.docx`) TZ fayllari mavjud
 - **OpenAPI spec yo'q**: api_nizolarni_muqobil_hal_etish.openapi.yaml fayli topilmadi
 - **Jira CSV yo'q**: Epics va stories bo'yicha Jira export fayli topilmadi
 
 ### Bajarilmagan modullar (kod yo'q)
 - **PUB (Ochiq portal)**: src/modules/ katalogida yo'q
-- **REG (Reyestr)**: `src/modules/reg/` — public/staff registry, Excel import/export, status history, regional access and my.gov.uz sync queue
+- **REG (Reyestr)**: implemented in `src/modules/reg/` — public/staff registry, Excel import/export, status history, regional access and my.gov.uz sync queue
 - **TAL (Talabgor kabineti)**: src/modules/ katalogida yo'q
 - **SHA (Shartnomalar)**: src/modules/ katalogida yo'q
 - **MTS (Mediatsiya seanslari)**: src/modules/ katalogida yo'q
@@ -212,25 +212,19 @@ OpenAPI spec fayli topilmagani uchun:
 - **Dalil**: Hozircha yo'q, yangi yaratish kerak
 - **Test**: test/test-public-apis.ts yaratish
 
-### 2. Bosqich 1: REG (Reyestr) — Kritik
-- **Nima qilish kerak**: src/modules/registry/ modulini yaratish
-- **Endpointlar**: Mediatorlar reyestrini boshqarish (ro'yxatga olish, o'chirish, status)
-- **Dalil**: Hozircha yo'q, yangi yaratish kerak
-- **Test**: test/test-registry-apis.ts yaratish
-
-### 3. Bosqich 1: TAL (Talabgor kabineti) — Kritik
+### 2. Bosqich 1: TAL (Talabgor kabineti) — Kritik
 - **Nima qilish kerak**: src/modules/applicant/ modulini yaratish
 - **Endpointlar**: Ariza yuborish, holatni kuzatish, hujjatlar yuklash
 - **Dalil**: Hozircha yo'q, yangi yaratish kerak
 - **Test**: test/test-applicant-apis.ts yaratish
 
-### 4. Bosqich 1: Frontend — Kritik
+### 3. Bosqich 1: Frontend — Kritik
 - **Nima qilish kerak**: frontend/ katalogiga React yoki Angular ilovasini yaratish
 - **Komponentlar**: Login page, Admin panel, Mediator kabineti, Talabgor kabineti
 - **Dalil**: Hozircha faqat README.md bor, kod yo'q
 - **Test**: Frontend unit va E2E testlar
 
-### 5. Bosqich 2: SHA (Shartnomalar) — Yuqori prioritet
+### 4. Bosqich 2: SHA (Shartnomalar) — Yuqori prioritet
 - **Nima qilish kerak**: src/modules/contracts/ modulini yaratish
 - **Endpointlar**: Shartnomalar yaratish, imzolash, holatni kuzatish
 - **Dalil**: Hozircha yo'q, yangi yaratish kerak
@@ -281,7 +275,7 @@ npx ts-node test/test-ent-apis.ts
 ### Buzilgan narsalar
 - **Hujjatlar yo'q**: TZ, OpenAPI, Jira CSV topilmadi
 - **Frontend yo'q**: Faqat README.md bor
-- **Bosqich 1 modullari yo'q**: PUB, REG, TAL
+- **Bosqich 1 modullari yo'q**: PUB, TAL
 - **Testlar kam**: Faqat 4 ta test fayli
 
 ### Qo'shimcha izohlar
