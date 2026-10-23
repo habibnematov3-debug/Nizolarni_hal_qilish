@@ -17,6 +17,7 @@ import { MedModule } from './modules/med/med.module';
 import { MkModule } from './modules/mk/mk.module';
 import { MonModule } from './modules/mon/mon.module';
 import { IntModule } from './modules/int/int.module';
+import { MtsModule } from './modules/mts/mts.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -42,6 +43,7 @@ import { AppController } from './app.controller';
     MkModule,
     MonModule,
     IntModule,
+    MtsModule,
   ],
   controllers: [AppController],
 })

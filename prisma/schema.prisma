@@ -174,6 +174,46 @@ enum ObligationStatus {
   OVERDUE
 }
 
+enum MediationType {
+  ONLINE
+  MANDATORY
+}
+
+enum MediationStatus {
+  AWAITING_CONSENT
+  MEDIATOR_REQUESTED
+  MEDIATOR_ASSIGNED
+  AGREEMENT_PENDING_SIGNATURE
+  SCHEDULED
+  IN_SESSION
+  SETTLED
+  FAILED
+  CLOSED
+}
+
+enum ParticipantSide {
+  CLAIMANT
+  RESPONDENT
+}
+
+enum ConsentStatus {
+  PENDING
+  CONSENTED
+  DECLINED
+}
+
+enum MedSessionStatus {
+  SCHEDULED
+  STARTED
+  FINISHED
+  CANCELLED
+}
+
+enum MedResultStatus {
+  SETTLED
+  NOT_SETTLED
+}
+
 model Organization {
   id        String           @id @default(uuid())
   name      String
@@ -881,4 +921,71 @@ model MonitoringObligation {
   @@index([dueDate, status])
   @@index([mediatorId, status])
   @@map("monitoring_obligations")
+}
+
+model MediationCase {
+  id                 String          @id @default(uuid())
+  courtCaseNumber    String?         @map("court_case_number")
+  type               MediationType
+  status             MediationStatus  @default(AWAITING_CONSENT)
+  disputeSubject     String           @map("dispute_subject")
+  initiatedById      String           @map("initiated_by_id")
+  mediatorId         String?          @map("mediator_id")
+  randomSeed         String?          @map("random_seed")
+  selectionLog       Json?            @map("selection_log")
+  agreementText      String?          @map("agreement_text")
+  agreementFileUrl   String?          @map("agreement_file_url")
+  mediatorSignaturePkcs7 String?      @map("mediator_signature_pkcs7")
+  mediatorSignedAt   DateTime?        @map("mediator_signed_at")
+  resultStatus       MedResultStatus?
+  resultSummary      String?          @map("result_summary")
+  courtSyncStatus    String?          @map("court_sync_status")
+  courtSyncError     String?          @map("court_sync_error")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  participants       MediationParticipant[]
+  sessions           MediationSession[]
+
+  @@index([courtCaseNumber])
+  @@index([status, type])
+  @@index([mediatorId])
+  @@map("mediation_cases")
+}
+
+model MediationParticipant {
+  id             String          @id @default(uuid())
+  mediationId    String          @map("mediation_id")
+  side           ParticipantSide
+  userId         String?         @map("user_id")
+  fullName       String          @map("full_name")
+  phone          String?
+  pinfl          String?
+  consentStatus  ConsentStatus   @default(PENDING) @map("consent_status")
+  consentedAt    DateTime?       @map("consented_at")
+  signaturePkcs7 String?         @map("signature_pkcs7")
+  signedAt       DateTime?       @map("signed_at")
+  mediation      MediationCase   @relation(fields: [mediationId], references: [id], onDelete: Cascade)
+
+  @@unique([mediationId, side])
+  @@index([userId])
+  @@map("mediation_participants")
+}
+
+model MediationSession {
+  id          String            @id @default(uuid())
+  mediationId String            @map("mediation_id")
+  scheduledAt DateTime          @map("scheduled_at")
+  durationMin Int               @default(60) @map("duration_min")
+  roomId      String?           @map("room_id")
+  roomUrl     String?           @map("room_url")
+  hostUrl     String?           @map("host_url")
+  accessPin   String?           @map("access_pin")
+  recordingUrl String?          @map("recording_url")
+  status      MedSessionStatus  @default(SCHEDULED)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  mediation   MediationCase    @relation(fields: [mediationId], references: [id], onDelete: Cascade)
+
+  @@index([mediationId, scheduledAt])
+  @@map("mediation_sessions")
 }
