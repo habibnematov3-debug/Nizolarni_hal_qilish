@@ -7,6 +7,35 @@
 **API versiyasi:** `v1`  
 **Hujjatlar:** `GET /api/docs` (Swagger UI)
 
+## REG — Mediatorlar, sudyalar va arbitrlar reyestri
+
+Public endpoints return only active records with `publicProfile=true` and expose a limited profile projection:
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/public/mediators` | Search public registry by name, region, type, or specialization |
+| GET | `/public/mediators/map` | Public map points for matching entries |
+| GET | `/public/mediators/:id` | Public profile |
+
+Registry staff endpoints require a JWT and one of `ADMIN`, `MINISTRY_STAFF`, or `REGIONAL_STAFF`. Regional staff are restricted to their own region.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET, POST | `/staff/registry/mediators` | Search/list and create entries |
+| GET, PATCH, DELETE | `/staff/registry/mediators/:id` | Read, edit, or remove an entry |
+| PATCH | `/staff/registry/mediators/:id/status` | Change status (`ACTIVE`, `SUSPENDED`, `REVOKED`) and record reason/history |
+| GET | `/staff/registry/mediators/:id/status-history` | View status history |
+| GET | `/staff/registry/statistics` | Registry counts and breakdown |
+| GET | `/staff/registry/export` | Export filtered records to Excel |
+| GET | `/staff/registry/imports/template` | Download Excel import template |
+| POST | `/staff/registry/imports` | Upload an `.xlsx` file (`file`, max 10 MB) |
+| GET | `/staff/registry/imports/:id` | Read import results, duplicate and row error report |
+| POST | `/staff/registry/sync/run` | Admin-only retry of queued my.gov.uz updates |
+
+The existing `GET /external/mygov/mediators` endpoint serves the active public mediator projection. Outbound updates are queued; configure `MYGOV_API_URL` and optionally `MYGOV_API_TOKEN` to enable delivery. When no URL is configured, queued items remain available for retry after configuration.
+
+The schema change is in `prisma/migrations/202610230002_add_registry_module`.
+
 ---
 
 ## 2. Autentifikatsiya

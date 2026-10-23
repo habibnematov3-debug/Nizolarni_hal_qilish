@@ -13,7 +13,7 @@
 | ENT | 2 | aniq emas / aniq emas | 10 / aniq emas | Ha | Boshlandi |
 | INFRA | 1 | aniq emas / aniq emas | 6 / 6 | Yo'q | Bajarildi |
 | PUB | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
-| REG | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
+| REG | 1-3 | 9 / 9 | 17 / 14 | Yo'q | Bajarildi |
 | TAL | 1-3 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | SHA | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
 | MTS | 2 | 0 / aniq emas | 0 / aniq emas | Yo'q | Boshlanmadi |
@@ -157,7 +157,7 @@
 
 ### Bajarilmagan modullar (kod yo'q)
 - **PUB (Ochiq portal)**: src/modules/ katalogida yo'q
-- **REG (Reyestr)**: src/modules/ katalogida yo'q
+- **REG (Reyestr)**: `src/modules/reg/` — public/staff registry, Excel import/export, status history, regional access and my.gov.uz sync queue
 - **TAL (Talabgor kabineti)**: src/modules/ katalogida yo'q
 - **SHA (Shartnomalar)**: src/modules/ katalogida yo'q
 - **MTS (Mediatsiya seanslari)**: src/modules/ katalogida yo'q
@@ -186,7 +186,7 @@ OpenAPI spec fayli topilmagani uchun:
 
 ### 2. Bosqich 1 modullari to'liq emas
 - PUB (ochiq portal) yo'q — tashqi foydalanuvchilar kirishi mumkin emas
-- REG (reyestr) yo'q — mediatorlar reyestrini boshqarib bo'lmayapti
+- REG (reyestr) — implemented in `src/modules/reg/`; verify migration deployment and configure my.gov.uz credentials for outbound delivery
 - TAL (talabgor kabineti) yo'q — arizalar topshirib bo'lmayapti
 
 ### 3. Frontend yo'q

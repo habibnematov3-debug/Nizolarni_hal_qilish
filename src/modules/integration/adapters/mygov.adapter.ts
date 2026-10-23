@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { IntegrationLoggerService } from '../services/integration-logger.service';
 import { MyGovMediatorsQueryDto } from '../dto/mygov-mediators-query.dto';
-import { IntegrationDirection, IntegrationStatus } from '@prisma/client';
+import { IntegrationDirection, IntegrationStatus, Prisma, RegistryEntryStatus, RegistryType } from '@prisma/client';
 
 export interface IMyGovPort {
   getMediatorsRegistryForMyGov(query: MyGovMediatorsQueryDto): Promise<any>;
@@ -23,40 +23,55 @@ export class MyGovIntegrationAdapter implements IMyGovPort {
     const { page = 1, limit = 20, region, specialization, search } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {
-      registryStatus: 'MEDIATOR',
-      status: 'ACTIVE',
+    const where: Prisma.RegistryEntryWhereInput = {
+      type: RegistryType.MEDIATOR,
+      status: RegistryEntryStatus.ACTIVE,
+      publicProfile: true,
+      deletedAt: null,
     };
 
     if (search) {
       where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },
         { address: { contains: search, mode: 'insensitive' } },
+        { region: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     if (region) {
-      where.address = { contains: region, mode: 'insensitive' };
+      where.region = { contains: region, mode: 'insensitive' };
+    }
+    if (specialization) {
+      where.specialization = { has: specialization };
     }
 
-    const [total, users] = await Promise.all([
-      this.prisma.user.count({ where }),
-      this.prisma.user.findMany({
+    const [total, entries] = await Promise.all([
+      this.prisma.registryEntry.count({ where }),
+      this.prisma.registryEntry.findMany({
         where,
         skip,
         take: limit,
         select: {
           id: true,
+          registryNumber: true,
           fullName: true,
-          pinfl: true,
+          type: true,
+          photoUrl: true,
           phone: true,
-          email: true,
           address: true,
-          position: true,
-          registryStatus: true,
-          createdAt: true,
+          region: true,
+          education: true,
+          specialization: true,
+          languages: true,
+          latitude: true,
+          longitude: true,
+          status: true,
+          certificateNumber: true,
+          certificateIssuedAt: true,
+          certificateExpiresAt: true,
+          registeredAt: true,
         },
-        orderBy: { fullName: 'asc' },
+        orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
       }),
     ]);
 
@@ -66,16 +81,10 @@ export class MyGovIntegrationAdapter implements IMyGovPort {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      items: users.map((u) => ({
-        id: u.id,
-        fullName: u.fullName,
-        pinfl: u.pinfl ? `${u.pinfl.slice(0, 4)}******${u.pinfl.slice(-4)}` : null, // Masked for public Gov API
-        phone: u.phone,
-        email: u.email,
-        address: u.address,
-        status: 'ACTIVE',
-        specializations: specialization ? [specialization] : ['CIVIL', 'FAMILY', 'ECONOMIC'],
-        registrationDate: u.createdAt,
+      items: entries.map((entry) => ({
+        ...entry,
+        specializations: entry.specialization,
+        profileUrl: `/public/mediators/${entry.id}`,
       })),
     };
 
@@ -86,10 +95,43 @@ export class MyGovIntegrationAdapter implements IMyGovPort {
       status: IntegrationStatus.SUCCESS,
       endpoint: '/external/mygov/mediators',
       request: query,
-      response: { total, returnedCount: users.length },
+      response: { total, returnedCount: entries.length },
       durationMs: Date.now() - startTime,
     });
 
     return result;
+  }
+
+  async pushRegistryEntry(payload: Prisma.InputJsonValue) {
+    const endpoint = process.env.MYGOV_API_URL;
+    if (!endpoint) throw new Error('MYGOV_API_URL sozlanmagan');
+
+    return this.loggerService.executeWithResilience(
+      async () => {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(process.env.MYGOV_API_TOKEN
+              ? { authorization: `Bearer ${process.env.MYGOV_API_TOKEN}` }
+              : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+        const responseBody = await response.text();
+        if (!response.ok) {
+          throw new Error(`my.gov.uz javobi ${response.status}: ${responseBody.slice(0, 500)}`);
+        }
+        return responseBody ? JSON.parse(responseBody) : { accepted: true };
+      },
+      {
+        serviceName: 'MY_GOV_UZ',
+        endpoint,
+        direction: IntegrationDirection.OUTBOUND,
+        timeoutMs: 5000,
+        maxRetries: 2,
+      },
+      payload,
+    );
   }
 }

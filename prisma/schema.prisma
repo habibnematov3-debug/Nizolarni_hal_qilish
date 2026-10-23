@@ -153,6 +153,18 @@ enum TrainingApplicationStatus {
   CONTRACT_CREATED
 }
 
+enum RegistryType {
+  MEDIATOR
+  ARBITRATION_JUDGE
+  ARBITRATOR
+}
+
+enum RegistryEntryStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+}
+
 enum MkApplicationStatus {
   SUBMITTED
   CHECKING
@@ -326,6 +338,7 @@ model User {
   notifications          Notification[]
   trainingCertificates   TrainingCertificate[]
   trainingApplications   TrainingApplication[]
+  registryEntries        RegistryEntry[]
   quarterlyReports       QuarterlyReport[]
   createdReportSummaries ReportSummary[]   @relation("ReportSummaryCreator")
 
@@ -578,6 +591,97 @@ model TrainingContract {
 
   @@index([createdAt])
   @@map("training_contracts")
+}
+
+model RegistryEntry {
+  id                   String              @id @default(uuid())
+  userId               String?             @map("user_id")
+  user                 User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  registryNumber       String?             @unique @map("registry_number")
+  pinfl                String?
+  type                 RegistryType
+  fullName             String              @map("full_name")
+  phone                String?
+  email                String?
+  address              String?
+  region               String
+  gender               String?
+  birthDate            DateTime?           @map("birth_date") @db.Date
+  photoUrl             String?             @map("photo_url")
+  education            String?
+  specialization       String[]            @default([])
+  languages            String[]            @default([])
+  latitude             Float?
+  longitude            Float?
+  certificateNumber    String?             @map("certificate_number")
+  certificateIssuedAt  DateTime?           @map("certificate_issued_at")
+  certificateExpiresAt DateTime?           @map("certificate_expires_at")
+  status               RegistryEntryStatus @default(ACTIVE)
+  publicProfile        Boolean             @default(true) @map("public_profile")
+  registeredAt         DateTime            @default(now()) @map("registered_at")
+  createdById          String?             @map("created_by_id")
+  updatedById          String?             @map("updated_by_id")
+  deletedAt            DateTime?           @map("deleted_at")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  statusHistory        RegistryStatusHistory[]
+  myGovSyncs           RegistryMyGovSync[]
+
+  @@unique([pinfl, type])
+  @@unique([userId, type])
+  @@index([type, status, region])
+  @@index([fullName])
+  @@index([gender, birthDate])
+  @@index([createdAt])
+  @@map("registry_entries")
+}
+
+model RegistryStatusHistory {
+  id             String              @id @default(uuid())
+  registryEntryId String             @map("registry_entry_id")
+  registryEntry  RegistryEntry       @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
+  previousStatus RegistryEntryStatus? @map("previous_status")
+  status         RegistryEntryStatus
+  reason         String?
+  changedById    String?             @map("changed_by_id")
+  createdAt      DateTime            @default(now()) @map("created_at")
+
+  @@index([registryEntryId, createdAt])
+  @@map("registry_status_history")
+}
+
+model RegistryImport {
+  id          String   @id @default(uuid())
+  fileName    String   @map("file_name")
+  createdById String   @map("created_by_id")
+  totalRows   Int      @default(0) @map("total_rows")
+  imported    Int      @default(0)
+  duplicates  Int      @default(0)
+  errorCount  Int      @default(0) @map("error_count")
+  errors      Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([createdById, createdAt])
+  @@map("registry_imports")
+}
+
+model RegistryMyGovSync {
+  id             String        @id @default(uuid())
+  registryEntryId String       @map("registry_entry_id")
+  registryEntry  RegistryEntry @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
+  eventType      String        @map("event_type")
+  payload        Json
+  status         String        @default("PENDING")
+  attempts       Int           @default(0)
+  nextAttemptAt  DateTime      @default(now()) @map("next_attempt_at")
+  lastError      String?       @map("last_error")
+  syncedAt       DateTime?     @map("synced_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, nextAttemptAt])
+  @@index([registryEntryId, createdAt])
+  @@map("registry_mygov_syncs")
 }
 
 model BillingTransaction {
