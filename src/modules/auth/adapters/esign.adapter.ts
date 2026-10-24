@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 
 export interface EsignCertificateProfile {
   pinfl: string;
@@ -16,6 +16,9 @@ export class EsignAdapter {
   async verifySignature(pkcs7: string, mockPinfl?: string): Promise<EsignCertificateProfile> {
     if (!pkcs7) {
       throw new BadRequestException('E-imzo ma\'lumoti (PKCS#7) kiritilmadi');
+    }
+    if (process.env.NODE_ENV === 'production') {
+      throw new ServiceUnavailableException('E-IMZO production tekshiruvchisi va tasdiqlangan API shartnomasi ulanmagan; demo imzo bilan kirish bloklandi');
     }
 
     // In production, calls E-IMZO verification API or parses X509 certificate via openssl/pkijs

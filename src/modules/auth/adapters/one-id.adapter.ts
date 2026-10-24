@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 
 export interface OneIdCitizenProfile {
   pinfl: string;
@@ -24,6 +24,9 @@ export class OneIdAdapter {
   async getCitizenProfile(code: string, mockPinfl?: string): Promise<OneIdCitizenProfile> {
     if (!code) {
       throw new BadRequestException('ONE ID avtorizatsiya kodi mavjud emas');
+    }
+    if (process.env.NODE_ENV === 'production') {
+      throw new ServiceUnavailableException('ONE ID production integratsiyasi va vazirlik tasdiqlagan API shartnomasi ulanmagan; demo shaxsiy ma’lumoti bilan kirish bloklandi');
     }
 
     // In a production environment with real OneID, we send HTTP POST to:

@@ -21,9 +21,13 @@ npm run preview
 - Ochiq sahifa, mediatorlar/hakamlik sudyalari/arbitrlar reyestri, qidiruv va kabinetga kirish oqimi mavjud.
 - OneID, ERI va Mobil ID tanlovi demo ekranini ochadi; integratsiyalarni tegishli jamoa keyin ulaydi.
 - 10 ta foydalanuvchi roli bo‘yicha demo kabinetlar va rolga mos menyular mavjud.
-- Mediator arizasi va imtihon, mediatsiya bosqichlari, kelishuv monitoringi, mediator hisoboti, malaka oshirish, portfolio va kontent oqimlari demo holatda ishlaydi.
-- Demo yozuvlar `localStorage` da saqlanadi. Hech qanday tashqi to‘lov, SMS, identifikatsiya yoki backend API chaqirilmaydi.
-- Davlat tizimlari, haqiqiy autentifikatsiya, maxfiylik va vakolat nazoratlari integratsiya bosqichida ulanadi.
+- Fuqaro murojaati va mediator maqomiga ariza alohida, maydonlari tekshiriladigan shakllar orqali topshiriladi. Demo ma’lumotlari `localStorage`da qoladi.
+- Tasdiqlangan API tokeni `nizolar.auth.accessToken` kalitida mavjud bo‘lsa, murojaatlar, mediator arizalari va maxfiy hujjatlar backendga yuboriladi; videokonferensiya ro‘yxati ham API orqali olinadi.
+- OneID/ERI/Mobile ID haqiqiy avtorizatsiyasi ushbu UIga ulanmagan. Token bo‘lmaganda ekranda demo ekanligi ochiq ko‘rsatiladi va rasmiy ariza serverga yuborilmaydi.
+
+## API sozlamasi
+
+`frontend/.env.example` faylini `.env.local` nomiga ko‘chirib, `VITE_API_BASE_URL` qiymatini API manziliga sozlang. API tomonida shu frontend domenini `CORS_ORIGINS`ga kiriting. Production integratsiyalari va qolgan tayyorgarlik talablari `docs/PRODUCTION_READINESS.md`da yozilgan.
 
 ## Vercelga joylashtirish
 

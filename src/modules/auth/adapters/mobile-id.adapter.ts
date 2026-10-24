@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 
 export interface MobileIdProfile {
   pinfl: string;
@@ -15,6 +15,9 @@ export class MobileIdAdapter {
   async verifyCode(phone: string, code: string, mockPinfl?: string): Promise<MobileIdProfile> {
     if (!phone || !code) {
       throw new BadRequestException('Telefon raqami va tasdiqlash kodi kiritilishi shart');
+    }
+    if (process.env.NODE_ENV === 'production') {
+      throw new ServiceUnavailableException('Mobile ID production SMS tekshiruvchisi va tasdiqlangan API shartnomasi ulanmagan; demo kod bilan kirish bloklandi');
     }
 
     // In production, verifies with Mobile ID service (e.g. Uzinfocom / Mobile ID gateway)

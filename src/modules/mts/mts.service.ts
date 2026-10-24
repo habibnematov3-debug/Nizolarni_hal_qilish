@@ -247,7 +247,7 @@ export class MtsService {
     if (now > end + 30 * 60_000) throw new ConflictException('Videokonferensiya oynasi yopilgan');
     const profile = await this.prisma.user.findUnique({ where: { id: user.id }, select: { id: true, fullName: true, email: true } });
     if (!profile) throw new NotFoundException('Foydalanuvchi profili topilmadi');
-    const join = this.video.createJoinLink(session.roomId, profile, isMediator, new Date(Math.min(end + 30 * 60_000, now + 60 * 60_000)));
+    const join = this.video.createJoinLink(session.roomId, { id: profile.id, name: profile.fullName, email: profile.email }, isMediator, new Date(Math.min(end + 30 * 60_000, now + 60 * 60_000)));
     if (session.status === 'SCHEDULED') {
       await this.prisma.mediationSession.update({ where: { id: sessionId }, data: { status: 'STARTED' } });
       await this.prisma.mediationCase.update({ where: { id: mediationId }, data: { status: MediationStatus.IN_SESSION } });
