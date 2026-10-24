@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { ConsentStatus, MediationStatus, MediationType, MedResultStatus, ParticipantSide, Prisma, RegistryStatus } from '@prisma/client';
 import { randomBytes, randomInt } from 'crypto';
@@ -24,6 +24,9 @@ export class MtsService {
 
   async create(user: AuthUser, dto: CreateMediationDto) {
     if (!user.roles.includes('TALABGOR')) throw new ForbiddenException('Mediatsiya murojaatini fuqaro yoki talabgor yuborishi mumkin');
+    if (dto.privacyAccepted !== true) throw new BadRequestException('Shaxsiy ma’lumotlardan foydalanishga rozilik talab qilinadi');
+    const privacyConsentVersion = this.getPrivacyConsentVersion();
+    const privacyConsentAt = new Date();
     if (dto.type === MediationType.MANDATORY && !dto.courtCaseNumber?.trim()) {
       throw new BadRequestException('Majburiy mediatsiya uchun sud ishi raqami majburiy');
     }
@@ -60,7 +63,7 @@ export class MtsService {
       disputeSubject: dto.disputeSubject.trim(),
       initiatedById: user.id,
       participants: { create: [
-        { side: ParticipantSide.CLAIMANT, userId: user.id, fullName: claimant.fullName, phone: claimant.phone, email: claimant.email, pinfl: claimant.pinfl },
+        { side: ParticipantSide.CLAIMANT, userId: user.id, fullName: claimant.fullName, phone: claimant.phone, email: claimant.email, pinfl: claimant.pinfl, dataProcessingConsentAt: privacyConsentAt, dataProcessingConsentVersion: privacyConsentVersion },
         { side: ParticipantSide.RESPONDENT, userId: linkedRespondent?.id, fullName: respondentName, phone: respondentPhone, email: linkedRespondent?.email || dto.respondentEmail || null, pinfl: linkedRespondent?.pinfl || dto.respondentPinfl || null },
       ] },
     }, include: { participants: true } });
@@ -73,6 +76,14 @@ export class MtsService {
     if (digits.length === 9) return `+998${digits}`;
     if (digits.length === 12 && digits.startsWith('998')) return `+${digits}`;
     throw new BadRequestException('Telefon raqamini +998 XX XXX XX XX formatida kiriting');
+  }
+
+  private getPrivacyConsentVersion() {
+    const version = process.env.MTS_PRIVACY_CONSENT_VERSION?.trim();
+    if (process.env.NODE_ENV === 'production' && !version) {
+      throw new ServiceUnavailableException('Adliya tomonidan tasdiqlangan mediatsiya maxfiylik roziligi versiyasi sozlanmagan');
+    }
+    return version || 'demo-v1';
   }
 
   async list(user: AuthUser) {
@@ -101,12 +112,15 @@ export class MtsService {
   async consent(user: AuthUser, id: string, dto: ConsentDto) {
     const item = await this.getCase(id);
     if (item.status !== MediationStatus.AWAITING_CONSENT) throw new ConflictException('Rozilik faqat yangi murojaat bosqichida beriladi');
+    if (dto.status === 'CONSENTED' && dto.privacyAccepted !== true) throw new BadRequestException('Rozilikdan oldin shaxsiy ma’lumotlarni qayta ishlash shartlariga rozilik bering');
+    const consentAt = dto.status === 'CONSENTED' ? new Date() : null;
+    const privacyConsentVersion = consentAt ? this.getPrivacyConsentVersion() : null;
     const participant = item.participants.find((candidate) => candidate.side === dto.side && (candidate.userId === user.id || (user.pinfl && candidate.pinfl === user.pinfl)));
     if (!participant) throw new ForbiddenException('Siz ushbu taraf sifatida ro\'yxatdan o\'tmagansiz');
     if (participant.consentStatus !== ConsentStatus.PENDING) throw new ConflictException('Sizning rozilik javobingiz avval qayd etilgan');
     const responseCount = await this.prisma.mediationParticipant.updateMany({
       where: { id: participant.id, consentStatus: ConsentStatus.PENDING },
-      data: { consentStatus: dto.status, consentedAt: dto.status === 'CONSENTED' ? new Date() : null },
+      data: { consentStatus: dto.status, consentedAt: consentAt, dataProcessingConsentAt: consentAt, dataProcessingConsentVersion: privacyConsentVersion },
     });
     if (responseCount.count !== 1) throw new ConflictException('Rozilik javobi avval qayd etilgan');
     const updated = await this.prisma.mediationParticipant.findUnique({ where: { id: participant.id } });
