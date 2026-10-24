@@ -102,12 +102,19 @@ export class MtsService {
     const participant = item.participants.find((candidate) => candidate.side === dto.side && (candidate.userId === user.id || (user.pinfl && candidate.pinfl === user.pinfl)));
     if (!participant) throw new ForbiddenException('Siz ushbu taraf sifatida ro\'yxatdan o\'tmagansiz');
     if (participant.consentStatus !== ConsentStatus.PENDING) throw new ConflictException('Sizning rozilik javobingiz avval qayd etilgan');
-    const updated = await this.prisma.mediationParticipant.update({ where: { id: participant.id }, data: { consentStatus: dto.status, consentedAt: dto.status === 'CONSENTED' ? new Date() : null } });
+    const responseCount = await this.prisma.mediationParticipant.updateMany({
+      where: { id: participant.id, consentStatus: ConsentStatus.PENDING },
+      data: { consentStatus: dto.status, consentedAt: dto.status === 'CONSENTED' ? new Date() : null },
+    });
+    if (responseCount.count !== 1) throw new ConflictException('Rozilik javobi avval qayd etilgan');
+    const updated = await this.prisma.mediationParticipant.findUnique({ where: { id: participant.id } });
     const participants = await this.prisma.mediationParticipant.findMany({ where: { mediationId: id } });
-    if (participants.some((candidate) => candidate.consentStatus === ConsentStatus.DECLINED)) await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.CLOSED } });
+    if (participants.some((candidate) => candidate.consentStatus === ConsentStatus.DECLINED)) {
+      await this.prisma.mediationCase.updateMany({ where: { id, status: MediationStatus.AWAITING_CONSENT }, data: { status: MediationStatus.CLOSED } });
+    }
     else if (participants.every((candidate) => candidate.consentStatus === ConsentStatus.CONSENTED)) {
-      const ready = await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.MEDIATOR_REQUESTED } });
-      if (item.type === MediationType.MANDATORY) await this.assignRandomMediatorInternal(user, ready);
+      const transitioned = await this.prisma.mediationCase.updateMany({ where: { id, status: MediationStatus.AWAITING_CONSENT }, data: { status: MediationStatus.MEDIATOR_REQUESTED } });
+      if (transitioned.count === 1 && item.type === MediationType.MANDATORY) await this.assignRandomMediatorInternal(user, { ...item, status: MediationStatus.MEDIATOR_REQUESTED });
     }
     return updated;
   }
@@ -136,7 +143,10 @@ export class MtsService {
       where: { registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE', dossier: { is: { registryStatus: 'ACTIVE', region: item.region, specialization: { has: item.disputeCategory } } } },
       select: { id: true, dossier: { select: { region: true, specialization: true } } },
     });
-    if (!candidates.length) return null;
+    if (!candidates.length) {
+      await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'MANDATORY_MEDIATOR_ASSIGNMENT_PENDING', entityType: 'MEDIATION_CASE', entityId: item.id, newValues: { region: item.region, disputeCategory: item.disputeCategory, reason: 'NO_ELIGIBLE_MEDIATOR' } });
+      return null;
+    }
     const activeCases = await this.prisma.mediationCase.groupBy({
       by: ['mediatorId'],
       where: { mediatorId: { in: candidates.map((candidate) => candidate.id) }, status: { in: [MediationStatus.MEDIATOR_ASSIGNED, MediationStatus.AGREEMENT_PENDING_SIGNATURE, MediationStatus.SCHEDULED, MediationStatus.IN_SESSION] } },
