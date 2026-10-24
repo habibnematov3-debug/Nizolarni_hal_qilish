@@ -244,6 +244,7 @@ export default function App() {
       </main>
     </div>
     {mobileNav && <button aria-label="Menyuni yopish" onClick={() => setMobileNav(false)} className="fixed inset-0 z-20 bg-slate-950/40 md:hidden"/>}
+    {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} onClose={() => { setModal(''); setSelectedMediator('') }} onSubmit={submitMediation} />}
     {modal === 'ariza' && role === 'APPLICANT' && <MediatorApplicationForm onClose={() => setModal('')} onSubmit={submitMediatorApplication} />}
     {modal && modal !== 'mediatsiya' && !(modal === 'ariza' && role === 'APPLICANT') && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
     {announcementGate && <div className="sr-only" aria-live="polite">Mediator kabinetini ochish uchun e’lon bilan tanishing.</div>}

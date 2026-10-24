@@ -117,7 +117,7 @@ export class FileStorageService implements IFileStorageService {
       },
     });
 
-    this.logger.log(`Fayl yuklandi: ${file.originalname} → ${storedName} (${file.size} bytes)`);
+    this.logger.log(`Fayl yuklandi: ${record.id} (${file.size} bytes)`);
     return record as FileRecord;
   }
 
@@ -138,7 +138,7 @@ export class FileStorageService implements IFileStorageService {
     // Faylni diskdan o'qish
     try {
       const buffer = await fs.promises.readFile(record.filePath);
-      this.logger.log(`Fayl yuklandi: ${record.originalName} — Foydalanuvchi: ${userId}`);
+      this.logger.log(`Fayl olindi: ${fileId} — Foydalanuvchi: ${userId}`);
       return buffer;
     } catch {
       throw new NotFoundException('Fayl diskda topilmadi');
@@ -168,7 +168,7 @@ export class FileStorageService implements IFileStorageService {
     // DB dan o'chirish
     await (this.prisma as any).fileRecord.delete({ where: { id: fileId } });
 
-    this.logger.log(`Fayl o'chirildi: ${record.originalName} — Foydalanuvchi: ${userId}`);
+    this.logger.log(`Fayl o'chirildi: ${fileId} — Foydalanuvchi: ${userId}`);
   }
 
   /**

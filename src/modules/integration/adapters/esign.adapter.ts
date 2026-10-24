@@ -58,7 +58,7 @@ export class EsignIntegrationAdapter implements IEsignPort {
         timeoutMs: 4000,
         maxRetries: 2,
       },
-      { pkcs7: pkcs7Base64.slice(0, 50) + '...', documentHash },
+      { pkcs7Length: pkcs7Base64.length, documentHash },
     );
   }
 

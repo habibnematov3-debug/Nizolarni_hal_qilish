@@ -21,8 +21,7 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
 
   async checkStatus(pinfl: string): Promise<LegalCapacityResult> {
     const endpoint = process.env.LEGAL_CAPACITY_API_URL?.trim();
-    const pending = (notes: string): LegalCapacityResult => ({
-      pinfl,
+    const pending = (notes: string): Omit<LegalCapacityResult, 'pinfl'> => ({
       hasCriminalRecord: false,
       isLegallyIncompetent: false,
       status: 'IN_PROGRESS',
@@ -30,9 +29,9 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
       checkDate: new Date().toISOString(),
       notes,
     });
-    if (!endpoint) return pending('Vakolatli tekshiruv reyestri ulanmagan; ariza qo‘lda ko‘rib chiqish uchun yuboriladi.');
+    if (!endpoint) return { ...pending('Vakolatli tekshiruv reyestri ulanmagan; ariza qo‘lda ko‘rib chiqish uchun yuboriladi.'), pinfl };
 
-    return this.loggerService.executeWithResilience(
+    const result = await this.loggerService.executeWithResilience<Omit<LegalCapacityResult, 'pinfl'>>(
       async () => {
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -48,7 +47,6 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
           throw new Error('Huquqiy layoqat reyestrining javobi talab qilingan formatga mos emas');
         }
         return {
-          pinfl,
           hasCriminalRecord: result.hasCriminalRecord,
           isLegallyIncompetent: result.isLegallyIncompetent,
           status: result.status as LegalCapacityResult['status'],
@@ -66,5 +64,6 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
       },
       { pinflLast4: pinfl.slice(-4) },
     );
+    return { ...result, pinfl };
   }
 }
