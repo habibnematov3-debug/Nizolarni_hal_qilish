@@ -5,7 +5,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MtsService } from './mts.service';
-import { ConsentDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
+import { ConsentDto, CreateAgreementDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
 
 @ApiTags('Onlayn va majburiy mediatsiya (MTS)')
 @ApiBearerAuth('JWT-auth')
@@ -28,6 +28,9 @@ export class MtsController {
 
   @Post('mediations/:id/mediator') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediator tanlash' })
   selectMediator(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SelectMediatorDto) { return this.service.selectMediator(user, id, dto); }
+
+  @Post('mediations/:id/agreement') @Roles('MEDIATOR') @ApiOperation({ summary: 'Mediatsiya kelishuvi loyihasini tayyorlash' })
+  agreement(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CreateAgreementDto) { return this.service.createAgreement(user, id, dto); }
 
   @Post('mediations/:id/agreement/sign') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya kelishuvini imzolash' })
   sign(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SignAgreementDto) { return this.service.signAgreement(user, id, dto); }

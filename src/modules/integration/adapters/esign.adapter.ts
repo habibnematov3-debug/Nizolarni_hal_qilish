@@ -63,21 +63,30 @@ export class EsignIntegrationAdapter implements IEsignPort {
   }
 
   async signDocument(documentHash: string, pinfl: string): Promise<EsignSignResult> {
+    const endpoint = process.env.ESIGN_SIGN_URL;
     return this.loggerService.executeWithResilience(
       async () => {
-        return {
-          pkcs7: `MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADC_${Date.now()}`,
-          signatureDate: new Date().toISOString(),
-          signerPinfl: pinfl,
-        };
+        if (!endpoint) throw new Error('ESIGN_SIGN_URL sozlanmagan; haqiqiy elektron imzo provayderi ulanmagan');
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(process.env.ESIGN_API_TOKEN ? { authorization: `Bearer ${process.env.ESIGN_API_TOKEN}` } : {}),
+          },
+          body: JSON.stringify({ documentHash, pinfl }),
+        });
+        if (!response.ok) throw new Error(`E-imzo provayderi ${response.status} javobini qaytardi`);
+        const result = await response.json() as Partial<EsignSignResult>;
+        if (!result.pkcs7 || !result.signatureDate || result.signerPinfl !== pinfl) throw new Error('E-imzo provayderining javobi noto‘g‘ri yoki imzolovchi mos emas');
+        return { pkcs7: result.pkcs7, signatureDate: result.signatureDate, signerPinfl: result.signerPinfl };
       },
       {
         serviceName: 'E_SIGN',
-        endpoint: '/api/v1/pkcs7/sign',
+        endpoint: endpoint || '/api/v1/pkcs7/sign',
         timeoutMs: 5000,
         maxRetries: 1,
       },
-      { documentHash, pinfl },
+      { documentHash, pinflLast4: pinfl.slice(-4) },
     );
   }
 }
