@@ -130,19 +130,23 @@ export class MtsService {
     if (!entry?.userId) throw new NotFoundException('Faol ochiq reyestr mediatori topilmadi');
     const mediator = await this.prisma.user.findFirst({ where: { id: entry.userId, registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE' } });
     if (!mediator) throw new NotFoundException('Faol mediator kabineti topilmadi');
-    const updated = await this.prisma.mediationCase.update({ where: { id }, data: { mediatorId: mediator.id, status: MediationStatus.MEDIATOR_REQUESTED } });
+    const assigned = await this.prisma.mediationCase.updateMany({ where: { id, status: MediationStatus.MEDIATOR_REQUESTED, mediatorId: null }, data: { mediatorId: mediator.id } });
+    if (assigned.count !== 1) throw new ConflictException('Mediator allaqachon tanlangan yoki murojaat bosqichi o‘zgargan');
     await this.notifications.send({ userId: mediator.id, templateCode: 'APPLICATION_STATUS', variables: { title: 'Yangi mediatsiya murojaati', content: 'Sizga yangi mediatsiya murojaati yuborildi.' }, idempotencyKey: `mts-${id}-mediator-request`, channels: ['CABINET', 'SMS'] as any });
-    return updated;
+    return this.getCase(id);
   }
 
   private async assignRandomMediatorInternal(user: AuthUser, item: Awaited<ReturnType<MtsService['getCase']>>) {
     if (item.type !== MediationType.MANDATORY || item.status !== MediationStatus.MEDIATOR_REQUESTED || item.mediatorId) return null;
     const consentCount = await this.prisma.mediationParticipant.count({ where: { mediationId: item.id, consentStatus: ConsentStatus.CONSENTED } });
     if (consentCount !== 2) return null;
-    const candidates = await this.prisma.user.findMany({
-      where: { registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE', dossier: { is: { registryStatus: 'ACTIVE', region: item.region, specialization: { has: item.disputeCategory } } } },
+    const eligibleCandidates = await this.prisma.user.findMany({
+      where: { registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE', dossier: { is: { registryStatus: 'ACTIVE', specialization: { has: item.disputeCategory } } } },
       select: { id: true, dossier: { select: { region: true, specialization: true } } },
     });
+    const normalizeRegion = (value: string) => value.toLocaleLowerCase('uz').replace(/[‘’ʻ`']/g, '').replace(/\s+/g, '');
+    const regionKey = normalizeRegion(item.region);
+    const candidates = eligibleCandidates.filter((candidate) => candidate.dossier && normalizeRegion(candidate.dossier.region) === regionKey);
     if (!candidates.length) {
       await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'MANDATORY_MEDIATOR_ASSIGNMENT_PENDING', entityType: 'MEDIATION_CASE', entityId: item.id, newValues: { region: item.region, disputeCategory: item.disputeCategory, reason: 'NO_ELIGIBLE_MEDIATOR' } });
       return null;
@@ -219,6 +223,7 @@ export class MtsService {
     if (!item.mediatorSignaturePkcs7 || item.participants.some((participant) => !participant.signaturePkcs7)) throw new ConflictException('Kelishuv barcha taraflar va mediator tomonidan imzolanmagan');
     if (new Date(dto.scheduledAt).getTime() <= Date.now()) throw new BadRequestException('Uchrashuv vaqti kelajakda bo‘lishi kerak');
     if (item.status !== MediationStatus.SCHEDULED) throw new ConflictException('Uchrashuv faqat imzolangan mediatsiya kelishuvi uchun belgilanadi');
+    if (await this.prisma.mediationSession.count({ where: { mediationId: id, status: { in: ['SCHEDULED', 'STARTED'] } } })) throw new ConflictException('Ushbu mediatsiyada faol uchrashuv allaqachon bor');
     const details = await this.video.createMeeting(`Mediatsiya: ${item.disputeSubject}`, dto.scheduledAt, dto.durationMin || 60);
     const session = await this.prisma.mediationSession.create({ data: { mediationId: id, scheduledAt: new Date(dto.scheduledAt), durationMin: dto.durationMin || 60, roomId: details.roomId, roomUrl: details.roomUrl, hostUrl: null, accessPin: null } });
     await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.SCHEDULED } });

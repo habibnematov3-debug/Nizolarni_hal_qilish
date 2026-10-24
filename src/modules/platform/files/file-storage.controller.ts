@@ -12,6 +12,7 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,7 +27,7 @@ import { Response } from 'express';
 import { FileStorageService } from './file-storage.service';
 import { FileUploadDto, FileAccessLevel, FileRecordDto } from './dto/file-upload.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { AuthUser, CurrentUser } from '../../../common/decorators/current-user.decorator';
 
 /**
  * Fayl Saqlash Controller
@@ -69,8 +70,11 @@ export class FileStorageController {
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: FileUploadDto,
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: AuthUser,
   ): Promise<FileRecordDto> {
+    if ((dto.accessLevel ?? FileAccessLevel.PRIVATE) !== FileAccessLevel.PRIVATE && !user.roles.includes('ADMIN')) {
+      throw new ForbiddenException('Ariza hujjatlari shaxsiy (PRIVATE) holatda yuklanadi');
+    }
     const record = await this.fileStorageService.upload(
       file,
       user.id,

@@ -1,13 +1,13 @@
-import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { MediationType, ParticipantSide, MedResultStatus } from '@prisma/client';
 
 export enum DisputeCategory {
   FAMILY = 'FAMILY',
   CIVIL = 'CIVIL',
   LABOR = 'LABOR',
-  BUSINESS = 'BUSINESS',
-  CONTRACT = 'CONTRACT',
-  OTHER = 'OTHER',
+  ECONOMIC = 'ECONOMIC',
+  INTELLECTUAL = 'INTELLECTUAL',
+  BANKING = 'BANKING',
 }
 
 export class CreateMediationDto {
@@ -19,7 +19,7 @@ export class CreateMediationDto {
   @IsString() @Matches(/^\+?[0-9()\-\s]{7,30}$/) respondentPhone: string;
   @IsOptional() @Matches(/^\d{14}$/) respondentPinfl?: string;
   @IsOptional() @IsEmail() @MaxLength(254) respondentEmail?: string;
-  @IsString() @MinLength(2) @MaxLength(100) region: string;
+  @IsString() @IsIn(['Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Jizzax viloyati', 'Qashqadaryo viloyati', 'Navoiy viloyati', 'Namangan viloyati', 'Samarqand viloyati', 'Surxondaryo viloyati', 'Sirdaryo viloyati', 'Toshkent viloyati', 'Farg‘ona viloyati', 'Xorazm viloyati', 'Toshkent shahri']) region: string;
 }
 
 export class ConsentDto {

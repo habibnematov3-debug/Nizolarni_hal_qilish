@@ -61,7 +61,7 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
         direction: IntegrationDirection.INBOUND,
         status: IntegrationStatus.SUCCESS,
         endpoint: '/external/courts/claims',
-        request: dto,
+        request: { courtCaseNumber: dto.courtCaseNumber, claimantPinflLast4: dto.claimantPinfl?.slice(-4), respondentPinflLast4: dto.respondentPinfl?.slice(-4), documentProvided: Boolean(dto.documentUrl) },
         response: { claimId: claim.id, courtCaseNumber: claim.courtCaseNumber },
         durationMs: Date.now() - startTime,
       });
@@ -79,7 +79,7 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
         direction: IntegrationDirection.INBOUND,
         status: IntegrationStatus.FAILED,
         endpoint: '/external/courts/claims',
-        request: dto,
+        request: { courtCaseNumber: dto.courtCaseNumber, claimantPinflLast4: dto.claimantPinfl?.slice(-4), respondentPinflLast4: dto.respondentPinfl?.slice(-4) },
         error: err.message,
         durationMs: Date.now() - startTime,
       });

@@ -1261,7 +1261,7 @@ model MediationCase {
   courtCaseNumber    String?         @map("court_case_number")
   type               MediationType
   status             MediationStatus  @default(AWAITING_CONSENT)
-  disputeCategory    String           @default("OTHER") @map("dispute_category")
+  disputeCategory    String           @default("CIVIL") @map("dispute_category")
   region              String           @default("")
   disputeSubject     String           @map("dispute_subject")
   initiatedById      String           @map("initiated_by_id")

@@ -232,6 +232,7 @@ export class FileStorageService implements IFileStorageService {
    * Fayl turini va hajmini tekshirish (magic bytes orqali)
    */
   private async validateFile(file: Express.Multer.File): Promise<void> {
+    if (!file?.buffer?.length) throw new BadRequestException('Yuklanadigan fayl tanlanmagan yoki bo‘sh');
     const allowedMimes = Object.values(ALLOWED_TYPES).map((t) => t.mime);
 
     if (!allowedMimes.includes(file.mimetype)) {

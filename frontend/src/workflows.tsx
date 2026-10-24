@@ -9,8 +9,8 @@ const regions = [
   'Xorazm viloyati', 'Toshkent shahri',
 ]
 const categories = [
-  ['FAMILY', 'Oilaviy nizo'], ['CIVIL', 'Fuqarolik nizosi'], ['LABOR', 'Mehnat nizosi'],
-  ['BUSINESS', 'Tadbirkorlik nizosi'], ['CONTRACT', 'Shartnomaviy nizo'], ['OTHER', 'Boshqa nizo'],
+  ['FAMILY', 'Oilaviy nizo'], ['CIVIL', 'Fuqarolik va shartnomaviy nizo'], ['LABOR', 'Mehnat nizosi'],
+  ['ECONOMIC', 'Iqtisodiy va tadbirkorlik nizosi'], ['INTELLECTUAL', 'Intellektual mulk nizosi'], ['BANKING', 'Bank va moliya nizosi'],
 ]
 
 export type MediationDraft = {
@@ -81,7 +81,7 @@ export function MediationRequestForm({ initialMediator, onClose, onSubmit }: {
         </div>
         {isMandatory && <Field label="Sud ishi raqami *"><input required maxLength={100} value={draft.courtCaseNumber} onChange={(event) => update('courtCaseNumber', event.target.value)} className="field-control" placeholder="Sud hujjatidagi ish raqami"/></Field>}
         <Field label="Nizo mavzusi va batafsil mazmuni *"><textarea required minLength={10} maxLength={3000} value={draft.disputeSubject} onChange={(event) => update('disputeSubject', event.target.value)} className="field-control min-h-28 resize-y" placeholder="Nizo mazmunini, talablarni va muhim sanalarni yozing"/></Field>
-        {initialMediator && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">Tanlangan mediator: <strong>{initialMediator}</strong>. Rasmiy mediator tanlovi ikki taraf roziligidan keyin qayd etiladi.</div>}
+        {initialMediator && !getAccessToken() && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">Demo reyestrdan tanlangan mediator: <strong>{initialMediator}</strong>. Rasmiy tizimda tanlov faol reyestrdan va ikki taraf roziligidan keyin qayd etiladi.</div>}
         {error && <ErrorNotice message={error}/>}<div className="flex justify-end border-t border-slate-100 pt-4"><button type="button" onClick={continueFromDispute} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white">Taraflar ma’lumotiga o‘tish</button></div>
       </div>}
       {step === 2 && <div className="space-y-4">
@@ -212,21 +212,52 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
       const isMediator = Boolean(remote && profile?.id && remote.mediatorId === profile.id)
       const ownSigned = isMediator ? Boolean(remote?.mediatorSignaturePkcs7) : Boolean(own?.signaturePkcs7)
       const title = remote ? remote.disputeSubject : (item as { title: string }).title
-      const status = remote ? mtsLabel(remote.status) : item.status
+      const status = remote ? remote.type === 'MANDATORY' && remote.status === 'MEDIATOR_REQUESTED' && !remote.mediatorId ? 'Mos mediator tayinlanishi kutilmoqda' : mtsLabel(remote.status) : item.status
       const selectMediator = async () => act('Mediator tanlash so‘rovi yuborildi', () => apiPost(`/cabinet/mts/mediations/${remote!.id}/mediator`, { mediatorRegistryId: selected[remote!.id] }))
       return <article key={item.id} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-800">{remote?.type === 'MANDATORY' ? 'Majburiy mediatsiya' : remote ? 'Ixtiyoriy mediatsiya' : 'Demo murojaat'}</span><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800">{status}</span></div><h2 className="mt-3 text-base font-semibold">{title}</h2><p className="mt-1 text-xs text-slate-500">{item.id} · {remote?.region || item.region || 'Hudud ko‘rsatilmagan'}{remote?.courtCaseNumber ? ` · Sud ishi ${remote.courtCaseNumber}` : ''}</p><div className="mt-3 flex flex-wrap gap-2">{(remote?.participants || []).map((participant) => <span key={participant.side} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">{participant.side === 'CLAIMANT' ? 'Ariza beruvchi' : 'Javobgar'}: {participant.fullName} · {participant.consentStatus === 'PENDING' ? 'rozilik kutilmoqda' : participant.consentStatus === 'CONSENTED' ? 'rozilik berdi' : 'rad etdi'}</span>)}</div></div>
-        {remote && own?.consentStatus === 'PENDING' && remote.status === 'AWAITING_CONSENT' && <button onClick={() => act('Rozilik qayd etildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/consent`, { side: own.side, status: 'CONSENTED' }))} className="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white">Rozilik berish</button>}
+        {remote && own?.consentStatus === 'PENDING' && remote.status === 'AWAITING_CONSENT' && <div className="flex shrink-0 gap-2"><button onClick={() => act('Rozilik qayd etildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/consent`, { side: own.side, status: 'CONSENTED' }))} className="h-10 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white">Rozilik berish</button><button onClick={() => { if (window.confirm('Mediatsiyaga rozilik bermasangiz, ish yopiladi. Davom etasizmi?')) void act('Rozilik rad etildi va ish yopildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/consent`, { side: own.side, status: 'DECLINED' })) }} className="h-10 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-700">Rad etish</button></div>}
       </div>
       {remote && remote.type === 'ONLINE' && allConsented && !remote.mediatorId && ownsMediation && <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row"><select value={selected[remote.id] || ''} onChange={(event) => setSelected((current) => ({ ...current, [remote.id]: event.target.value }))} className="h-10 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">Reyestrdan mediator tanlang</option>{mediators.map((mediator) => <option value={mediator.id} key={mediator.id}>{mediator.fullName} · {mediator.region}</option>)}</select><button disabled={!selected[remote.id]} onClick={selectMediator} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white disabled:opacity-40">Mediatorni tanlash</button></div>}
       {remote && isMediator && allConsented && !remote.mediatorSignaturePkcs7 && !remote.participants.some((participant) => participant.signaturePkcs7) && <AgreementEditor initialText={remote.agreementText || ''} onSave={(text) => act('Kelishuv loyihasi saqlandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/agreement`, { text }))}/>}
       {remote?.agreementText && remote.status === 'AGREEMENT_PENDING_SIGNATURE' && ((isMediator && !remote.mediatorSignaturePkcs7) || (ownsMediation && !ownSigned)) && <SignatureBox agreement={remote.agreementText} onSign={(pkcs7) => act('Elektron imzo tekshirishga yuborildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/agreement/sign`, { pkcs7 }))}/>}
-      {remote && role === 'MEDIATOR' && remote.mediatorId === profile?.id && remote.status === 'SCHEDULED' && <ScheduleMeeting caseId={remote.id} value={schedule[remote.id] || { at: '', duration: '60' }} onChange={(value) => setSchedule((current) => ({ ...current, [remote.id]: value }))} onSchedule={() => act('Videouchrashuv belgilandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/sessions`, { scheduledAt: new Date(schedule[remote.id]?.at || '').toISOString(), durationMin: Number(schedule[remote.id]?.duration || 60) }))}/>}
+      {remote && role === 'MEDIATOR' && remote.mediatorId === profile?.id && remote.status === 'SCHEDULED' && remote.sessions.length === 0 && <ScheduleMeeting caseId={remote.id} value={schedule[remote.id] || { at: '', duration: '60' }} onChange={(value) => setSchedule((current) => ({ ...current, [remote.id]: value }))} onSchedule={() => act('Videouchrashuv belgilandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/sessions`, { scheduledAt: new Date(schedule[remote.id]?.at || '').toISOString(), durationMin: Number(schedule[remote.id]?.duration || 60) }))}/>}
       {remote?.sessions?.length ? <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">{remote.sessions.map((session) => <div key={session.id} className="flex flex-col justify-between gap-3 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold">Videokonferensiya</p><p className="mt-1 text-xs text-slate-500">{new Date(session.scheduledAt).toLocaleString('uz-UZ')} · {session.durationMin} daqiqa · {mtsLabel(session.status)}</p></div><button onClick={() => act('Uchrashuv havolasi ochildi', async () => { const tab = window.open('', '_blank'); if (tab) tab.opener = null; const result = await apiPost<{ joinUrl: string }>(`/cabinet/mts/mediations/${remote.id}/sessions/${session.id}/join`, {}); if (tab) tab.location.href = result.joinUrl; else window.location.assign(result.joinUrl) })} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 text-xs font-semibold text-white"><Video size={15}/>Uchrashuvga qo‘shilish</button></div>)}</div> : null}
       {remote && isMediator && remote.status === 'IN_SESSION' && <ResultEditor onSubmit={(resultStatus, summary, agreementText) => act('Mediatsiya natijasi saqlandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/result`, { resultStatus, summary, agreementText: agreementText || remote.agreementText || undefined }))}/>}
       </article>
     })}</div>}
   </section>
 }
+
+type MkApplication = { id: string; status: string; submittedAt: string; rejectionReason?: string | null; phone: string; autoCheckResult?: { status?: string } | null }
+export function MkApplicationWorkspace({ role, demoItems, onCreate }: { role: string; demoItems: { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string }[]; onCreate: () => void }) {
+  const [remote, setRemote] = useState<MkApplication[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const authenticated = Boolean(getAccessToken())
+  useEffect(() => {
+    if (!getAccessToken()) { setRemote(null); return }
+    let cancelled = false
+    setLoading(true); setError('')
+    apiGet<MkApplication[]>('/cabinet/mk/applications')
+      .then((items) => { if (!cancelled) setRemote(items) })
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Arizalarni yuklab bo‘lmadi.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [demoItems.length])
+
+  return <section>
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">Mediator-talabgor</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Mediator maqomiga arizalarim</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">Hujjatlar, huquqiy tekshiruv va komissiya qarori bo‘yicha ariza holatini kuzating.</p></div><button onClick={onCreate} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">+ Yangi ariza</button></div>
+    {!authenticated && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Demo arizalar faqat brauzerda saqlanadi va hujjat fayllari serverga yuklanmaydi. Rasmiy topshirish uchun OneID bilan tasdiqlangan API seansi kerak.</div>}
+    {error && <ErrorNotice message={error}/>}
+    {loading ? <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Arizalar yuklanmoqda…</div> : null}
+    {!loading && authenticated && remote?.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-10 text-center"><FileText className="mx-auto text-slate-300" size={28}/><h2 className="mt-3 text-sm font-semibold">Hozircha mediator arizasi yo‘q</h2><p className="mt-1 text-xs text-slate-500">Diplom va zarur hujjatlarni biriktirib, arizani yuboring.</p></div>}
+    {!loading && !authenticated && demoItems.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-10 text-center"><FileText className="mx-auto text-slate-300" size={28}/><h2 className="mt-3 text-sm font-semibold">Hozircha ariza yo‘q</h2><p className="mt-1 text-xs text-slate-500">Mediator maqomini olish arizasini yaratish uchun yuqoridagi tugmani bosing.</p></div>}
+    {!loading && <div className="mt-4 space-y-3">{authenticated ? (remote || []).map((application) => <article key={application.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">{application.id}</p><h2 className="mt-2 text-sm font-semibold">Mediator maqomini olish</h2><p className="mt-1 text-xs text-slate-500">Yuborilgan: {new Date(application.submittedAt).toLocaleString('uz-UZ')} · {application.phone}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{mkLabel(application.status)}</span></div>{application.autoCheckResult?.status && <p className="mt-3 text-xs text-slate-600">Davlat reyestri tekshiruvi: {application.autoCheckResult.status === 'IN_PROGRESS' ? 'tekshiruv kutilmoqda' : application.autoCheckResult.status}</p>}{application.rejectionReason && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">Rad etish sababi: {application.rejectionReason}</p>}</article>) : demoItems.map((application) => <article key={application.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">{application.id}</p><h2 className="mt-2 text-sm font-semibold">{application.title}</h2><p className="mt-1 text-xs text-slate-500">{application.createdAt} · {application.detail}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{application.status}</span></div></article>)}</div>}
+    {role !== 'APPLICANT' && <p className="mt-4 text-xs text-slate-500">Komissiya, hududiy organ va vazirlik ko‘rib chiqish amallari o‘z vakolatli kabinetlarida bajariladi.</p>}
+  </section>
+}
+
+function mkLabel(value: string) { return ({ SUBMITTED: 'Yangi yuborildi · tekshiruv kutilmoqda', CHECKING: 'Tekshiruv va ko‘rib chiqishda', ACCEPTED: 'Qabul qilindi', REJECTED: 'Rad etildi', INVITED: 'Imtihonga chaqirildi', PASSED: 'Imtihondan o‘tdi', FAILED: 'Imtihondan o‘tmadi', REGISTERED: 'Reyestrga kiritildi' } as Record<string, string>)[value] || value }
 
 function AgreementEditor({ initialText, onSave }: { initialText: string; onSave: (text: string) => void }) {
   const [text, setText] = useState(initialText)

@@ -8,7 +8,7 @@ import {
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
 import { apiPost, getAccessToken, uploadPrivateDocument } from './api'
-import { ApplicationDraft, MediatorApplicationForm, MediationDraft, MediationRequestForm, MtsWorkspace } from './workflows'
+import { ApplicationDraft, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -137,8 +137,8 @@ export default function App() {
       setCases((items) => [item, ...items])
       setToast('Murojaat serverga yuborildi; respondent roziligi kutilmoqda')
     } else {
-      const category = { FAMILY: 'Oilaviy nizo', CIVIL: 'Fuqarolik nizosi', LABOR: 'Mehnat nizosi', BUSINESS: 'Tadbirkorlik nizosi', CONTRACT: 'Shartnomaviy nizo', OTHER: 'Boshqa nizo' }[draft.disputeCategory] || 'Mediatsiya murojaati'
-      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: category, status: 'Rozilik kutilmoqda', detail: `${draft.claimantName} → ${draft.respondentName}: ${draft.disputeSubject}`, region: draft.region, createdAt: new Date().toLocaleDateString('uz-UZ'), data: { ...draft, selectedMediator } }
+      const category = { FAMILY: 'Oilaviy nizo', CIVIL: 'Fuqarolik va shartnomaviy nizo', LABOR: 'Mehnat nizosi', ECONOMIC: 'Iqtisodiy va tadbirkorlik nizosi', INTELLECTUAL: 'Intellektual mulk nizosi', BANKING: 'Bank va moliya nizosi' }[draft.disputeCategory] || 'Mediatsiya murojaati'
+      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: category, status: 'Rozilik kutilmoqda', detail: 'Demo murojaati · shaxsiy ma’lumotlar brauzer xotirasiga saqlanmadi', region: 'Demo', createdAt: new Date().toLocaleDateString('uz-UZ') }
       setCases((items) => [item, ...items])
       setToast('Demo murojaati saqlandi. Rasmiy yuborish uchun OneID orqali kirish kerak.')
     }
@@ -177,7 +177,7 @@ export default function App() {
         throw error
       }
     } else {
-      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: 'Mediator maqomini olish', status: 'Yangi yuborildi', detail: `${draft.fullName} · diplom: ${draft.diplomaFile?.name} · kurs: ${draft.courseCertificate?.name || 'maqom hujjati biriktirildi'}`, region: 'Demo hudud', createdAt: new Date().toLocaleDateString('uz-UZ'), data: { ...draft, diplomaFile: draft.diplomaFile?.name, courseCertificate: draft.courseCertificate?.name, professionProof: draft.professionProof?.name, passportFile: draft.passportFile?.name } }
+      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: 'Mediator maqomini olish', status: 'Yangi yuborildi', detail: 'Demo ariza · shaxsiy ma’lumot va fayl mazmuni saqlanmadi', region: 'Demo', createdAt: new Date().toLocaleDateString('uz-UZ') }
       setApplications((items) => [item, ...items])
       setToast('Demo ariza saqlandi. Hujjatlar rasmiy serverga yuborilmadi.')
     }
@@ -340,8 +340,9 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
   if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onPublicRegistry={onPublicRegistry}/>
   if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside onToast={onToast}/></section>
-  if (page === 'Onlayn uchrashuvlar') return <MtsWorkspace role={role} demoItems={cases} onCreate={()=>onOpenModal('mediatsiya')} onToast={onToast}/>
-  if (/mediatsiya|tashkilot nizolari|arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
+  if (role === 'APPLICANT' && /ariza|talabgor/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
+  if (page === 'Onlayn uchrashuvlar' || /mediatsiya|tashkilot nizolari/i.test(page)) return <MtsWorkspace role={role} demoItems={cases} onCreate={()=>onOpenModal('mediatsiya')} onToast={onToast}/>
+  if (/arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
   if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
   if (/hisobot|statistika tahlili/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
   if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
