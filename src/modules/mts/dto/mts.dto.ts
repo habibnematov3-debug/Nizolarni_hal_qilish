@@ -29,10 +29,9 @@ export class ConsentDto {
 
 export class SelectMediatorDto { @IsUUID() mediatorRegistryId: string; }
 
-export class SignAgreementDto {
-  @IsString() side: ParticipantSide | 'MEDIATOR';
-  @IsOptional() @IsString() pkcs7?: string;
-}
+export class CreateAgreementDto { @IsString() @MinLength(50) @MaxLength(10000) text: string; }
+
+export class SignAgreementDto { @IsString() @MinLength(100) @MaxLength(500000) pkcs7: string; }
 
 export class ScheduleSessionDto {
   @IsDateString() scheduledAt: string;

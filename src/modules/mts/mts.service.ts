@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { ConsentStatus, MediationStatus, MediationType, MedResultStatus, ParticipantSide, Prisma, RegistryStatus } from '@prisma/client';
 import { randomBytes, randomInt } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -8,7 +9,7 @@ import { EsignIntegrationAdapter } from '../integration/adapters/esign.adapter';
 import { VideoConferenceIntegrationAdapter } from '../integration/adapters/video-conference.adapter';
 import { CourtSystemIntegrationAdapter } from '../integration/adapters/court-system.adapter';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
-import { ConsentDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
+import { ConsentDto, CreateAgreementDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
 
 @Injectable()
 export class MtsService {
@@ -167,21 +168,39 @@ export class MtsService {
     return selected.id;
   }
 
+  async createAgreement(user: AuthUser, id: string, dto: CreateAgreementDto) {
+    const item = await this.getCase(id);
+    if (item.mediatorId !== user.id) throw new ForbiddenException('Kelishuv loyihasini faqat biriktirilgan mediator tayyorlaydi');
+    if (item.status !== MediationStatus.MEDIATOR_ASSIGNED && item.status !== MediationStatus.AGREEMENT_PENDING_SIGNATURE) throw new ConflictException('Kelishuv faqat mediator tayinlangandan keyin tayyorlanadi');
+    if (item.participants.length !== 2 || item.participants.some((participant) => participant.consentStatus !== ConsentStatus.CONSENTED)) throw new ConflictException('Kelishuvdan oldin ikki taraf roziligi kerak');
+    if (item.mediatorSignaturePkcs7 || item.participants.some((participant) => participant.signaturePkcs7)) throw new ConflictException('Imzolangan kelishuv matnini almashtirib bo‘lmaydi');
+    return this.prisma.mediationCase.update({ where: { id }, data: { agreementText: dto.text.trim(), agreementFileUrl: null, status: MediationStatus.AGREEMENT_PENDING_SIGNATURE } });
+  }
+
   async signAgreement(user: AuthUser, id: string, dto: SignAgreementDto) {
     const item = await this.getCase(id);
     this.assertParticipantOrMediator(user, item);
-    const pkcs7 = dto.pkcs7 || (await this.esign.signDocument(`mediation:${id}`, user.pinfl || user.id)).pkcs7;
-    if (dto.side === 'MEDIATOR') {
-      if (item.mediatorId !== user.id) throw new ForbiddenException('Faqat biriktirilgan mediator imzolashi mumkin');
-      return this.prisma.mediationCase.update({ where: { id }, data: { mediatorSignaturePkcs7: pkcs7, mediatorSignedAt: new Date() } });
+    if (item.status !== MediationStatus.AGREEMENT_PENDING_SIGNATURE || !item.agreementText) throw new ConflictException('Imzolash uchun mediator tayyorlagan kelishuv matni kerak');
+    if (!user.pinfl || !/^\d{14}$/.test(user.pinfl)) throw new ForbiddenException('Elektron imzo uchun tekshirilgan PINFL talab qilinadi');
+    const digest = createHash('sha256').update(item.agreementText, 'utf8').digest('hex');
+    const verified = await this.esign.verifyPkcs7(dto.pkcs7, digest);
+    if (!verified.valid || verified.pinfl !== user.pinfl) throw new ForbiddenException('Elektron imzo yaroqsiz yoki imzolovchining PINFLi mos emas');
+    if (item.mediatorId === user.id) {
+      if (item.mediatorSignaturePkcs7) throw new ConflictException('Mediator kelishuvni avval imzolagan');
+      const updatedCase = await this.prisma.mediationCase.update({ where: { id }, data: { mediatorSignaturePkcs7: dto.pkcs7, mediatorSignedAt: new Date() } });
+      const participants = await this.prisma.mediationParticipant.findMany({ where: { mediationId: id } });
+      if (participants.length === 2 && participants.every((candidate) => candidate.signedAt)) await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.SCHEDULED } });
+      return updatedCase;
     }
-    const participant = item.participants.find((candidate) => candidate.side === dto.side && (candidate.userId === user.id || (user.pinfl && candidate.pinfl === user.pinfl)));
-    if (!participant) throw new ForbiddenException('Siz ushbu taraf sifatida imzolay olmaysiz');
-    const updated = await this.prisma.mediationParticipant.update({ where: { id: participant.id }, data: { signaturePkcs7: pkcs7, signedAt: new Date() } });
+    const participant = item.participants.find((candidate) => candidate.userId === user.id || candidate.pinfl === user.pinfl);
+    if (!participant || participant.consentStatus !== ConsentStatus.CONSENTED) throw new ForbiddenException('Kelishuvni faqat rozilik bergan taraf imzolaydi');
+    if (participant.signaturePkcs7) throw new ConflictException('Siz kelishuvni avval imzolagansiz');
+    const signatureCount = await this.prisma.mediationParticipant.updateMany({ where: { id: participant.id, signaturePkcs7: null }, data: { signaturePkcs7: dto.pkcs7, signedAt: new Date() } });
+    if (signatureCount.count !== 1) throw new ConflictException('Imzo oldinroq qayd etilgan');
     const participants = await this.prisma.mediationParticipant.findMany({ where: { mediationId: id } });
     const caseUpdated = await this.prisma.mediationCase.findUnique({ where: { id } });
-    if (participants.every((candidate) => candidate.signedAt) && caseUpdated?.mediatorSignaturePkcs7) await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.SCHEDULED } });
-    return updated;
+    if (participants.length === 2 && participants.every((candidate) => candidate.signedAt) && caseUpdated?.mediatorSignaturePkcs7) await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.SCHEDULED } });
+    return this.prisma.mediationParticipant.findUnique({ where: { id: participant.id } });
   }
 
   async scheduleSession(user: AuthUser, id: string, dto: ScheduleSessionDto) {

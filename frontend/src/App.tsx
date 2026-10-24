@@ -8,7 +8,7 @@ import {
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
 import { apiPost, getAccessToken, uploadPrivateDocument } from './api'
-import { ApplicationDraft, MediatorApplicationForm, MediationDraft, MediationRequestForm } from './workflows'
+import { ApplicationDraft, MediatorApplicationForm, MediationDraft, MediationRequestForm, MtsWorkspace } from './workflows'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -50,10 +50,10 @@ const initialReports: PortalRecord[] = [
   { id: 'HIS-2026-Q3', title: '2026-yil III chorak hisoboti', status: 'Hududiy ko‘rib chiqishda', detail: 'Mediatsiya ishlari: 24 · Yakunlangan: 18', region: 'Toshkent shahri', createdAt: '10.10.2026' },
 ]
 const navByRole: Record<RoleKey, string[]> = {
-  CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Shartnomalar', 'Xabarnomalar'],
-  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Tashkilot nizolari', 'Mediatsiyalarim', 'Shartnomalar'],
+  CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Shartnomalar', 'Xabarnomalar'],
+  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Tashkilot nizolari', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Shartnomalar'],
   APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'Imtihon', 'Shartnomalar', 'Xabarnomalar'],
-  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Yozishmalar', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'E’lonlar'],
+  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'E’lonlar'],
   REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
   MINISTRY: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Hisobotlar tahlili', 'Statistika', 'Malaka oshirish', 'Kontent'],
   COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'],
@@ -337,6 +337,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
   if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onPublicRegistry={onPublicRegistry}/>
   if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside onToast={onToast}/></section>
+  if (page === 'Onlayn uchrashuvlar') return <MtsWorkspace role={role} demoItems={cases} onCreate={()=>onOpenModal('mediatsiya')} onToast={onToast}/>
   if (/mediatsiya|tashkilot nizolari|arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
   if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
   if (/hisobot|statistika tahlili/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>

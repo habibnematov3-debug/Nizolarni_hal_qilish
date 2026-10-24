@@ -1,5 +1,6 @@
-import { FormEvent, useMemo, useState } from 'react'
-import { AlertCircle, Check, FileText, ShieldCheck, Upload, X } from 'lucide-react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { AlertCircle, CalendarDays, Check, FileText, RefreshCw, ShieldCheck, Upload, Video, X } from 'lucide-react'
+import { apiGet, apiGetPublic, apiPost, getAccessToken } from './api'
 
 const regions = [
   'Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Jizzax viloyati',
@@ -130,6 +131,81 @@ export function MediatorApplicationForm({ onClose, onSubmit }: { onClose: () => 
     </form>
   </Dialog>
 }
+
+type MtsSession = { id: string; scheduledAt: string; durationMin: number; status: string }
+type MtsParticipant = { side: 'CLAIMANT' | 'RESPONDENT'; userId: string | null; pinfl: string | null; fullName: string; consentStatus: string; signaturePkcs7: string | null }
+type MtsCase = { id: string; type: 'ONLINE' | 'MANDATORY'; disputeCategory: string; disputeSubject: string; courtCaseNumber: string | null; region: string; status: string; mediatorId: string | null; participants: MtsParticipant[]; sessions: MtsSession[] }
+type PublicMediator = { id: string; fullName: string; region: string; specialization: string[] }
+
+export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: string; demoItems: { id: string; title: string; status: string; detail?: string; region?: string }[]; onCreate: () => void; onToast: (message: string) => void }) {
+  const [cases, setCases] = useState<MtsCase[] | null>(null)
+  const [profile, setProfile] = useState<{ id: string; pinfl?: string | null } | null>(null)
+  const [mediators, setMediators] = useState<PublicMediator[]>([])
+  const [selected, setSelected] = useState<Record<string, string>>({})
+  const [schedule, setSchedule] = useState<Record<string, { at: string; duration: string }>>({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [reload, setReload] = useState(0)
+  const isAuthenticated = Boolean(getAccessToken())
+
+  useEffect(() => {
+    if (!getAccessToken()) { setCases(null); setProfile(null); return }
+    let cancelled = false
+    setLoading(true); setError('')
+    Promise.all([apiGet<MtsCase[]>('/cabinet/mts/mediations'), apiGet<{ id: string; pinfl?: string | null }>('/cabinet/profile')])
+      .then(([rows, user]) => { if (!cancelled) { setCases(rows); setProfile(user) } })
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Mediatsiyalarni yuklab bo‘lmadi.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [reload, demoItems.length])
+
+  useEffect(() => {
+    if (!getAccessToken()) return
+    let cancelled = false
+    apiGetPublic<{ items: PublicMediator[] }>('/public/mediators?type=MEDIATOR&limit=100')
+      .then((result) => { if (!cancelled) setMediators(result.items || []) })
+      .catch(() => { if (!cancelled) setMediators([]) })
+    return () => { cancelled = true }
+  }, [])
+
+  const act = async (message: string, operation: () => Promise<unknown>) => {
+    try { await operation(); setReload((current) => current + 1); onToast(message) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Amalni bajarib bo‘lmadi.') }
+  }
+  const ownParticipant = (item: MtsCase) => item.participants.find((participant) => participant.userId === profile?.id || Boolean(profile?.pinfl && participant.pinfl === profile.pinfl))
+
+  return <section>
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">Onlayn mediatsiya</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Mediatsiyalar</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">Rozilik, mediator tanlovi, uchrashuv va videokonferensiya havolalari shu yerda boshqariladi.</p></div><div className="flex gap-2"><button onClick={() => setReload((current) => current + 1)} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm"><RefreshCw size={15}/>Yangilash</button><button onClick={onCreate} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">+ Yangi murojaat</button></div></div>
+    {error && <ErrorNotice message={error}/>}
+    {!isAuthenticated && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Demo kabinetda murojaat ma’lumotlari brauzerda saqlanadi. Rozilik qaydi, mediator tayinlash, rasmiy videokonferensiya va hujjatlar uchun OneID/ERI bilan tasdiqlangan API seansi kerak.</div>}
+    {loading && <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Mediatsiyalar yuklanmoqda…</div>}
+    {!loading && isAuthenticated && cases?.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-10 text-center"><Video className="mx-auto text-slate-300" size={28}/><h2 className="mt-3 text-sm font-semibold">Hozircha mediatsiya yo‘q</h2><p className="mt-1 text-xs text-slate-500">Yangi murojaat yuborilganda javobgar roziligi va keyingi bosqichlar shu yerda ko‘rinadi.</p></div>}
+    {!loading && !isAuthenticated && demoItems.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-10 text-center"><CalendarDays className="mx-auto text-slate-300" size={28}/><h2 className="mt-3 text-sm font-semibold">Hozircha murojaat yo‘q</h2><p className="mt-1 text-xs text-slate-500">Birinchi murojaatingizni yaratish uchun “Yangi murojaat” tugmasini bosing.</p></div>}
+    {!loading && <div className="space-y-4">{(isAuthenticated ? (cases || []) : demoItems).map((item) => {
+      const remote = isAuthenticated ? item as MtsCase : null
+      const own = remote ? ownParticipant(remote) : undefined
+      const allConsented = remote?.participants.length === 2 && remote.participants.every((participant) => participant.consentStatus === 'CONSENTED')
+      const ownsMediation = Boolean(own && (own.userId === profile?.id || (profile?.pinfl && own.pinfl === profile.pinfl)))
+      const title = remote ? remote.disputeSubject : item.title
+      const status = remote ? mtsLabel(remote.status) : item.status
+      const selectMediator = async () => act('Mediator tanlash so‘rovi yuborildi', () => apiPost(`/cabinet/mts/mediations/${remote!.id}/mediator`, { mediatorRegistryId: selected[remote!.id] }))
+      return <article key={item.id} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-semibold text-blue-800">{remote?.type === 'MANDATORY' ? 'Majburiy mediatsiya' : remote ? 'Ixtiyoriy mediatsiya' : 'Demo murojaat'}</span><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800">{status}</span></div><h2 className="mt-3 text-base font-semibold">{title}</h2><p className="mt-1 text-xs text-slate-500">{item.id} · {remote?.region || item.region || 'Hudud ko‘rsatilmagan'}{remote?.courtCaseNumber ? ` · Sud ishi ${remote.courtCaseNumber}` : ''}</p><div className="mt-3 flex flex-wrap gap-2">{(remote?.participants || []).map((participant) => <span key={participant.side} className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">{participant.side === 'CLAIMANT' ? 'Ariza beruvchi' : 'Javobgar'}: {participant.fullName} · {participant.consentStatus === 'PENDING' ? 'rozilik kutilmoqda' : participant.consentStatus === 'CONSENTED' ? 'rozilik berdi' : 'rad etdi'}</span>)}</div></div>
+        {remote && own?.consentStatus === 'PENDING' && remote.status === 'AWAITING_CONSENT' && <button onClick={() => act('Rozilik qayd etildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/consent`, { side: own.side, status: 'CONSENTED' }))} className="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white">Rozilik berish</button>}
+      </div>
+      {remote && remote.type === 'ONLINE' && allConsented && !remote.mediatorId && ownsMediation && <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row"><select value={selected[remote.id] || ''} onChange={(event) => setSelected((current) => ({ ...current, [remote.id]: event.target.value }))} className="h-10 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">Reyestrdan mediator tanlang</option>{mediators.map((mediator) => <option value={mediator.id} key={mediator.id}>{mediator.fullName} · {mediator.region}</option>)}</select><button disabled={!selected[remote.id]} onClick={selectMediator} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white disabled:opacity-40">Mediatorni tanlash</button></div>}
+      {remote && role === 'MEDIATOR' && remote.mediatorId === profile?.id && remote.status === 'SCHEDULED' && <ScheduleMeeting caseId={remote.id} value={schedule[remote.id] || { at: '', duration: '60' }} onChange={(value) => setSchedule((current) => ({ ...current, [remote.id]: value }))} onSchedule={() => act('Videouchrashuv belgilandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/sessions`, { scheduledAt: new Date(schedule[remote.id]?.at || '').toISOString(), durationMin: Number(schedule[remote.id]?.duration || 60) }))}/>}
+      {remote?.sessions?.length ? <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">{remote.sessions.map((session) => <div key={session.id} className="flex flex-col justify-between gap-3 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold">Videokonferensiya</p><p className="mt-1 text-xs text-slate-500">{new Date(session.scheduledAt).toLocaleString('uz-UZ')} · {session.durationMin} daqiqa · {mtsLabel(session.status)}</p></div><button onClick={() => act('Uchrashuv havolasi ochildi', async () => { const result = await apiPost<{ joinUrl: string }>(`/cabinet/mts/mediations/${remote.id}/sessions/${session.id}/join`, {}); window.open(result.joinUrl, '_blank', 'noopener,noreferrer') })} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 text-xs font-semibold text-white"><Video size={15}/>Uchrashuvga qo‘shilish</button></div>)}</div> : null}
+      </article>
+    })}</div>}
+  </section>
+}
+
+function ScheduleMeeting({ caseId, value, onChange, onSchedule }: { caseId: string; value: { at: string; duration: string }; onChange: (value: { at: string; duration: string }) => void; onSchedule: () => void }) {
+  const minimum = new Date(Date.now() + 5 * 60_000).toISOString().slice(0, 16)
+  return <div className="mt-4 grid gap-2 border-t border-slate-100 pt-4 sm:grid-cols-[1fr_150px_auto]"><label className="text-xs font-semibold text-slate-600">Uchrashuv vaqti<input required type="datetime-local" min={minimum} value={value.at} onChange={(event) => onChange({ ...value, at: event.target.value })} className="field-control mt-1" aria-label={`Uchrashuv vaqti ${caseId}`}/></label><label className="text-xs font-semibold text-slate-600">Davomiyligi<select value={value.duration} onChange={(event) => onChange({ ...value, duration: event.target.value })} className="field-control mt-1">{[30, 60, 90, 120, 180].map((minutes) => <option key={minutes} value={minutes}>{minutes} daqiqa</option>)}</select></label><button disabled={!value.at} onClick={onSchedule} className="mt-5 h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white disabled:opacity-40">Videouchrashuv yaratish</button></div>
+}
+
+function mtsLabel(value: string) { return ({ AWAITING_CONSENT: 'Rozilik kutilmoqda', MEDIATOR_REQUESTED: 'Mediator tanlash', MEDIATOR_ASSIGNED: 'Mediator tayinlandi', AGREEMENT_PENDING_SIGNATURE: 'Kelishuv imzolanmoqda', SCHEDULED: 'Rejalashtirildi', IN_SESSION: 'Sessiya davom etmoqda', SETTLED: 'Kelishuv monitoringi', FAILED: 'Yakunlanmadi', CLOSED: 'Yopildi', STARTED: 'Boshlangan', FINISHED: 'Yakunlangan', CANCELLED: 'Bekor qilingan' } as Record<string, string>)[value] || value }
 
 function FileField({ label, required, file, onChange }: { label: string; required?: boolean; file: File | null; onChange: (file: File | null) => void }) {
   const [message, setMessage] = useState('')
