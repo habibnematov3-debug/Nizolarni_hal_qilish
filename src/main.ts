@@ -9,13 +9,20 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function createApp(expressInstance?: express.Express) {
+  if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGINS?.trim()) {
+    throw new Error('Production API uchun CORS_ORIGINS da ruxsat etilgan frontend domenlarini belgilang');
+  }
   const app = expressInstance
     ? await NestFactory.create(AppModule, new ExpressAdapter(expressInstance))
     : await NestFactory.create(AppModule);
 
   // Enable CORS
+  const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: '*',
+    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
