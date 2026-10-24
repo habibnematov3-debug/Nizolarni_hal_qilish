@@ -4,3 +4,6 @@ ALTER TABLE "mediation_cases"
 
 ALTER TABLE "mediation_participants"
   ADD COLUMN IF NOT EXISTS "email" TEXT;
+
+ALTER TABLE "mk_applications"
+  ADD COLUMN IF NOT EXISTS "profession_proof_file_id" TEXT;

@@ -32,10 +32,11 @@ export class MkService {
     if (!profile.email || profile.email.toLowerCase() !== dto.email.toLowerCase()) {
       throw new BadRequestException('Elektron pochtani avval shaxsiy profilda yangilang va tasdiqlang');
     }
-    const requiredFileIds = [dto.diplomaFileId, dto.passportFileId, dto.courseCertificateId].filter((id): id is string => Boolean(id));
+    const requiredFileIds = [dto.diplomaFileId, dto.passportFileId, dto.courseCertificateId, dto.professionProofFileId].filter((id): id is string => Boolean(id));
     const profession = dto.profession.toUpperCase();
     const specialProfession = ['NOTARY', 'ADVOCATE'].includes(profession);
     if (!specialProfession && !dto.courseCertificateId) throw new BadRequestException('Mediatorlar maxsus o‘quv kursi sertifikati majburiy');
+    if (specialProfession && !dto.professionProofFileId) throw new BadRequestException('Notarius yoki advokat maqomini tasdiqlovchi hujjatni biriktiring');
     const ownedFiles = await this.prisma.fileRecord.findMany({
       where: { id: { in: requiredFileIds }, uploadedById: user.id, accessLevel: 'PRIVATE' },
       select: { id: true },
@@ -59,7 +60,7 @@ export class MkService {
     const application = await this.prisma.mkApplication.create({
       data: {
         applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, profession,
-        diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId,
+        diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId, professionProofFileId: dto.professionProofFileId,
         passportData: passportData as unknown as Prisma.InputJsonValue,
         status: check?.status === 'IN_PROGRESS' ? MkApplicationStatus.SUBMITTED : MkApplicationStatus.CHECKING,
         autoCheckResult: check as unknown as Prisma.InputJsonValue,
@@ -67,10 +68,6 @@ export class MkService {
       },
     });
 
-    if (check.status === 'APPROVED' && specialProfession) {
-      await this.registerApplicant(user, application.id, 'Tashqi maqom tasdiqlangani sababli imtihonsiz');
-      return this.prisma.mkApplication.findUnique({ where: { id: application.id } });
-    }
     return application;
   }
 

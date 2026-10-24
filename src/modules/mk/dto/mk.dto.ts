@@ -8,6 +8,7 @@ export class CreateMkApplicationDto {
   @IsUUID() diplomaFileId: string;
   @IsOptional() @IsUUID() passportFileId?: string;
   @IsOptional() @IsUUID() courseCertificateId?: string;
+  @IsOptional() @IsUUID() professionProofFileId?: string;
 }
 
 export class ReviewMkApplicationDto {

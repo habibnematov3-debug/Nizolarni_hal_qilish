@@ -156,6 +156,8 @@ export default function App() {
         uploadedIds.push(diploma.id)
         const course = draft.courseCertificate ? await uploadPrivateDocument(draft.courseCertificate, 'Mediator arizasi: maxsus kurs sertifikati') : undefined
         if (course) uploadedIds.push(course.id)
+        const professionProof = draft.professionProof ? await uploadPrivateDocument(draft.professionProof, 'Mediator arizasi: notarius/advokat maqomi') : undefined
+        if (professionProof) uploadedIds.push(professionProof.id)
         const passport = draft.passportFile ? await uploadPrivateDocument(draft.passportFile, 'Mediator arizasi: pasport nusxasi') : undefined
         if (passport) uploadedIds.push(passport.id)
         const created = await apiPost<{ id: string; status: string }>('/cabinet/mk/applications', {
@@ -166,6 +168,7 @@ export default function App() {
           diplomaFileId: diploma.id,
           passportFileId: passport?.id,
           courseCertificateId: course?.id,
+          professionProofFileId: professionProof?.id,
         })
         setApplications((items) => [{ id: created.id, title: 'Mediator maqomini olish', status: applicationStatusLabel(created.status), detail: 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Hududiy tekshiruv', createdAt: new Date().toLocaleDateString('uz-UZ') }, ...items])
         setToast('Mediator arizasi serverga yuborildi')
@@ -174,7 +177,7 @@ export default function App() {
         throw error
       }
     } else {
-      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: 'Mediator maqomini olish', status: 'Yangi yuborildi', detail: `${draft.fullName} · diplom: ${draft.diplomaFile?.name} · kurs: ${draft.courseCertificate?.name || 'notarius/advokat istisnosi'}`, region: 'Demo hudud', createdAt: new Date().toLocaleDateString('uz-UZ'), data: { ...draft, diplomaFile: draft.diplomaFile?.name, courseCertificate: draft.courseCertificate?.name, passportFile: draft.passportFile?.name } }
+      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: 'Mediator maqomini olish', status: 'Yangi yuborildi', detail: `${draft.fullName} · diplom: ${draft.diplomaFile?.name} · kurs: ${draft.courseCertificate?.name || 'maqom hujjati biriktirildi'}`, region: 'Demo hudud', createdAt: new Date().toLocaleDateString('uz-UZ'), data: { ...draft, diplomaFile: draft.diplomaFile?.name, courseCertificate: draft.courseCertificate?.name, professionProof: draft.professionProof?.name, passportFile: draft.passportFile?.name } }
       setApplications((items) => [item, ...items])
       setToast('Demo ariza saqlandi. Hujjatlar rasmiy serverga yuborilmadi.')
     }

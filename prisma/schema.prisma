@@ -1137,6 +1137,7 @@ model MkApplication {
   diplomaFileId      String?            @map("diploma_file_id")
   passportFileId     String?            @map("passport_file_id")
   courseCertificateId String?           @map("course_certificate_id")
+  professionProofFileId String?          @map("profession_proof_file_id")
   passportData       Json?              @map("passport_data")
   autoCheckResult    Json?              @map("auto_check_result")
   rejectionReason    String?            @map("rejection_reason")
