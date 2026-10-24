@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { MediationType, ParticipantSide, MedResultStatus } from '@prisma/client';
 
 export enum DisputeCategory {
@@ -20,11 +20,13 @@ export class CreateMediationDto {
   @IsOptional() @Matches(/^\d{14}$/) respondentPinfl?: string;
   @IsOptional() @IsEmail() @MaxLength(254) respondentEmail?: string;
   @IsString() @IsIn(['Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Jizzax viloyati', 'Qashqadaryo viloyati', 'Navoiy viloyati', 'Namangan viloyati', 'Samarqand viloyati', 'Surxondaryo viloyati', 'Sirdaryo viloyati', 'Toshkent viloyati', 'Farg‘ona viloyati', 'Xorazm viloyati', 'Toshkent shahri']) region: string;
+  @IsBoolean() privacyAccepted: boolean;
 }
 
 export class ConsentDto {
   @IsEnum(ParticipantSide) side: ParticipantSide;
   @IsEnum(['CONSENTED', 'DECLINED'] as const) status: 'CONSENTED' | 'DECLINED';
+  @IsOptional() @IsBoolean() privacyAccepted?: boolean;
 }
 
 export class SelectMediatorDto { @IsUUID() mediatorRegistryId: string; }

@@ -76,7 +76,9 @@ export class MtsService {
   }
 
   async list(user: AuthUser) {
-    return this.prisma.mediationCase.findMany({ where: { OR: [{ initiatedById: user.id }, { mediatorId: user.id }, { participants: { some: { userId: user.id } } }] }, include: { participants: true, sessions: true }, orderBy: { updatedAt: 'desc' } });
+    const participantAccess: Prisma.MediationCaseWhereInput[] = [{ participants: { some: { userId: user.id } } }];
+    if (user.pinfl) participantAccess.push({ participants: { some: { pinfl: user.pinfl } } });
+    return this.prisma.mediationCase.findMany({ where: { OR: [{ initiatedById: user.id }, { mediatorId: user.id }, ...participantAccess] }, include: { participants: true, sessions: true }, orderBy: { updatedAt: 'desc' } });
   }
 
   async get(user: AuthUser, id: string) {

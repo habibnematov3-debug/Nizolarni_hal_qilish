@@ -1299,6 +1299,8 @@ model MediationParticipant {
   pinfl          String?
   consentStatus  ConsentStatus   @default(PENDING) @map("consent_status")
   consentedAt    DateTime?       @map("consented_at")
+    dataProcessingConsentAt      DateTime? @map("data_processing_consent_at")
+    dataProcessingConsentVersion String?   @map("data_processing_consent_version")
   signaturePkcs7 String?         @map("signature_pkcs7")
   signedAt       DateTime?       @map("signed_at")
   mediation      MediationCase   @relation(fields: [mediationId], references: [id], onDelete: Cascade)

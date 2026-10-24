@@ -132,6 +132,7 @@ export default function App() {
         respondentPinfl: draft.respondentPinfl || undefined,
         respondentEmail: draft.respondentEmail || undefined,
         region: draft.region,
+        privacyAccepted: draft.privacyAccepted,
       })
       const item = { id: created.id, title: created.disputeSubject.slice(0, 80), status: mediationStatusLabel(created.status), detail: `${draft.respondentName} · rozilik kutilmoqda`, region: created.region, createdAt: new Date().toLocaleDateString('uz-UZ') }
       setCases((items) => [item, ...items])

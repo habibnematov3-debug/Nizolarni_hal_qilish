@@ -236,9 +236,15 @@ export class NotificationsService {
       results.push(updatedSms);
     }
 
+    const deliveredChannels = results
+      .filter((notification) => [NotificationStatus.DELIVERED, NotificationStatus.SENT].includes(notification.status))
+      .map((notification) => notification.channel);
+    const failedChannels = channels.filter((channel) => !deliveredChannels.includes(channel));
     return {
-      success: true,
-      deliveredChannels: channels,
+      success: failedChannels.length === 0,
+      requestedChannels: channels,
+      deliveredChannels,
+      failedChannels,
       notifications: results,
     };
   }
