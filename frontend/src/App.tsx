@@ -164,6 +164,7 @@ export default function App() {
           phone: draft.phone,
           email: draft.email,
           address: draft.address,
+          education: draft.education,
           profession: draft.profession,
           diplomaFileId: diploma.id,
           passportFileId: passport?.id,

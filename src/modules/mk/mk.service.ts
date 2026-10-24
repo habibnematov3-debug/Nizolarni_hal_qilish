@@ -59,7 +59,7 @@ export class MkService {
     };
     const application = await this.prisma.mkApplication.create({
       data: {
-        applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, profession,
+        applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, education: dto.education.trim(), profession,
         diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId, professionProofFileId: dto.professionProofFileId,
         passportData: passportData as unknown as Prisma.InputJsonValue,
         status: check?.status === 'IN_PROGRESS' ? MkApplicationStatus.SUBMITTED : MkApplicationStatus.CHECKING,

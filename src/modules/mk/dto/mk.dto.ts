@@ -4,6 +4,7 @@ export class CreateMkApplicationDto {
   @IsString() @MaxLength(30) phone: string;
   @IsEmail() @MaxLength(254) email: string;
   @IsOptional() @IsString() @MaxLength(1000) address?: string;
+  @IsString() @MaxLength(250) education: string;
   @IsIn(['MEDIATOR', 'NOTARY', 'ADVOCATE']) profession: 'MEDIATOR' | 'NOTARY' | 'ADVOCATE';
   @IsUUID() diplomaFileId: string;
   @IsOptional() @IsUUID() passportFileId?: string;

@@ -1133,6 +1133,7 @@ model MkApplication {
   phone              String
   email              String?
   address            String?
+    education          String?
   profession         String?
   diplomaFileId      String?            @map("diploma_file_id")
   passportFileId     String?            @map("passport_file_id")
