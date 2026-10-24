@@ -42,9 +42,22 @@ export function MediationRequestForm({ initialMediator, onClose, onSubmit }: {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1)
+  const authenticated = Boolean(getAccessToken())
   const isMandatory = draft.type === 'MANDATORY'
   const respondentPinflError = useMemo(() => draft.respondentPinfl && !/^\d{14}$/.test(draft.respondentPinfl) ? 'PINFL 14 ta raqamdan iborat bo‘lishi kerak.' : '', [draft.respondentPinfl])
   const update = <K extends keyof MediationDraft>(key: K, value: MediationDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
+
+  useEffect(() => {
+    if (!authenticated) return
+    let cancelled = false
+    apiGet<{ fullName?: string | null; pinfl?: string | null; phone?: string | null }>('/cabinet/profile')
+      .then((profile) => {
+        if (cancelled) return
+        setDraft((current) => ({ ...current, claimantName: profile.fullName || '', claimantPinfl: profile.pinfl || '', claimantPhone: profile.phone || '' }))
+      })
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Shaxsiy profilni yuklab bo‘lmadi.') })
+    return () => { cancelled = true }
+  }, [authenticated])
 
   const continueFromDispute = () => {
     if (draft.disputeSubject.trim().length < 10) { setError('Nizo mazmunini kamida 10 ta belgi bilan yozing.'); return }
@@ -86,7 +99,7 @@ export function MediationRequestForm({ initialMediator, onClose, onSubmit }: {
       </div>}
       {step === 2 && <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
-          <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div><p className="text-sm font-semibold">Ariza beruvchi</p><p className="mt-1 text-xs text-slate-500">Rasmiy tizimda bu ma’lumotlar OneID profilidan olinadi.</p></div><Field label="F.I.Sh. *"><input required maxLength={160} value={draft.claimantName} onChange={(event) => update('claimantName', event.target.value)} className="field-control" autoComplete="name"/></Field><Field label="PINFL *"><input required inputMode="numeric" pattern="\d{14}" maxLength={14} value={draft.claimantPinfl} onChange={(event) => update('claimantPinfl', event.target.value.replace(/\D/g, ''))} className="field-control" placeholder="14 ta raqam"/></Field><Field label="Telefon *"><input required type="tel" value={draft.claimantPhone} onChange={(event) => update('claimantPhone', event.target.value)} className="field-control" placeholder="+998 90 123 45 67" autoComplete="tel"/></Field></section>
+          <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div><p className="text-sm font-semibold">Ariza beruvchi</p><p className="mt-1 text-xs text-slate-500">{authenticated ? 'Shaxsiy ma’lumotlar tasdiqlangan OneID profilidan olindi.' : 'Rasmiy tizimda bu ma’lumotlar OneID profilidan olinadi.'}</p></div><Field label="F.I.Sh. *"><input required maxLength={160} value={draft.claimantName} onChange={(event) => update('claimantName', event.target.value)} readOnly={authenticated} className="field-control read-only:bg-slate-50" autoComplete="name"/></Field><Field label="PINFL *"><input required inputMode="numeric" pattern="\d{14}" maxLength={14} value={draft.claimantPinfl} onChange={(event) => update('claimantPinfl', event.target.value.replace(/\D/g, ''))} readOnly={authenticated} className="field-control read-only:bg-slate-50" placeholder="14 ta raqam"/></Field><Field label="Telefon *"><input required type="tel" value={draft.claimantPhone} onChange={(event) => update('claimantPhone', event.target.value)} readOnly={authenticated} className="field-control read-only:bg-slate-50" placeholder="+998 90 123 45 67" autoComplete="tel"/></Field></section>
           <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div><p className="text-sm font-semibold">Javobgar taraf</p><p className="mt-1 text-xs text-slate-500">Rozilik va xabarnoma uchun telefon raqami kerak.</p></div><Field label="F.I.Sh. yoki tashkilot nomi *"><input required maxLength={160} value={draft.respondentName} onChange={(event) => update('respondentName', event.target.value)} className="field-control"/></Field><Field label="Telefon *"><input required type="tel" value={draft.respondentPhone} onChange={(event) => update('respondentPhone', event.target.value)} className="field-control" placeholder="+998 90 123 45 67"/></Field><Field label="PINFL (jismoniy shaxs uchun)"><input inputMode="numeric" maxLength={14} value={draft.respondentPinfl} onChange={(event) => update('respondentPinfl', event.target.value.replace(/\D/g, ''))} className="field-control" placeholder="14 ta raqam" aria-invalid={Boolean(respondentPinflError)}/>{respondentPinflError && <span className="mt-1 block text-xs text-red-600">{respondentPinflError}</span>}</Field><Field label="Elektron pochta"><input type="email" maxLength={254} value={draft.respondentEmail} onChange={(event) => update('respondentEmail', event.target.value)} className="field-control" placeholder="ixtiyoriy"/></Field></section>
         </div>
         {error && <ErrorNotice message={error}/>}<div className="flex justify-between border-t border-slate-100 pt-4"><button type="button" onClick={() => { setError(''); setStep(1) }} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium">Orqaga</button><button type="button" onClick={continueFromParties} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white">Ma’lumotlarni tekshirish</button></div>
