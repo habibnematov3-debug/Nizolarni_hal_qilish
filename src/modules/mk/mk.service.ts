@@ -17,6 +17,7 @@ export class MkService {
   ) {}
 
   async createApplication(user: AuthUser, dto: CreateMkApplicationDto) {
+    if (dto.education.trim().length < 2) throw new BadRequestException('Ma’lumoti va diplom yo‘nalishini kiriting');
     const active = await this.prisma.mkApplication.findFirst({ where: { applicantId: user.id, status: { notIn: [MkApplicationStatus.REJECTED, MkApplicationStatus.FAILED] } } });
     if (active) throw new ConflictException('Sizda faol MK arizasi mavjud');
     const profile = await this.prisma.user.findUnique({

@@ -1,10 +1,10 @@
-import { IsArray, IsDateString, IsEmail, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min, Max } from 'class-validator';
+import { IsArray, IsDateString, IsEmail, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, MinLength, Min, Max } from 'class-validator';
 
 export class CreateMkApplicationDto {
   @IsString() @MaxLength(30) phone: string;
   @IsEmail() @MaxLength(254) email: string;
   @IsOptional() @IsString() @MaxLength(1000) address?: string;
-  @IsString() @MaxLength(250) education: string;
+  @IsString() @MinLength(2) @MaxLength(250) education: string;
   @IsIn(['MEDIATOR', 'NOTARY', 'ADVOCATE']) profession: 'MEDIATOR' | 'NOTARY' | 'ADVOCATE';
   @IsUUID() diplomaFileId: string;
   @IsOptional() @IsUUID() passportFileId?: string;

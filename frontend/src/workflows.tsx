@@ -183,6 +183,7 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
   const isAuthenticated = Boolean(getAccessToken())
+  const canCreate = ['CITIZEN', 'BUSINESS', 'APPLICANT'].includes(role)
 
   useEffect(() => {
     if (!getAccessToken()) { setCases(null); setProfile(null); return }
@@ -211,7 +212,7 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
   const ownParticipant = (item: MtsCase) => item.participants.find((participant) => participant.userId === profile?.id || Boolean(profile?.pinfl && participant.pinfl === profile.pinfl))
 
   return <section>
-    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">Onlayn mediatsiya</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Mediatsiyalar</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">Rozilik, mediator tanlovi, uchrashuv va videokonferensiya havolalari shu yerda boshqariladi.</p></div><div className="flex gap-2"><button onClick={() => setReload((current) => current + 1)} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm"><RefreshCw size={15}/>Yangilash</button><button onClick={onCreate} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">+ Yangi murojaat</button></div></div>
+    <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">Onlayn mediatsiya</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Mediatsiyalar</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">Rozilik, mediator tanlovi, uchrashuv va videokonferensiya havolalari shu yerda boshqariladi.</p></div><div className="flex gap-2"><button onClick={() => setReload((current) => current + 1)} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm"><RefreshCw size={15}/>Yangilash</button>{canCreate && <button onClick={onCreate} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">+ Yangi murojaat</button>}</div></div>
     {error && <ErrorNotice message={error}/>}
     {!isAuthenticated && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Demo kabinetda murojaat ma’lumotlari brauzerda saqlanadi. Rozilik qaydi, mediator tayinlash, rasmiy videokonferensiya va hujjatlar uchun OneID/ERI bilan tasdiqlangan API seansi kerak.</div>}
     {loading && <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Mediatsiyalar yuklanmoqda…</div>}
