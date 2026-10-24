@@ -7,12 +7,13 @@ import { JwtStrategy } from './jwt.strategy';
 import { OneIdAdapter } from './adapters/one-id.adapter';
 import { EsignAdapter } from './adapters/esign.adapter';
 import { MobileIdAdapter } from './adapters/mobile-id.adapter';
+import { getJwtSecret } from './jwt-secret';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'nizolarni_hal_qilish_secret_key_2026_adliya',
+      secret: getJwtSecret(),
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '1h' },
     }),
   ],

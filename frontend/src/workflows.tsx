@@ -46,8 +46,22 @@ export function MediationRequestForm({ initialMediator, onClose, onSubmit }: {
   const respondentPinflError = useMemo(() => draft.respondentPinfl && !/^\d{14}$/.test(draft.respondentPinfl) ? 'PINFL 14 ta raqamdan iborat bo‘lishi kerak.' : '', [draft.respondentPinfl])
   const update = <K extends keyof MediationDraft>(key: K, value: MediationDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
 
+  const continueFromDispute = () => {
+    if (draft.disputeSubject.trim().length < 10) { setError('Nizo mazmunini kamida 10 ta belgi bilan yozing.'); return }
+    if (!draft.region) { setError('Hududni tanlang.'); return }
+    if (isMandatory && !draft.courtCaseNumber.trim()) { setError('Majburiy mediatsiya uchun sud ishi raqamini kiriting.'); return }
+    setError(''); setStep(2)
+  }
+  const continueFromParties = () => {
+    if (!draft.claimantName.trim() || !/^\d{14}$/.test(draft.claimantPinfl) || !isUzPhone(draft.claimantPhone)) { setError('Ariza beruvchining F.I.Sh., 14 raqamli PINFL va +998 telefon raqamini tekshiring.'); return }
+    if (!draft.respondentName.trim() || !isUzPhone(draft.respondentPhone)) { setError('Javobgar F.I.Sh. va +998 telefon raqamini kiriting.'); return }
+    setError(''); setStep(3)
+  }
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (draft.disputeSubject.trim().length < 10 || !draft.region || (isMandatory && !draft.courtCaseNumber.trim())) { setError('Nizo turi, mazmuni, hudud va majburiy holatda sud ishi raqamini to‘ldiring.'); setStep(1); return }
+    if (!draft.claimantName.trim() || !/^\d{14}$/.test(draft.claimantPinfl) || !isUzPhone(draft.claimantPhone) || !draft.respondentName.trim() || !isUzPhone(draft.respondentPhone)) { setError('Ariza beruvchi va javobgar taraflarning ma’lumotlarini tekshiring.'); setStep(2); return }
     if (!draft.privacyAccepted) { setError('Shaxsiy ma’lumotlardan foydalanishga rozilikni belgilang.'); return }
     if (draft.respondentPinfl && !/^\d{14}$/.test(draft.respondentPinfl)) { setError('Javobgar PINFL raqamini tekshiring.'); return }
     setError('')
@@ -68,14 +82,14 @@ export function MediationRequestForm({ initialMediator, onClose, onSubmit }: {
         {isMandatory && <Field label="Sud ishi raqami *"><input required maxLength={100} value={draft.courtCaseNumber} onChange={(event) => update('courtCaseNumber', event.target.value)} className="field-control" placeholder="Sud hujjatidagi ish raqami"/></Field>}
         <Field label="Nizo mavzusi va batafsil mazmuni *"><textarea required minLength={10} maxLength={3000} value={draft.disputeSubject} onChange={(event) => update('disputeSubject', event.target.value)} className="field-control min-h-28 resize-y" placeholder="Nizo mazmunini, talablarni va muhim sanalarni yozing"/></Field>
         {initialMediator && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">Tanlangan mediator: <strong>{initialMediator}</strong>. Rasmiy mediator tanlovi ikki taraf roziligidan keyin qayd etiladi.</div>}
-        <div className="flex justify-end border-t border-slate-100 pt-4"><button type="button" onClick={() => setStep(2)} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white">Taraflar ma’lumotiga o‘tish</button></div>
+        {error && <ErrorNotice message={error}/>}<div className="flex justify-end border-t border-slate-100 pt-4"><button type="button" onClick={continueFromDispute} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white">Taraflar ma’lumotiga o‘tish</button></div>
       </div>}
       {step === 2 && <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div><p className="text-sm font-semibold">Ariza beruvchi</p><p className="mt-1 text-xs text-slate-500">Rasmiy tizimda bu ma’lumotlar OneID profilidan olinadi.</p></div><Field label="F.I.Sh. *"><input required maxLength={160} value={draft.claimantName} onChange={(event) => update('claimantName', event.target.value)} className="field-control" autoComplete="name"/></Field><Field label="PINFL *"><input required inputMode="numeric" pattern="\d{14}" maxLength={14} value={draft.claimantPinfl} onChange={(event) => update('claimantPinfl', event.target.value.replace(/\D/g, ''))} className="field-control" placeholder="14 ta raqam"/></Field><Field label="Telefon *"><input required type="tel" value={draft.claimantPhone} onChange={(event) => update('claimantPhone', event.target.value)} className="field-control" placeholder="+998 90 123 45 67" autoComplete="tel"/></Field></section>
           <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div><p className="text-sm font-semibold">Javobgar taraf</p><p className="mt-1 text-xs text-slate-500">Rozilik va xabarnoma uchun telefon raqami kerak.</p></div><Field label="F.I.Sh. yoki tashkilot nomi *"><input required maxLength={160} value={draft.respondentName} onChange={(event) => update('respondentName', event.target.value)} className="field-control"/></Field><Field label="Telefon *"><input required type="tel" value={draft.respondentPhone} onChange={(event) => update('respondentPhone', event.target.value)} className="field-control" placeholder="+998 90 123 45 67"/></Field><Field label="PINFL (jismoniy shaxs uchun)"><input inputMode="numeric" maxLength={14} value={draft.respondentPinfl} onChange={(event) => update('respondentPinfl', event.target.value.replace(/\D/g, ''))} className="field-control" placeholder="14 ta raqam" aria-invalid={Boolean(respondentPinflError)}/>{respondentPinflError && <span className="mt-1 block text-xs text-red-600">{respondentPinflError}</span>}</Field><Field label="Elektron pochta"><input type="email" maxLength={254} value={draft.respondentEmail} onChange={(event) => update('respondentEmail', event.target.value)} className="field-control" placeholder="ixtiyoriy"/></Field></section>
         </div>
-        <div className="flex justify-between border-t border-slate-100 pt-4"><button type="button" onClick={() => setStep(1)} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium">Orqaga</button><button type="button" onClick={() => setStep(3)} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white">Ma’lumotlarni tekshirish</button></div>
+        {error && <ErrorNotice message={error}/>}<div className="flex justify-between border-t border-slate-100 pt-4"><button type="button" onClick={() => { setError(''); setStep(1) }} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium">Orqaga</button><button type="button" onClick={continueFromParties} className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white">Ma’lumotlarni tekshirish</button></div>
       </div>}
       {step === 3 && <div className="space-y-4">
         <div className="rounded-xl border border-slate-200 p-4"><h3 className="text-sm font-semibold">Yuborishdan oldin tekshiring</h3><dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2"><Summary label="Mediatsiya turi" value={isMandatory ? 'Majburiy' : 'Ixtiyoriy'}/><Summary label="Nizo turi" value={categories.find(([id]) => id === draft.disputeCategory)?.[1] || draft.disputeCategory}/><Summary label="Hudud" value={draft.region}/><Summary label="Sud ishi raqami" value={draft.courtCaseNumber || 'Ko‘rsatilmagan'}/><Summary label="Ariza beruvchi" value={`${draft.claimantName} · ${draft.claimantPhone}`}/><Summary label="Javobgar" value={`${draft.respondentName} · ${draft.respondentPhone}`}/><Summary label="Nizo mazmuni" value={draft.disputeSubject}/></dl></div>
@@ -111,6 +125,12 @@ export function MediatorApplicationForm({ onClose, onSubmit }: { onClose: () => 
   const [busy, setBusy] = useState(false)
   const courseRequired = draft.profession === 'MEDIATOR'
   const update = <K extends keyof ApplicationDraft>(key: K, value: ApplicationDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
+  useEffect(() => {
+    if (!getAccessToken()) return
+    apiGet<{ fullName: string; pinfl?: string | null; passportSeriesNumber?: string | null; passportGivenDate?: string | null; passportExpireDate?: string | null; phone?: string | null; email?: string | null; address?: string | null }>('/cabinet/profile')
+      .then((profile) => setDraft((current) => ({ ...current, fullName: profile.fullName || '', pinfl: profile.pinfl || '', passportNumber: profile.passportSeriesNumber || '', passportGivenDate: profile.passportGivenDate || '', passportExpireDate: profile.passportExpireDate || '', phone: profile.phone || '', email: profile.email || '', address: profile.address || '' })))
+      .catch((cause) => setError(cause instanceof Error ? cause.message : 'Shaxsiy profilni yuklab bo‘lmadi.'))
+  }, [])
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!/^\d{14}$/.test(draft.pinfl)) { setError('PINFL 14 ta raqam bo‘lishi kerak.'); return }
@@ -134,7 +154,7 @@ export function MediatorApplicationForm({ onClose, onSubmit }: { onClose: () => 
 
 type MtsSession = { id: string; scheduledAt: string; durationMin: number; status: string }
 type MtsParticipant = { side: 'CLAIMANT' | 'RESPONDENT'; userId: string | null; pinfl: string | null; fullName: string; consentStatus: string; signaturePkcs7: string | null }
-type MtsCase = { id: string; type: 'ONLINE' | 'MANDATORY'; disputeCategory: string; disputeSubject: string; courtCaseNumber: string | null; region: string; status: string; mediatorId: string | null; participants: MtsParticipant[]; sessions: MtsSession[] }
+type MtsCase = { id: string; type: 'ONLINE' | 'MANDATORY'; disputeCategory: string; disputeSubject: string; courtCaseNumber: string | null; region: string; status: string; mediatorId: string | null; agreementText: string | null; mediatorSignaturePkcs7: string | null; participants: MtsParticipant[]; sessions: MtsSession[] }
 type PublicMediator = { id: string; fullName: string; region: string; specialization: string[] }
 
 export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: string; demoItems: { id: string; title: string; status: string; detail?: string; region?: string }[]; onCreate: () => void; onToast: (message: string) => void }) {
@@ -186,6 +206,8 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
       const own = remote ? ownParticipant(remote) : undefined
       const allConsented = remote?.participants.length === 2 && remote.participants.every((participant) => participant.consentStatus === 'CONSENTED')
       const ownsMediation = Boolean(own && (own.userId === profile?.id || (profile?.pinfl && own.pinfl === profile.pinfl)))
+      const isMediator = Boolean(remote && profile?.id && remote.mediatorId === profile.id)
+      const ownSigned = isMediator ? Boolean(remote?.mediatorSignaturePkcs7) : Boolean(own?.signaturePkcs7)
       const title = remote ? remote.disputeSubject : item.title
       const status = remote ? mtsLabel(remote.status) : item.status
       const selectMediator = async () => act('Mediator tanlash so‘rovi yuborildi', () => apiPost(`/cabinet/mts/mediations/${remote!.id}/mediator`, { mediatorRegistryId: selected[remote!.id] }))
@@ -193,11 +215,31 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
         {remote && own?.consentStatus === 'PENDING' && remote.status === 'AWAITING_CONSENT' && <button onClick={() => act('Rozilik qayd etildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/consent`, { side: own.side, status: 'CONSENTED' }))} className="h-10 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white">Rozilik berish</button>}
       </div>
       {remote && remote.type === 'ONLINE' && allConsented && !remote.mediatorId && ownsMediation && <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row"><select value={selected[remote.id] || ''} onChange={(event) => setSelected((current) => ({ ...current, [remote.id]: event.target.value }))} className="h-10 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">Reyestrdan mediator tanlang</option>{mediators.map((mediator) => <option value={mediator.id} key={mediator.id}>{mediator.fullName} · {mediator.region}</option>)}</select><button disabled={!selected[remote.id]} onClick={selectMediator} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white disabled:opacity-40">Mediatorni tanlash</button></div>}
+      {remote && isMediator && allConsented && !remote.mediatorSignaturePkcs7 && !remote.participants.some((participant) => participant.signaturePkcs7) && <AgreementEditor initialText={remote.agreementText || ''} onSave={(text) => act('Kelishuv loyihasi saqlandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/agreement`, { text }))}/>}
+      {remote?.agreementText && remote.status === 'AGREEMENT_PENDING_SIGNATURE' && ((isMediator && !remote.mediatorSignaturePkcs7) || (ownsMediation && !ownSigned)) && <SignatureBox agreement={remote.agreementText} onSign={(pkcs7) => act('Elektron imzo tekshirishga yuborildi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/agreement/sign`, { pkcs7 }))}/>}
       {remote && role === 'MEDIATOR' && remote.mediatorId === profile?.id && remote.status === 'SCHEDULED' && <ScheduleMeeting caseId={remote.id} value={schedule[remote.id] || { at: '', duration: '60' }} onChange={(value) => setSchedule((current) => ({ ...current, [remote.id]: value }))} onSchedule={() => act('Videouchrashuv belgilandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/sessions`, { scheduledAt: new Date(schedule[remote.id]?.at || '').toISOString(), durationMin: Number(schedule[remote.id]?.duration || 60) }))}/>}
-      {remote?.sessions?.length ? <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">{remote.sessions.map((session) => <div key={session.id} className="flex flex-col justify-between gap-3 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold">Videokonferensiya</p><p className="mt-1 text-xs text-slate-500">{new Date(session.scheduledAt).toLocaleString('uz-UZ')} · {session.durationMin} daqiqa · {mtsLabel(session.status)}</p></div><button onClick={() => act('Uchrashuv havolasi ochildi', async () => { const result = await apiPost<{ joinUrl: string }>(`/cabinet/mts/mediations/${remote.id}/sessions/${session.id}/join`, {}); window.open(result.joinUrl, '_blank', 'noopener,noreferrer') })} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 text-xs font-semibold text-white"><Video size={15}/>Uchrashuvga qo‘shilish</button></div>)}</div> : null}
+      {remote?.sessions?.length ? <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">{remote.sessions.map((session) => <div key={session.id} className="flex flex-col justify-between gap-3 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold">Videokonferensiya</p><p className="mt-1 text-xs text-slate-500">{new Date(session.scheduledAt).toLocaleString('uz-UZ')} · {session.durationMin} daqiqa · {mtsLabel(session.status)}</p></div><button onClick={() => act('Uchrashuv havolasi ochildi', async () => { const tab = window.open('', '_blank'); if (tab) tab.opener = null; const result = await apiPost<{ joinUrl: string }>(`/cabinet/mts/mediations/${remote.id}/sessions/${session.id}/join`, {}); if (tab) tab.location.href = result.joinUrl; else window.location.assign(result.joinUrl) })} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 text-xs font-semibold text-white"><Video size={15}/>Uchrashuvga qo‘shilish</button></div>)}</div> : null}
+      {remote && isMediator && remote.status === 'IN_SESSION' && <ResultEditor onSubmit={(resultStatus, summary, agreementText) => act('Mediatsiya natijasi saqlandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/result`, { resultStatus, summary, agreementText: agreementText || remote.agreementText || undefined }))}/>}
       </article>
     })}</div>}
   </section>
+}
+
+function AgreementEditor({ initialText, onSave }: { initialText: string; onSave: (text: string) => void }) {
+  const [text, setText] = useState(initialText)
+  return <div className="mt-4 border-t border-slate-100 pt-4"><label className="block text-xs font-semibold text-slate-700">Kelishuv loyihasi *<textarea minLength={50} maxLength={10000} value={text} onChange={(event) => setText(event.target.value)} className="field-control mt-1 min-h-32 resize-y" placeholder="Taraflar kelishgan shartlar, majburiyatlar va bajarish muddatlarini kiriting"/></label><p className="mt-2 text-xs text-slate-500">Matn saqlangach, imzolovchilar uchun uning SHA-256 xeshi bo‘yicha ERI tekshiruvi qilinadi.</p><button disabled={text.trim().length < 50} onClick={() => onSave(text)} className="mt-3 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">Kelishuv loyihasini saqlash</button></div>
+}
+
+function SignatureBox({ agreement, onSign }: { agreement: string; onSign: (pkcs7: string) => void }) {
+  const [pkcs7, setPkcs7] = useState('')
+  return <div className="mt-4 border-t border-slate-100 pt-4"><details className="rounded-lg bg-slate-50 p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-700">Kelishuv matnini ko‘rish</summary><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{agreement}</p></details><label className="mt-3 block text-xs font-semibold text-slate-700">ERI PKCS#7 imzo qiymati<textarea value={pkcs7} onChange={(event) => setPkcs7(event.target.value)} maxLength={500000} className="field-control mt-1 min-h-24 font-mono text-xs" placeholder="E-IMZO orqali aynan ushbu kelishuv xeshiga olingan PKCS#7 qiymatini kiriting"/></label><button disabled={pkcs7.trim().length < 100} onClick={() => onSign(pkcs7.trim())} className="mt-3 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">Imzoni tekshirishga yuborish</button></div>
+}
+
+function ResultEditor({ onSubmit }: { onSubmit: (status: 'SETTLED' | 'NOT_SETTLED', summary: string, agreementText: string) => void }) {
+  const [status, setStatus] = useState<'SETTLED' | 'NOT_SETTLED'>('SETTLED')
+  const [summary, setSummary] = useState('')
+  const [agreement, setAgreement] = useState('')
+  return <div className="mt-4 border-t border-slate-100 pt-4"><h3 className="text-sm font-semibold">Sessiya natijasini qayd etish</h3><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-600">Natija<select value={status} onChange={(event) => setStatus(event.target.value as 'SETTLED' | 'NOT_SETTLED')} className="field-control mt-1"><option value="SETTLED">Kelishuvga erishildi</option><option value="NOT_SETTLED">Kelishuvga erishilmadi</option></select></label><label className="text-xs font-semibold text-slate-600">Qisqa xulosa<input required maxLength={10000} value={summary} onChange={(event) => setSummary(event.target.value)} className="field-control mt-1"/></label></div>{status === 'SETTLED' && <label className="mt-3 block text-xs font-semibold text-slate-600">Bajarish shartlari yoki qo‘shimcha kelishuv<textarea value={agreement} onChange={(event) => setAgreement(event.target.value)} className="field-control mt-1 min-h-20" placeholder="Oldindan imzolangan kelishuv ishlatiladi; o‘zgargan shartlar bo‘lsa kiriting"/></label>}<button disabled={summary.trim().length < 5} onClick={() => onSubmit(status, summary, agreement)} className="mt-3 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">Natijani saqlash</button></div>
 }
 
 function ScheduleMeeting({ caseId, value, onChange, onSchedule }: { caseId: string; value: { at: string; duration: string }; onChange: (value: { at: string; duration: string }) => void; onSchedule: () => void }) {
@@ -206,6 +248,7 @@ function ScheduleMeeting({ caseId, value, onChange, onSchedule }: { caseId: stri
 }
 
 function mtsLabel(value: string) { return ({ AWAITING_CONSENT: 'Rozilik kutilmoqda', MEDIATOR_REQUESTED: 'Mediator tanlash', MEDIATOR_ASSIGNED: 'Mediator tayinlandi', AGREEMENT_PENDING_SIGNATURE: 'Kelishuv imzolanmoqda', SCHEDULED: 'Rejalashtirildi', IN_SESSION: 'Sessiya davom etmoqda', SETTLED: 'Kelishuv monitoringi', FAILED: 'Yakunlanmadi', CLOSED: 'Yopildi', STARTED: 'Boshlangan', FINISHED: 'Yakunlangan', CANCELLED: 'Bekor qilingan' } as Record<string, string>)[value] || value }
+function isUzPhone(value: string) { const digits = value.replace(/\D/g, ''); return digits.length === 9 || (digits.length === 12 && digits.startsWith('998')) }
 
 function FileField({ label, required, file, onChange }: { label: string; required?: boolean; file: File | null; onChange: (file: File | null) => void }) {
   const [message, setMessage] = useState('')

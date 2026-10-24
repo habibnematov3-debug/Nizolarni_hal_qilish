@@ -258,8 +258,10 @@ export class MtsService {
   async recordResult(user: AuthUser, id: string, dto: RecordResultDto) {
     const item = await this.getCase(id);
     if (item.mediatorId !== user.id) throw new ForbiddenException('Faqat biriktirilgan mediator natija qayd etadi');
-    if (dto.resultStatus === MedResultStatus.SETTLED && !dto.agreementText && !dto.agreementFileUrl) throw new BadRequestException('Kelishuv natijasi uchun kelishuv matni yoki hujjati kerak');
-    const updated = await this.prisma.mediationCase.update({ where: { id }, data: { resultStatus: dto.resultStatus, resultSummary: dto.summary, agreementText: dto.agreementText, agreementFileUrl: dto.agreementFileUrl, status: dto.resultStatus === MedResultStatus.SETTLED ? MediationStatus.SETTLED : MediationStatus.FAILED } });
+    if (item.status !== MediationStatus.IN_SESSION) throw new ConflictException('Natija faqat boshlangan mediatsiya sessiyasidan keyin qayd etiladi');
+    if (dto.resultStatus === MedResultStatus.SETTLED && !dto.agreementText && !item.agreementText && !dto.agreementFileUrl) throw new BadRequestException('Kelishuv natijasi uchun imzolangan kelishuv matni yoki hujjati kerak');
+    const updated = await this.prisma.mediationCase.update({ where: { id }, data: { resultStatus: dto.resultStatus, resultSummary: dto.summary.trim(), agreementText: dto.agreementText?.trim() || item.agreementText, agreementFileUrl: dto.agreementFileUrl || item.agreementFileUrl, status: dto.resultStatus === MedResultStatus.SETTLED ? MediationStatus.SETTLED : MediationStatus.FAILED } });
+    await this.prisma.mediationSession.updateMany({ where: { mediationId: id, status: 'STARTED' }, data: { status: 'FINISHED' } });
     if (item.courtCaseNumber) {
       try {
         const sync = await this.court.sendMediationResultToCourt(item.courtCaseNumber, dto.resultStatus, dto.summary);
@@ -268,7 +270,7 @@ export class MtsService {
         await this.prisma.mediationCase.update({ where: { id }, data: { courtSyncStatus: 'FAILED', courtSyncError: error instanceof Error ? error.message : String(error) } });
       }
     }
-    if (dto.resultStatus === MedResultStatus.SETTLED) await this.notifyParticipants(id, 'Mediatsiya kelishuvi rasmiylashtirildi va monitoringga yuborildi.', `mts-${id}-settled`);
+    if (dto.resultStatus === MedResultStatus.SETTLED) await this.notifyParticipants(id, 'Mediatsiya kelishuvi rasmiylashtirildi.', `mts-${id}-settled`);
     return updated;
   }
 

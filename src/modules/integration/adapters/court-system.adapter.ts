@@ -92,22 +92,30 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
    * Outgoing notify court system of mediation result
    */
   async sendMediationResultToCourt(caseNumber: string, status: string, summary: string) {
+    const endpoint = process.env.COURT_RESULT_API_URL?.trim();
     return this.loggerService.executeWithResilience(
       async () => {
-        return {
-          acknowledged: true,
-          caseNumber,
-          courtReceiptId: `ACK_COURT_${Date.now()}`,
-          receivedAt: new Date().toISOString(),
-        };
+        if (!endpoint) throw new Error('COURT_RESULT_API_URL sozlanmagan; sud tizimiga yuborish amalga oshmadi');
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(process.env.COURT_API_TOKEN ? { authorization: `Bearer ${process.env.COURT_API_TOKEN}` } : {}),
+          },
+          body: JSON.stringify({ caseNumber, status, summary }),
+        });
+        if (!response.ok) throw new Error(`Sud axborot tizimi ${response.status} javobini qaytardi`);
+        const result = await response.json() as { acknowledged?: boolean; courtReceiptId?: string; receivedAt?: string };
+        if (result.acknowledged !== true || !result.courtReceiptId) throw new Error('Sud tizimi mediatsiya natijasini tasdiqlamadi');
+        return { acknowledged: true, caseNumber, courtReceiptId: result.courtReceiptId, receivedAt: result.receivedAt || new Date().toISOString() };
       },
       {
         serviceName: 'COURT_SYSTEM',
-        endpoint: '/api/v1/mediation/result-notification',
+        endpoint: endpoint || '/api/v1/mediation/result-notification',
         timeoutMs: 4000,
         maxRetries: 2,
       },
-      { caseNumber, status, summary },
+      { caseNumber, status, summaryLength: summary.length },
     );
   }
 }
