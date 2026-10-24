@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConsentStatus, MediationStatus, MediationType, MedResultStatus, ParticipantSide, Prisma, RegistryStatus } from '@prisma/client';
+import { randomBytes, randomInt } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/services/notifications.service';
@@ -21,15 +22,56 @@ export class MtsService {
   ) {}
 
   async create(user: AuthUser, dto: CreateMediationDto) {
+    if (!user.roles.includes('TALABGOR')) throw new ForbiddenException('Mediatsiya murojaatini fuqaro yoki talabgor yuborishi mumkin');
+    if (dto.type === MediationType.MANDATORY && !dto.courtCaseNumber?.trim()) {
+      throw new BadRequestException('Majburiy mediatsiya uchun sud ishi raqami majburiy');
+    }
+    const claimant = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, fullName: true, phone: true, email: true, pinfl: true },
+    });
+    if (!claimant?.phone || !claimant.pinfl || !/^\d{14}$/.test(claimant.pinfl)) {
+      throw new BadRequestException('Murojaat yuborish uchun OneID profilidagi PINFL va telefon raqamini to‘ldiring');
+    }
+    const normalizedPhone = this.normalizePhone(dto.respondentPhone);
+    const respondentByPinfl = dto.respondentPinfl
+      ? await this.prisma.user.findUnique({ where: { pinfl: dto.respondentPinfl }, select: { id: true, fullName: true, phone: true, email: true, pinfl: true } })
+      : null;
+    const respondentByPhone = await this.prisma.user.findUnique({ where: { phone: normalizedPhone }, select: { id: true, fullName: true, phone: true, email: true, pinfl: true } });
+    if (respondentByPinfl && respondentByPhone && respondentByPinfl.id !== respondentByPhone.id) {
+      throw new BadRequestException('Javobgar PINFL va telefon raqami turli foydalanuvchilarga tegishli');
+    }
+    const linkedRespondent = respondentByPinfl || respondentByPhone;
+    if (linkedRespondent?.id === claimant.id) throw new BadRequestException('Ariza beruvchi o‘ziga qarshi murojaat yubora olmaydi');
+    if (linkedRespondent && dto.respondentPinfl && linkedRespondent.pinfl !== dto.respondentPinfl) {
+      throw new BadRequestException('Javobgar PINFL foydalanuvchi profiliga mos kelmadi');
+    }
+    if (linkedRespondent?.phone && this.normalizePhone(linkedRespondent.phone) !== normalizedPhone) {
+      throw new BadRequestException('Javobgar telefon raqami profil ma’lumotiga mos kelmadi');
+    }
+    const respondentName = linkedRespondent?.fullName || dto.respondentName.trim();
+    const respondentPhone = linkedRespondent?.phone || normalizedPhone;
     const item = await this.prisma.mediationCase.create({ data: {
-      courtCaseNumber: dto.courtCaseNumber, type: dto.type, disputeSubject: dto.disputeSubject, initiatedById: user.id,
+      courtCaseNumber: dto.courtCaseNumber?.trim() || null,
+      type: dto.type,
+      disputeCategory: dto.disputeCategory,
+      region: dto.region.trim(),
+      disputeSubject: dto.disputeSubject.trim(),
+      initiatedById: user.id,
       participants: { create: [
-        { side: ParticipantSide.CLAIMANT, userId: user.id, fullName: dto.claimantName, phone: dto.claimantPhone, pinfl: dto.claimantPinfl },
-        { side: ParticipantSide.RESPONDENT, userId: dto.respondentUserId, fullName: dto.respondentName, phone: dto.respondentPhone, pinfl: dto.respondentPinfl },
+        { side: ParticipantSide.CLAIMANT, userId: user.id, fullName: claimant.fullName, phone: claimant.phone, email: claimant.email, pinfl: claimant.pinfl },
+        { side: ParticipantSide.RESPONDENT, userId: linkedRespondent?.id, fullName: respondentName, phone: respondentPhone, email: linkedRespondent?.email || dto.respondentEmail || null, pinfl: linkedRespondent?.pinfl || dto.respondentPinfl || null },
       ] },
     }, include: { participants: true } });
     await this.notifyParticipants(item.id, 'Mediatsiya jarayoni boshlandi. Roziligingizni bildiring.', `mts-${item.id}-started`);
     return item;
+  }
+
+  private normalizePhone(value: string) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 9) return `+998${digits}`;
+    if (digits.length === 12 && digits.startsWith('998')) return `+${digits}`;
+    throw new BadRequestException('Telefon raqamini +998 XX XXX XX XX formatida kiriting');
   }
 
   async list(user: AuthUser) {
@@ -55,41 +97,74 @@ export class MtsService {
 
   async consent(user: AuthUser, id: string, dto: ConsentDto) {
     const item = await this.getCase(id);
-    this.assertParticipantOrMediator(user, item);
+    if (item.status !== MediationStatus.AWAITING_CONSENT) throw new ConflictException('Rozilik faqat yangi murojaat bosqichida beriladi');
     const participant = item.participants.find((candidate) => candidate.side === dto.side && (candidate.userId === user.id || (user.pinfl && candidate.pinfl === user.pinfl)));
     if (!participant) throw new ForbiddenException('Siz ushbu taraf sifatida ro\'yxatdan o\'tmagansiz');
-    const updated = await this.prisma.mediationParticipant.update({ where: { id: participant.id }, data: { consentStatus: dto.status, consentedAt: new Date() } });
+    if (participant.consentStatus !== ConsentStatus.PENDING) throw new ConflictException('Sizning rozilik javobingiz avval qayd etilgan');
+    const updated = await this.prisma.mediationParticipant.update({ where: { id: participant.id }, data: { consentStatus: dto.status, consentedAt: dto.status === 'CONSENTED' ? new Date() : null } });
     const participants = await this.prisma.mediationParticipant.findMany({ where: { mediationId: id } });
     if (participants.some((candidate) => candidate.consentStatus === ConsentStatus.DECLINED)) await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.CLOSED } });
-    else if (participants.every((candidate) => candidate.consentStatus === ConsentStatus.CONSENTED)) await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.MEDIATOR_REQUESTED } });
+    else if (participants.every((candidate) => candidate.consentStatus === ConsentStatus.CONSENTED)) {
+      const ready = await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.MEDIATOR_REQUESTED } });
+      if (item.type === MediationType.MANDATORY) await this.assignRandomMediatorInternal(user, ready);
+    }
     return updated;
   }
 
   async selectMediator(user: AuthUser, id: string, dto: SelectMediatorDto) {
     const item = await this.getCase(id);
-    this.assertParticipantOrMediator(user, item);
+    const claimant = item.participants.find((candidate) => candidate.side === ParticipantSide.CLAIMANT && (candidate.userId === user.id || (user.pinfl && candidate.pinfl === user.pinfl)));
+    if (!claimant) throw new ForbiddenException('Mediatorni faqat ariza beruvchi tanlashi mumkin');
     if (item.type === MediationType.MANDATORY) throw new ConflictException('Majburiy mediatsiyada mediator tizim tomonidan tanlanadi');
+    if (item.status !== MediationStatus.MEDIATOR_REQUESTED || item.mediatorId) throw new ConflictException('Ushbu bosqichda mediator tanlab bo‘lmaydi');
     if (!(await this.prisma.mediationParticipant.count({ where: { mediationId: id, consentStatus: ConsentStatus.CONSENTED } }) === 2)) throw new ConflictException('Mediator tanlashdan oldin ikki taraf roziligi kerak');
-    const mediator = await this.prisma.user.findFirst({ where: { id: dto.mediatorId, registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE' } });
-    if (!mediator) throw new NotFoundException('Faol mediator topilmadi');
+    const entry = await this.prisma.registryEntry.findFirst({ where: { id: dto.mediatorRegistryId, type: 'MEDIATOR', status: 'ACTIVE', publicProfile: true, deletedAt: null } });
+    if (!entry?.userId) throw new NotFoundException('Faol ochiq reyestr mediatori topilmadi');
+    const mediator = await this.prisma.user.findFirst({ where: { id: entry.userId, registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE' } });
+    if (!mediator) throw new NotFoundException('Faol mediator kabineti topilmadi');
     const updated = await this.prisma.mediationCase.update({ where: { id }, data: { mediatorId: mediator.id, status: MediationStatus.MEDIATOR_REQUESTED } });
     await this.notifications.send({ userId: mediator.id, templateCode: 'APPLICATION_STATUS', variables: { title: 'Yangi mediatsiya murojaati', content: 'Sizga yangi mediatsiya murojaati yuborildi.' }, idempotencyKey: `mts-${id}-mediator-request`, channels: ['CABINET', 'SMS'] as any });
     return updated;
   }
 
-  async assignRandomMediator(user: AuthUser, id: string) {
-    const item = await this.getCase(id);
-    this.assertParticipantOrMediator(user, item);
-    if (item.type !== MediationType.MANDATORY) throw new ConflictException('Random tanlash faqat majburiy mediatsiya uchun');
-    const candidates = await this.prisma.user.findMany({ where: { registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE' }, include: { dossier: true } });
-    if (!candidates.length) throw new NotFoundException('Faol mediatorlar topilmadi');
-    const seed = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const selected = candidates[Math.floor(Math.random() * candidates.length)];
-    return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.mediationCase.update({ where: { id }, data: { mediatorId: selected.id, status: MediationStatus.MEDIATOR_ASSIGNED, randomSeed: seed, selectionLog: { selectedId: selected.id, candidateCount: candidates.length, seed } } });
-      await this.notifications.send({ userId: selected.id, templateCode: 'APPLICATION_STATUS', variables: { title: 'Majburiy mediatsiya tayinlandi', content: 'Sizga majburiy mediatsiya tayinlandi.' }, idempotencyKey: `mts-${id}-random-${seed}`, channels: ['CABINET', 'SMS'] as any });
-      return updated;
+  private async assignRandomMediatorInternal(user: AuthUser, item: Awaited<ReturnType<MtsService['getCase']>>) {
+    if (item.type !== MediationType.MANDATORY || item.status !== MediationStatus.MEDIATOR_REQUESTED || item.mediatorId) return null;
+    const consentCount = await this.prisma.mediationParticipant.count({ where: { mediationId: item.id, consentStatus: ConsentStatus.CONSENTED } });
+    if (consentCount !== 2) return null;
+    const candidates = await this.prisma.user.findMany({
+      where: { registryStatus: RegistryStatus.MEDIATOR, status: 'ACTIVE', dossier: { is: { registryStatus: 'ACTIVE', region: item.region, specialization: { has: item.disputeCategory } } } },
+      select: { id: true, dossier: { select: { region: true, specialization: true } } },
     });
+    if (!candidates.length) return null;
+    const activeCases = await this.prisma.mediationCase.groupBy({
+      by: ['mediatorId'],
+      where: { mediatorId: { in: candidates.map((candidate) => candidate.id) }, status: { in: [MediationStatus.MEDIATOR_ASSIGNED, MediationStatus.AGREEMENT_PENDING_SIGNATURE, MediationStatus.SCHEDULED, MediationStatus.IN_SESSION] } },
+      _count: { _all: true },
+    });
+    const loadByMediator = new Map(activeCases.map((row) => [row.mediatorId, row._count._all]));
+    const minLoad = Math.min(...candidates.map((candidate) => loadByMediator.get(candidate.id) || 0));
+    const leastLoaded = candidates.filter((candidate) => (loadByMediator.get(candidate.id) || 0) === minLoad);
+    const selected = leastLoaded[randomInt(leastLoaded.length)];
+    const seed = randomBytes(24).toString('hex');
+    const selectionLog = {
+      method: 'REGION_SPECIALTY_LOWEST_CASELOAD_RANDOM_TIE_BREAK',
+      region: item.region,
+      disputeCategory: item.disputeCategory,
+      candidateCount: candidates.length,
+      minimumActiveCaseLoad: minLoad,
+      leastLoadedCandidateIds: leastLoaded.map((candidate) => candidate.id),
+      selectedId: selected.id,
+      seed,
+      selectedAt: new Date().toISOString(),
+    };
+    const updated = await this.prisma.mediationCase.updateMany({
+      where: { id: item.id, type: MediationType.MANDATORY, status: MediationStatus.MEDIATOR_REQUESTED, mediatorId: null },
+      data: { mediatorId: selected.id, status: MediationStatus.MEDIATOR_ASSIGNED, randomSeed: seed, selectionLog: selectionLog as unknown as Prisma.InputJsonValue },
+    });
+    if (updated.count !== 1) return null;
+    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'AUTO_ASSIGN_MANDATORY_MEDIATOR', entityType: 'MEDIATION_CASE', entityId: item.id, newValues: selectionLog });
+    await this.notifications.send({ userId: selected.id, templateCode: 'APPLICATION_STATUS', variables: { title: 'Majburiy mediatsiya tayinlandi', content: 'Hudud, ixtisoslik va joriy ish yuklamasi bo‘yicha sizga mediatsiya tayinlandi.' }, idempotencyKey: `mts-${item.id}-random-${seed}`, channels: ['CABINET', 'SMS'] as any });
+    return selected.id;
   }
 
   async signAgreement(user: AuthUser, id: string, dto: SignAgreementDto) {
@@ -113,11 +188,42 @@ export class MtsService {
     const item = await this.getCase(id);
     if (item.mediatorId !== user.id) throw new ForbiddenException('Faqat biriktirilgan mediator sana belgilashi mumkin');
     if (!item.mediatorSignaturePkcs7 || item.participants.some((participant) => !participant.signaturePkcs7)) throw new ConflictException('Kelishuv barcha taraflar va mediator tomonidan imzolanmagan');
+    if (new Date(dto.scheduledAt).getTime() <= Date.now()) throw new BadRequestException('Uchrashuv vaqti kelajakda bo‘lishi kerak');
+    if (item.status !== MediationStatus.SCHEDULED) throw new ConflictException('Uchrashuv faqat imzolangan mediatsiya kelishuvi uchun belgilanadi');
     const details = await this.video.createMeeting(`Mediatsiya: ${item.disputeSubject}`, dto.scheduledAt, dto.durationMin || 60);
-    const session = await this.prisma.mediationSession.create({ data: { mediationId: id, scheduledAt: new Date(dto.scheduledAt), durationMin: dto.durationMin || 60, roomId: details.roomId, roomUrl: details.roomUrl, hostUrl: details.hostUrl, accessPin: details.pin } });
+    const session = await this.prisma.mediationSession.create({ data: { mediationId: id, scheduledAt: new Date(dto.scheduledAt), durationMin: dto.durationMin || 60, roomId: details.roomId, roomUrl: details.roomUrl, hostUrl: null, accessPin: null } });
     await this.prisma.mediationCase.update({ where: { id }, data: { status: MediationStatus.SCHEDULED } });
-    await this.notifyParticipants(id, `Mediatsiya uchrashuvi: ${new Date(dto.scheduledAt).toLocaleString('uz-UZ')}. Havola: ${details.roomUrl}`, `mts-${id}-session-${session.id}`);
+    await this.notifyParticipants(id, `Mediatsiya uchrashuvi ${new Date(dto.scheduledAt).toLocaleString('uz-UZ')} vaqtiga belgilandi. Havola shaxsiy kabinetdan ochiladi.`, `mts-${id}-session-${session.id}`);
     return session;
+  }
+
+  async joinSession(user: AuthUser, mediationId: string, sessionId: string) {
+    const item = await this.getCase(mediationId);
+    this.assertParticipantOrMediator(user, item);
+    const session = item.sessions.find((candidate) => candidate.id === sessionId);
+    if (!session || !session.roomId) throw new NotFoundException('Videokonferensiya sessiyasi topilmadi');
+    if (session.status === 'CANCELLED' || session.status === 'FINISHED') throw new ConflictException('Uchrashuv yopilgan');
+    const participant = item.participants.find((candidate) => candidate.userId === user.id || (!!user.pinfl && candidate.pinfl === user.pinfl));
+    const isMediator = item.mediatorId === user.id;
+    if (!isMediator && (!participant || participant.consentStatus !== ConsentStatus.CONSENTED || !participant.signaturePkcs7)) {
+      throw new ForbiddenException('Uchrashuvga faqat rozilik bergan va kelishuvni imzolagan taraflar qo‘shila oladi');
+    }
+    if (!item.mediatorSignaturePkcs7 || item.participants.some((candidate) => !candidate.signaturePkcs7)) {
+      throw new ConflictException('Kelishuv imzolari to‘liq emas');
+    }
+    const now = Date.now();
+    const start = new Date(session.scheduledAt).getTime();
+    const end = start + session.durationMin * 60_000;
+    if (now < start - 15 * 60_000) throw new ConflictException('Videokonferensiya uchrashuv boshlanishidan 15 daqiqa oldin ochiladi');
+    if (now > end + 30 * 60_000) throw new ConflictException('Videokonferensiya oynasi yopilgan');
+    const profile = await this.prisma.user.findUnique({ where: { id: user.id }, select: { id: true, fullName: true, email: true } });
+    if (!profile) throw new NotFoundException('Foydalanuvchi profili topilmadi');
+    const join = this.video.createJoinLink(session.roomId, profile, isMediator, new Date(Math.min(end + 30 * 60_000, now + 60 * 60_000)));
+    if (session.status === 'SCHEDULED') {
+      await this.prisma.mediationSession.update({ where: { id: sessionId }, data: { status: 'STARTED' } });
+      await this.prisma.mediationCase.update({ where: { id: mediationId }, data: { status: MediationStatus.IN_SESSION } });
+    }
+    return join;
   }
 
   async recordResult(user: AuthUser, id: string, dto: RecordResultDto) {

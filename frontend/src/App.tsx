@@ -7,9 +7,11 @@ import {
   LayoutDashboard, LogIn, MapPin, Menu, MessageSquare, Newspaper, Pencil, Search,
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
+import { apiPost, getAccessToken, uploadPrivateDocument } from './api'
+import { ApplicationDraft, MediatorApplicationForm, MediationDraft, MediationRequestForm } from './workflows'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
-type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string }
+type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
 type Role = { key: RoleKey; title: string; summary: string; icon: typeof UserRound }
 type Metric = [string, number, string, typeof UserRound]
 
@@ -42,15 +44,8 @@ const arbitratorsSeed = [
   { id: 'a2', name: 'Nargiza Aliyeva', specialty: 'Investitsiya va savdo arbitraji', region: 'Toshkent shahri', experience: '10 yil', rating: '4.8', status: 'Faol', initials: 'NA' },
 ]
 
-const initialCases: PortalRecord[] = [
-  { id: 'MED-2026-0084', title: 'Shartnomaviy nizo', status: 'Mediator tanlash', detail: 'Taraflar: A. S. va “Baraka servis” MCHJ', region: 'Toshkent shahri', createdAt: '21.10.2026' },
-  { id: 'MED-2026-0081', title: 'Oilaviy nizo', status: 'Uchrashuv belgilangan', detail: 'Mediator: Dilnoza Karimova', region: 'Samarqand viloyati', createdAt: '18.10.2026' },
-  { id: 'MED-2026-0077', title: 'Mehnat nizosi', status: 'Kelishuv monitoringi', detail: 'Keyingi muddat: 30.10.2026', region: 'Buxoro viloyati', createdAt: '12.10.2026' },
-]
-const initialApplications: PortalRecord[] = [
-  { id: 'ARZ-2026-0142', title: 'Mediator maqomini olish', status: 'Ko‘rib chiqilmoqda', detail: 'Komissiya ko‘rib chiqishi kutilmoqda', region: 'Toshkent shahri', createdAt: '22.10.2026' },
-  { id: 'ARZ-2026-0138', title: 'Mediator maqomini olish', status: 'Imtihonga ruxsat', detail: 'To‘lov va imtihon chaqiruvi bosqichi', region: 'Samarqand viloyati', createdAt: '20.10.2026' },
-]
+const initialCases: PortalRecord[] = []
+const initialApplications: PortalRecord[] = []
 const initialReports: PortalRecord[] = [
   { id: 'HIS-2026-Q3', title: '2026-yil III chorak hisoboti', status: 'Hududiy ko‘rib chiqishda', detail: 'Mediatsiya ishlari: 24 · Yakunlangan: 18', region: 'Toshkent shahri', createdAt: '10.10.2026' },
 ]
@@ -95,6 +90,7 @@ export default function App() {
   const [announcementsAccepted, setAnnouncementsAccepted] = useState(() => localStorage.getItem('nizolar.demo.notice.read') === 'yes')
   const [formName, setFormName] = useState('')
   const [formDetail, setFormDetail] = useState('')
+  const [selectedMediator, setSelectedMediator] = useState('')
   const [announcementGate, setAnnouncementGate] = useState(false)
 
   useEffect(() => { localStorage.setItem('nizolar.demo.cases', JSON.stringify(cases)) }, [cases])
@@ -123,9 +119,66 @@ export default function App() {
     const item = { id: `MED-2026-${String(Date.now()).slice(-4)}`, title, status: mediationSteps[0], detail: detail || 'Demo rejimida yaratilgan murojaat', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
     setCases((items) => [item, ...items]); setModal(''); setFormName(''); setFormDetail(''); setToast('Mediatsiya murojaati yaratildi')
   }
+  const submitMediation = async (draft: MediationDraft) => {
+    const token = getAccessToken()
+    if (token) {
+      const created = await apiPost<{ id: string; status: string; disputeSubject: string; region: string }>('/cabinet/mts/mediations', {
+        type: draft.type,
+        disputeCategory: draft.disputeCategory,
+        disputeSubject: draft.disputeSubject,
+        courtCaseNumber: draft.courtCaseNumber || undefined,
+        respondentName: draft.respondentName,
+        respondentPhone: draft.respondentPhone,
+        respondentPinfl: draft.respondentPinfl || undefined,
+        respondentEmail: draft.respondentEmail || undefined,
+        region: draft.region,
+      })
+      const item = { id: created.id, title: created.disputeSubject.slice(0, 80), status: mediationStatusLabel(created.status), detail: `${draft.respondentName} · rozilik kutilmoqda`, region: created.region, createdAt: new Date().toLocaleDateString('uz-UZ') }
+      setCases((items) => [item, ...items])
+      setToast('Murojaat serverga yuborildi; respondent roziligi kutilmoqda')
+    } else {
+      const category = { FAMILY: 'Oilaviy nizo', CIVIL: 'Fuqarolik nizosi', LABOR: 'Mehnat nizosi', BUSINESS: 'Tadbirkorlik nizosi', CONTRACT: 'Shartnomaviy nizo', OTHER: 'Boshqa nizo' }[draft.disputeCategory] || 'Mediatsiya murojaati'
+      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: category, status: 'Rozilik kutilmoqda', detail: `${draft.claimantName} → ${draft.respondentName}: ${draft.disputeSubject}`, region: draft.region, createdAt: new Date().toLocaleDateString('uz-UZ'), data: { ...draft, selectedMediator } }
+      setCases((items) => [item, ...items])
+      setToast('Demo murojaati saqlandi. Rasmiy yuborish uchun OneID orqali kirish kerak.')
+    }
+    setModal(''); setSelectedMediator('')
+  }
   const createApplication = (title: string, detail = '') => {
     const item = { id: `ARZ-2026-${String(Date.now()).slice(-4)}`, title, status: applicationSteps[0], detail: detail || 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
     setApplications((items) => [item, ...items]); setModal(''); setFormName(''); setFormDetail(''); setToast('Ariza yuborildi')
+  }
+  const submitMediatorApplication = async (draft: ApplicationDraft) => {
+    if (getAccessToken()) {
+      const uploadedIds: string[] = []
+      try {
+        const diploma = await uploadPrivateDocument(draft.diplomaFile!, 'Mediator arizasi: diplom')
+        uploadedIds.push(diploma.id)
+        const course = draft.courseCertificate ? await uploadPrivateDocument(draft.courseCertificate, 'Mediator arizasi: maxsus kurs sertifikati') : undefined
+        if (course) uploadedIds.push(course.id)
+        const passport = draft.passportFile ? await uploadPrivateDocument(draft.passportFile, 'Mediator arizasi: pasport nusxasi') : undefined
+        if (passport) uploadedIds.push(passport.id)
+        const created = await apiPost<{ id: string; status: string }>('/cabinet/mk/applications', {
+          phone: draft.phone,
+          email: draft.email,
+          address: draft.address,
+          profession: draft.profession,
+          diplomaFileId: diploma.id,
+          passportFileId: passport?.id,
+          courseCertificateId: course?.id,
+        })
+        setApplications((items) => [{ id: created.id, title: 'Mediator maqomini olish', status: applicationStatusLabel(created.status), detail: 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Hududiy tekshiruv', createdAt: new Date().toLocaleDateString('uz-UZ') }, ...items])
+        setToast('Mediator arizasi serverga yuborildi')
+      } catch (error) {
+        await Promise.allSettled(uploadedIds.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')}/platform/files/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getAccessToken()}` } })))
+        throw error
+      }
+    } else {
+      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: 'Mediator maqomini olish', status: 'Yangi yuborildi', detail: `${draft.fullName} · diplom: ${draft.diplomaFile?.name} · kurs: ${draft.courseCertificate?.name || 'notarius/advokat istisnosi'}`, region: 'Demo hudud', createdAt: new Date().toLocaleDateString('uz-UZ'), data: { ...draft, diplomaFile: draft.diplomaFile?.name, courseCertificate: draft.courseCertificate?.name, passportFile: draft.passportFile?.name } }
+      setApplications((items) => [item, ...items])
+      setToast('Demo ariza saqlandi. Hujjatlar rasmiy serverga yuborilmadi.')
+    }
+    setModal('')
   }
   const createReport = (title: string, detail = '') => {
     const item = { id: `HIS-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`, title, status: 'Qoralama', detail: detail || 'Yangi hisobot qoralamasi', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
@@ -161,14 +214,14 @@ export default function App() {
   }))
 
   if (!role) return <>
-    <PublicSite page={publicPage} setPage={setPublicPage} onLogin={() => { setLoginMethod(''); setShowLogin(true) }} onRegistry={showPublicRegistry} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={(name) => { setFormName('Mediator bilan mediatsiya'); setFormDetail(`Tanlangan mutaxassis: ${name}`); setModal('mediatsiya') }} onToast={setToast} />
+    <PublicSite page={publicPage} setPage={setPublicPage} onLogin={() => { setLoginMethod(''); setShowLogin(true) }} onRegistry={showPublicRegistry} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={(name) => { setSelectedMediator(name); setModal('mediatsiya') }} onToast={setToast} />
     {showLogin && <ModalShell onClose={() => setShowLogin(false)}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={() => setShowLogin(false)} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
       {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
       {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
     </div></ModalShell>}
     {chooseRole && <RolePicker onClose={() => setChooseRole(false)} onChoose={startRole} />}
-    {modal === 'mediatsiya' && <FormModal title="Mediatorga murojaat" description="Mediatsiya bo‘yicha murojaat ma’lumotlarini kiriting." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel="Murojaat yuborish" onClose={() => setModal('')} onSubmit={(e) => { e.preventDefault(); createCase(formName || 'Mediator bilan mediatsiya', formDetail) }} />}
+    {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} onClose={() => { setModal(''); setSelectedMediator('') }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
 
@@ -188,7 +241,8 @@ export default function App() {
       </main>
     </div>
     {mobileNav && <button aria-label="Menyuni yopish" onClick={() => setMobileNav(false)} className="fixed inset-0 z-20 bg-slate-950/40 md:hidden"/>}
-    {modal && modal !== 'mediatsiya' && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
+    {modal === 'ariza' && role === 'APPLICANT' && <MediatorApplicationForm onClose={() => setModal('')} onSubmit={submitMediatorApplication} />}
+    {modal && modal !== 'mediatsiya' && !(modal === 'ariza' && role === 'APPLICANT') && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
     {announcementGate && <div className="sr-only" aria-live="polite">Mediator kabinetini ochish uchun e’lon bilan tanishing.</div>}
     {toast && <Toast text={toast} />}
   </div>
@@ -354,3 +408,5 @@ function FormModal({title,description,name,setName,detail,setDetail,submitLabel,
 function navIcon(label:string) { if(/Umumiy/.test(label))return LayoutDashboard;if(/reyestr|nomzod|foydalanuvchi/i.test(label))return Users;if(/mediatsiya|ishlari|nizo/i.test(label))return Handshake;if(/hisobot|statistika/i.test(label))return ClipboardList;if(/imtihon|komissiya|malaka/i.test(label))return GraduationCap;if(/shartnoma|hujjat/i.test(label))return FileText;if(/yozishma/i.test(label))return MessageSquare;if(/kalendar/i.test(label))return CalendarDays;if(/kontent|e’lon/i.test(label))return Newspaper;if(/audit/i.test(label))return FileClock;if(/sozlama|spravochnik/i.test(label))return Settings;if(/profil/i.test(label))return User;return BriefcaseBusiness }
 function modalTitle(key:string) { if(/ariza|talabgor/.test(key))return 'Ariza yaratish';if(/hisobot/.test(key))return 'Hisobot yaratish';if(/mediatsiya|murojaat/.test(key))return 'Yangi mediatsiya murojaati';if(/uchrashuv/.test(key))return 'Uchrashuv belgilash';if(/e’lon/.test(key))return 'Yangi e’lon';if(/portfolio/.test(key))return 'Portfolio yozuvi';if(/malaka/.test(key))return 'Malaka oshirish arizasi';if(/shartnoma/.test(key))return 'Shartnoma yaratish';if(/yozishma/.test(key))return 'Yangi yozishma';return 'Yangi yozuv qo‘shish' }
 function modalAction(key:string) { return /ariza/.test(key)?'Arizani yuborish':/hisobot/.test(key)?'Hisobotni saqlash':/mediatsiya|murojaat/.test(key)?'Murojaat yuborish':'Saqlash' }
+function mediationStatusLabel(status: string) { return ({ AWAITING_CONSENT: 'Rozilik kutilmoqda', MEDIATOR_REQUESTED: 'Mediator tanlash', MEDIATOR_ASSIGNED: 'Mediator tayinlandi', AGREEMENT_PENDING_SIGNATURE: 'Kelishuv imzolanmoqda', SCHEDULED: 'Uchrashuv belgilangan', IN_SESSION: 'Mediatsiya sessiyasi', SETTLED: 'Kelishuv monitoringi', FAILED: 'Kelishuvga erishilmadi', CLOSED: 'Yopildi' } as Record<string, string>)[status] || status }
+function applicationStatusLabel(status: string) { return ({ SUBMITTED: 'Yangi yuborildi', CHECKING: 'Tekshiruvda', ACCEPTED: 'Qabul qilindi', REJECTED: 'Rad etildi', INVITED: 'Imtihonga chaqirildi', PASSED: 'Imtihondan o‘tdi', FAILED: 'Imtihondan o‘tmadi', REGISTERED: 'Reyestrga kiritildi' } as Record<string, string>)[status] || status }

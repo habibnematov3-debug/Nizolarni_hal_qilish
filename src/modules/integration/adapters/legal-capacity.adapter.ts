@@ -20,39 +20,51 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
   constructor(private readonly loggerService: IntegrationLoggerService) {}
 
   async checkStatus(pinfl: string): Promise<LegalCapacityResult> {
+    const endpoint = process.env.LEGAL_CAPACITY_API_URL?.trim();
+    const pending = (notes: string): LegalCapacityResult => ({
+      pinfl,
+      hasCriminalRecord: false,
+      isLegallyIncompetent: false,
+      status: 'IN_PROGRESS',
+      referenceNumber: `PENDING-${Date.now()}`,
+      checkDate: new Date().toISOString(),
+      notes,
+    });
+    if (!endpoint) return pending('Vakolatli tekshiruv reyestri ulanmagan; ariza qo‘lda ko‘rib chiqish uchun yuboriladi.');
+
     return this.loggerService.executeWithResilience(
       async () => {
-        // Mock check logic:
-        // PINFL starting with 999 triggers rejection; normal returns clean
-        const isProblematic = pinfl.startsWith('999');
-
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(process.env.LEGAL_CAPACITY_API_TOKEN ? { authorization: `Bearer ${process.env.LEGAL_CAPACITY_API_TOKEN}` } : {}),
+          },
+          body: JSON.stringify({ pinfl }),
+        });
+        if (!response.ok) throw new Error(`Huquqiy layoqat reyestri ${response.status} javobini qaytardi`);
+        const result = await response.json() as Partial<LegalCapacityResult>;
+        if (result.pinfl !== pinfl || typeof result.hasCriminalRecord !== 'boolean' || typeof result.isLegallyIncompetent !== 'boolean' || !['APPROVED', 'REJECTED', 'IN_PROGRESS'].includes(String(result.status)) || !result.referenceNumber) {
+          throw new Error('Huquqiy layoqat reyestrining javobi talab qilingan formatga mos emas');
+        }
         return {
           pinfl,
-          hasCriminalRecord: isProblematic,
-          isLegallyIncompetent: isProblematic,
-          status: isProblematic ? 'REJECTED' : 'APPROVED',
-          referenceNumber: `IIV-CAP-${Date.now()}`,
-          checkDate: new Date().toISOString(),
-          notes: isProblematic ? 'Sudlanganlik ma\'lumoti mavjud' : 'Sudlanmagan, muomala layoqatiga ega',
+          hasCriminalRecord: result.hasCriminalRecord,
+          isLegallyIncompetent: result.isLegallyIncompetent,
+          status: result.status as LegalCapacityResult['status'],
+          referenceNumber: result.referenceNumber,
+          checkDate: result.checkDate || new Date().toISOString(),
+          notes: result.notes,
         };
       },
       {
         serviceName: 'LEGAL_CAPACITY_REGISTRY',
-        endpoint: '/api/v1/citizen/check-capacity',
+        endpoint,
         timeoutMs: 4000,
         maxRetries: 2,
-        // Fallback value if external service is temporarily unreachable: "tekshiruv jarayonda" (Section 3)
-        fallbackValue: {
-          pinfl,
-          hasCriminalRecord: false,
-          isLegallyIncompetent: false,
-          status: 'IN_PROGRESS',
-          referenceNumber: `PENDING-${Date.now()}`,
-          checkDate: new Date().toISOString(),
-          notes: 'Tashqi tizim bilan aloqa mavjud emas, tekshiruv jarayonda',
-        },
+        fallbackValue: pending('Davlat reyestri vaqtincha javob bermadi; tekshiruv davom etadi.'),
       },
-      { pinfl },
+      { pinflLast4: pinfl.slice(-4) },
     );
   }
 }

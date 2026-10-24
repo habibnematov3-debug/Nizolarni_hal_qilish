@@ -19,24 +19,64 @@ export class MkService {
   async createApplication(user: AuthUser, dto: CreateMkApplicationDto) {
     const active = await this.prisma.mkApplication.findFirst({ where: { applicantId: user.id, status: { notIn: [MkApplicationStatus.REJECTED, MkApplicationStatus.FAILED] } } });
     if (active) throw new ConflictException('Sizda faol MK arizasi mavjud');
+    const profile = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, fullName: true, pinfl: true, phone: true, email: true, address: true, passportSeriesNumber: true, passportGivenDate: true, passportExpireDate: true, birthDate: true, birthPlace: true, nationality: true, gender: true },
+    });
+    if (!profile?.pinfl || !/^\d{14}$/.test(profile.pinfl) || !profile.passportSeriesNumber || !profile.passportGivenDate || !profile.passportExpireDate) {
+      throw new BadRequestException('Ariza uchun OneID profilidagi PINFL va to‘liq pasport ma’lumotlari zarur');
+    }
+    if (!profile.phone || this.normalizePhone(profile.phone) !== this.normalizePhone(dto.phone)) {
+      throw new BadRequestException('Telefon raqamini avval shaxsiy profilda yangilang va tasdiqlang');
+    }
+    if (!profile.email || profile.email.toLowerCase() !== dto.email.toLowerCase()) {
+      throw new BadRequestException('Elektron pochtani avval shaxsiy profilda yangilang va tasdiqlang');
+    }
+    const requiredFileIds = [dto.diplomaFileId, dto.passportFileId, dto.courseCertificateId].filter((id): id is string => Boolean(id));
+    const profession = dto.profession.toUpperCase();
+    const specialProfession = ['NOTARY', 'ADVOCATE'].includes(profession);
+    if (!specialProfession && !dto.courseCertificateId) throw new BadRequestException('Mediatorlar maxsus o‘quv kursi sertifikati majburiy');
+    const ownedFiles = await this.prisma.fileRecord.findMany({
+      where: { id: { in: requiredFileIds }, uploadedById: user.id, accessLevel: 'PRIVATE' },
+      select: { id: true },
+    });
+    if (ownedFiles.length !== new Set(requiredFileIds).size) {
+      throw new BadRequestException('Arizaga faqat o‘zingiz yuklagan shaxsiy hujjat fayllarini biriktiring');
+    }
 
-    const check = user.pinfl ? await this.legalCapacity.checkStatus(user.pinfl) : null;
+    const check = await this.legalCapacity.checkStatus(profile.pinfl);
+    const passportData = {
+      seriesNumber: profile.passportSeriesNumber,
+      givenDate: profile.passportGivenDate,
+      expireDate: profile.passportExpireDate,
+      birthDate: profile.birthDate,
+      birthPlace: profile.birthPlace,
+      nationality: profile.nationality,
+      gender: profile.gender,
+      fullName: profile.fullName,
+      pinfl: profile.pinfl,
+    };
     const application = await this.prisma.mkApplication.create({
       data: {
-        applicantId: user.id, phone: dto.phone, email: dto.email, address: dto.address, profession: dto.profession,
+        applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, profession,
         diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId,
+        passportData: passportData as unknown as Prisma.InputJsonValue,
         status: check?.status === 'IN_PROGRESS' ? MkApplicationStatus.SUBMITTED : MkApplicationStatus.CHECKING,
         autoCheckResult: check as unknown as Prisma.InputJsonValue,
         reviewDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
-    const normalizedProfession = (dto.profession || '').toUpperCase();
-    if (check?.status === 'APPROVED' && ['NOTARY', 'NOTARIUS', 'ADVOCATE', 'ADVOKAT'].includes(normalizedProfession)) {
+    if (check.status === 'APPROVED' && specialProfession) {
       await this.registerApplicant(user, application.id, 'Tashqi maqom tasdiqlangani sababli imtihonsiz');
       return this.prisma.mkApplication.findUnique({ where: { id: application.id } });
     }
     return application;
+  }
+
+  private normalizePhone(value: string) {
+    const digits = value.replace(/\D/g, '');
+    return digits.startsWith('998') ? `+${digits}` : digits.length === 9 ? `+998${digits}` : `+${digits}`;
   }
 
   async myApplications(user: AuthUser) { return this.prisma.mkApplication.findMany({ where: { applicantId: user.id }, include: { exams: true }, orderBy: { createdAt: 'desc' } }); }

@@ -1,17 +1,25 @@
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { MediationType, ParticipantSide, MedResultStatus } from '@prisma/client';
 
+export enum DisputeCategory {
+  FAMILY = 'FAMILY',
+  CIVIL = 'CIVIL',
+  LABOR = 'LABOR',
+  BUSINESS = 'BUSINESS',
+  CONTRACT = 'CONTRACT',
+  OTHER = 'OTHER',
+}
+
 export class CreateMediationDto {
-  @IsOptional() @IsString() courtCaseNumber?: string;
+  @IsOptional() @IsString() @MaxLength(100) courtCaseNumber?: string;
   @IsEnum(MediationType) type: MediationType;
-  @IsString() @MaxLength(3000) disputeSubject: string;
-  @IsString() claimantName: string;
-  @IsOptional() @IsString() claimantPhone?: string;
-  @IsOptional() @IsString() claimantPinfl?: string;
-  @IsString() respondentName: string;
-  @IsOptional() @IsUUID() respondentUserId?: string;
-  @IsOptional() @IsString() respondentPhone?: string;
-  @IsOptional() @IsString() respondentPinfl?: string;
+  @IsEnum(DisputeCategory) disputeCategory: DisputeCategory;
+  @IsString() @MinLength(10) @MaxLength(3000) disputeSubject: string;
+  @IsString() @MinLength(2) @MaxLength(160) respondentName: string;
+  @IsString() @Matches(/^\+?[0-9()\-\s]{7,30}$/) respondentPhone: string;
+  @IsOptional() @Matches(/^\d{14}$/) respondentPinfl?: string;
+  @IsOptional() @IsEmail() @MaxLength(254) respondentEmail?: string;
+  @IsString() @MinLength(2) @MaxLength(100) region: string;
 }
 
 export class ConsentDto {
@@ -19,7 +27,7 @@ export class ConsentDto {
   @IsEnum(['CONSENTED', 'DECLINED'] as const) status: 'CONSENTED' | 'DECLINED';
 }
 
-export class SelectMediatorDto { @IsUUID() mediatorId: string; }
+export class SelectMediatorDto { @IsUUID() mediatorRegistryId: string; }
 
 export class SignAgreementDto {
   @IsString() side: ParticipantSide | 'MEDIATOR';

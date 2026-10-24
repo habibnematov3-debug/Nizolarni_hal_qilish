@@ -14,7 +14,7 @@ import { ConsentDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, Se
 export class MtsController {
   constructor(private readonly service: MtsService) {}
 
-  @Post('mediations') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
+  @Post('mediations') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateMediationDto) { return this.service.create(user, dto); }
 
   @Get('mediations') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiyalar ro\'yxati' })
@@ -26,17 +26,17 @@ export class MtsController {
   @Post('mediations/:id/consent') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Taraf roziligini qayd etish' })
   consent(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ConsentDto) { return this.service.consent(user, id, dto); }
 
-  @Post('mediations/:id/mediator') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediator tanlash' })
+  @Post('mediations/:id/mediator') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediator tanlash' })
   selectMediator(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SelectMediatorDto) { return this.service.selectMediator(user, id, dto); }
-
-  @Post('mediations/:id/assign-random') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Majburiy mediatsiyada random mediator tanlash' })
-  assignRandom(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.assignRandomMediator(user, id); }
 
   @Post('mediations/:id/agreement/sign') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya kelishuvini imzolash' })
   sign(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SignAgreementDto) { return this.service.signAgreement(user, id, dto); }
 
   @Post('mediations/:id/sessions') @Roles('MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya uchrashuvini belgilash' })
   session(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ScheduleSessionDto) { return this.service.scheduleSession(user, id, dto); }
+
+  @Post('mediations/:id/sessions/:sessionId/join') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Uchrashuvga shaxsiy vaqtinchalik havola olish' })
+  joinSession(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('sessionId') sessionId: string) { return this.service.joinSession(user, id, sessionId); }
 
   @Post('mediations/:id/result') @Roles('MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya natijasini qayd etish' })
   result(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: RecordResultDto) { return this.service.recordResult(user, id, dto); }

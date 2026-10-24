@@ -1,0 +1,6 @@
+ALTER TABLE "mediation_cases"
+  ADD COLUMN IF NOT EXISTS "dispute_category" TEXT NOT NULL DEFAULT 'OTHER',
+  ADD COLUMN IF NOT EXISTS "region" TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE "mediation_participants"
+  ADD COLUMN IF NOT EXISTS "email" TEXT;
