@@ -288,6 +288,7 @@ function PublicSite({ page, setPage, onLogin, onRegistry, registryRows, query, s
           <RegistrySearchBox query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} onSearch={onRegistry}/>
         </div>
       </section>
+      <PublicHomeSections onRegistry={onRegistry} setRegion={setRegion} onContact={onContact}/>
       <PublicFooter onLogin={onLogin} setPage={setPage}/>
     </> : <PublicInfoPage page={page} registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} onRegistry={onRegistry} onLogin={onLogin} onToast={onToast} onContact={onContact}/>}
   </div>
@@ -303,6 +304,79 @@ function RegistrySearchBox({ query, setQuery, region, setRegion, kind, setKind, 
       <button onClick={onSearch} className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#0875cf] px-5 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition hover:bg-[#0b83e3]"><Search size={18}/>Reyestrdan qidirish<ArrowRight size={16}/></button>
     </div>
   </aside>
+}
+
+function PublicHomeSections({ onRegistry, setRegion, onContact }: { onRegistry: () => void; setRegion: (region: string) => void; onContact: (name: string) => void }) {
+  const [content, setContent] = useState<Record<string, PublicContentItem[]>>({ news: [], legal_framework: [], templates: [], manuals: [], video_manuals: [], faq: [] })
+  const [contentLoaded, setContentLoaded] = useState(false)
+  useEffect(() => {
+    let active = true
+    const types = ['news', 'legal_framework', 'templates', 'manuals', 'video_manuals', 'faq']
+    Promise.allSettled(types.map((type) => apiGetPublic<PublicContentList>(`/public/content/${type}?limit=4`))).then((results) => {
+      if (!active) return
+      const next: Record<string, PublicContentItem[]> = {}
+      results.forEach((result, index) => { next[types[index]] = result.status === 'fulfilled' ? result.value.items : [] })
+      setContent((current) => ({ ...current, ...next }))
+      setContentLoaded(true)
+    })
+    return () => { active = false }
+  }, [])
+
+  const activeMediators = registrySeed.filter((item) => item.status === 'Faol')
+  const coveredRegions = new Set(registrySeed.map((item) => item.region)).size
+  const leadingMediators = [...registrySeed].sort((a, b) => Number(b.rating) - Number(a.rating)).slice(0, 3)
+  const faqs = content.faq.length ? content.faq.map((item) => ({ question: item.titleUz, answer: item.bodyUz || item.summaryUz || '' })) : publicFaqFallbacks
+  const materials = [...content.templates, ...content.manuals, ...content.video_manuals]
+
+  return <>
+    <section className="relative z-10 mx-auto -mt-7 max-w-[1420px] px-5 sm:px-8 lg:px-10">
+      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+        {[[String(registrySeed.length), 'Jami mediatorlar', 'Namuna reyestri', 'text-blue-800'], [String(activeMediators.length), 'Faol mutaxassislar', 'Namuna reyestri', 'text-emerald-600'], [String(coveredRegions), 'Hudud qamrovi', 'Reyestrdagi hududlar', 'text-amber-500'], ['3 ta', 'Mutaxassis turi', 'Mediator · sudya · arbitr', 'text-violet-600']].map(([value, label, detail, color]) => <div key={label} className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-4 text-center"><p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p><p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></div>)}
+      </div>
+    </section>
+
+    <section className="bg-slate-50 px-5 pb-12 pt-16 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-[1420px] rounded-3xl bg-gradient-to-br from-[#101b31] to-[#082f5f] p-5 text-white shadow-xl shadow-slate-900/10 sm:p-8 lg:p-10">
+        <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-amber-400">Interaktiv xarita</p><h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Hududlar bo‘yicha mediatorlar</h2><p className="mt-2 text-sm text-blue-100/70">Hududni tanlab, reyestrdagi mutaxassislarni ko‘ring.</p></div><button onClick={onRegistry} className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-semibold text-white transition hover:bg-white/15 sm:self-auto"><MapPin size={15} className="text-amber-400"/>To‘liq reyestr<ArrowRight size={14}/></button></div>
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7">{publicRegions.map(([regionName, shortName]) => {
+          const count = registrySeed.filter((person) => person.region === regionName).length
+          return <button key={regionName} onClick={() => { setRegion(regionName); onRegistry() }} className="group rounded-xl border border-white/10 bg-white/[.06] p-3 text-left transition hover:border-sky-300/50 hover:bg-white/10"><span className="block truncate text-xs font-semibold text-slate-100" title={regionName}>{shortName}</span><span className="mt-3 flex items-center justify-between text-[11px] text-blue-100/60"><span>Mediatorlar</span><span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-500/25 px-1.5 font-bold text-amber-300">{count}</span></span></button>
+        })}</div>
+        <p className="mt-4 text-[11px] text-blue-100/50">Ko‘rsatkichlar joriy demo reyestridagi yozuvlardan hisoblandi.</p>
+      </div>
+    </section>
+
+    <section className="bg-slate-50 px-5 py-10 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-[1420px]">
+        <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">Reyting</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Yetakchi mediatorlar</h2><p className="mt-2 text-sm text-slate-500">Reyestrdagi mutaxassislar bilan tanishing.</p></div><button onClick={onRegistry} className="inline-flex items-center gap-2 self-start text-sm font-semibold text-blue-800 hover:text-blue-950">Barchasini ko‘rish<ArrowRight size={16}/></button></div>
+        <div className="grid gap-4 md:grid-cols-3">{leadingMediators.map((person) => <article key={person.id} className="flex min-h-52 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-900">{person.initials}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{person.name}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><MapPin size={12}/>{person.region}</p></div><span className="flex items-center gap-1 text-sm font-bold text-slate-800"><Star size={14} className="fill-amber-400 text-amber-400"/>{person.rating}</span></div><div className="mt-5 flex flex-wrap gap-2">{person.specialty.split(' va ').slice(0, 2).map((specialty) => <span key={specialty} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-medium text-slate-600">{specialty}</span>)}</div><div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-500">{person.experience} tajriba</span><button onClick={() => onContact(person.name)} className="rounded-lg bg-blue-800 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-900">Murojaat qilish</button></div></article>)}</div>
+        <p className="mt-3 text-right text-[11px] text-slate-400">Reyting namuna reyestridagi demo ma’lumotlaridan olindi.</p>
+      </div>
+    </section>
+
+    <section className="bg-slate-50 px-5 py-12 sm:px-8 lg:px-10">
+      <div className="mx-auto grid max-w-[1420px] gap-8 lg:grid-cols-[1.55fr_1fr]">
+        <div><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">So‘nggi xabarlar</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">Yangiliklar va e’lonlar</h2></div>
+          <div className="space-y-3">{content.news.length ? content.news.slice(0, 3).map((item) => <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start gap-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800"><Newspaper size={18}/></span><div className="min-w-0"><p className="text-[11px] font-medium text-blue-700">{formatPublicDate(item.publishedAt)}</p><h3 className="mt-1 text-sm font-bold text-slate-900">{item.titleUz}</h3><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{item.summaryUz || item.bodyUz}</p></div></div></article>) : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6"><p className="text-sm font-semibold text-slate-800">{contentLoaded ? 'Hozircha yangiliklar joylanmagan' : 'Yangiliklar yuklanmoqda'}</p><p className="mt-1 text-xs leading-5 text-slate-500">Nashr qilingan yangiliklar va e’lonlar shu bo‘limda ko‘rinadi.</p></div>}</div>
+        </div>
+        <div><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">Rasmiy manbalar</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">Huquqiy baza</h2></div>
+          <div className="space-y-3"><a href="https://www.lex.uz/mact/-3805227" target="_blank" rel="noreferrer" className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"><span><span className="block text-sm font-bold text-slate-900">“Mediatsiya to‘g‘risida”gi Qonun</span><span className="mt-1 block text-xs text-slate-500">O‘RQ-482 · LexUZ</span></span><ArrowUpRight size={17} className="shrink-0 text-blue-700"/></a>{content.legal_framework.slice(0, 3).map((item) => <a key={item.id} href={item.fileUrl || '#legal-framework'} target={item.fileUrl ? '_blank' : undefined} rel={item.fileUrl ? 'noreferrer' : undefined} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-800">{item.titleUz}</span><span className="mt-1 block truncate text-xs text-slate-500">{item.summaryUz || 'Huquqiy hujjat'}</span></span><ArrowUpRight size={17} className="shrink-0 text-blue-700"/></a>)}</div>
+        </div>
+      </div>
+    </section>
+
+    <section className="bg-slate-50 px-5 py-12 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-4xl"><div className="mb-7 text-center"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">Yordam</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Ko‘p beriladigan savollar</h2></div><div className="space-y-3">{faqs.slice(0, 6).map((faq, index) => <details key={`${faq.question}-${index}`} className="group rounded-2xl border border-slate-200 bg-white px-5 py-4 open:shadow-sm"><summary className="flex cursor-pointer list-none items-center gap-3 text-sm font-semibold text-slate-800"><CircleHelp size={18} className="shrink-0 text-blue-700"/><span className="flex-1">{faq.question}</span><ChevronDown size={17} className="shrink-0 text-slate-400 transition group-open:rotate-180"/></summary><p className="ml-8 mt-3 max-w-3xl text-sm leading-6 text-slate-600">{faq.answer}</p></details>)}</div><p className="mt-4 text-center text-[11px] text-slate-400">Huquqiy ma’lumot: <a className="font-medium text-blue-700 hover:underline" href="https://www.lex.uz/mact/-3805227" target="_blank" rel="noreferrer">“Mediatsiya to‘g‘risida”gi Qonun</a>.</p></div>
+    </section>
+
+    {materials.length > 0 && <section className="bg-slate-50 px-5 pb-14 pt-4 sm:px-8 lg:px-10"><div className="mx-auto max-w-[1420px]"><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">Foydali materiallar</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">Namunalar va qo‘llanmalar</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{materials.slice(0, 6).map((item) => <a key={item.id} href={item.fileUrl || '#materials'} target={item.fileUrl ? '_blank' : undefined} rel={item.fileUrl ? 'noreferrer' : undefined} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-800 hover:border-blue-300"><FileText size={18} className="shrink-0 text-blue-700"/>{item.titleUz}<ArrowUpRight size={15} className="ml-auto shrink-0 text-slate-400"/></a>)}</div></div></section>}
+  </>
+}
+
+function formatPublicDate(value?: string | null) {
+  if (!value) return 'Yangilik'
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 'Yangilik' : new Intl.DateTimeFormat('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' }).format(date)
 }
 
 function PublicInfoPage({ page, registryKind, setRegistryKind, query, setQuery, region, setRegion, onRegistry, onLogin, onToast, onContact }: { page: string; registryKind: string; setRegistryKind: (value: string) => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; onRegistry: () => void; onLogin: () => void; onToast: (text: string) => void; onContact: (name: string) => void }) {
