@@ -4,7 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { QueryContentDto } from './dto/query-content.dto';
-import { Prisma } from '@prisma/client';
+import { ContentStatus, Prisma } from '@prisma/client';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 
 @Injectable()
@@ -102,6 +102,10 @@ export class ContentService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async findPublished(type: string, query: QueryContentDto) {
+    return this.findAll(type, { ...query, status: ContentStatus.PUBLISHED });
   }
 
   async findOne(type: string, id: string) {

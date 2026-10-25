@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -20,6 +21,22 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
+
+const PUBLIC_CONTENT_TYPES = new Set(['news', 'legal_framework', 'templates', 'faq', 'manuals', 'video_manuals', 'announcements']);
+
+@ApiTags('Ochiq kontent')
+@Controller('public/content')
+export class PublicContentController {
+  constructor(private readonly contentService: ContentService) {}
+
+  @Get(':type')
+  @ApiOperation({ summary: 'Nashr qilingan ochiq kontentni olish' })
+  async findPublished(@Param('type') type: string, @Query() query: QueryContentDto) {
+    const normalizedType = type.toLowerCase().trim();
+    if (!PUBLIC_CONTENT_TYPES.has(normalizedType)) throw new BadRequestException('Ochiq kontent turi noto‘g‘ri');
+    return this.contentService.findPublished(normalizedType, query);
+  }
+}
 
 @ApiTags('Kontent boshqaruvi (Content Management)')
 @ApiBearerAuth()

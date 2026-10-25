@@ -7,7 +7,7 @@ import {
   LayoutDashboard, LogIn, MapPin, Menu, MessageSquare, Newspaper, Pencil, Search,
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
-import { apiPost, getAccessToken, uploadPrivateDocument } from './api'
+import { apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
@@ -43,6 +43,21 @@ const arbitratorsSeed = [
   { id: 'a1', name: 'Kamoliddin Saidov', specialty: 'Xalqaro tijorat arbitraji', region: 'Toshkent shahri', experience: '14 yil', rating: '4.9', status: 'Faol', initials: 'KS' },
   { id: 'a2', name: 'Nargiza Aliyeva', specialty: 'Investitsiya va savdo arbitraji', region: 'Toshkent shahri', experience: '10 yil', rating: '4.8', status: 'Faol', initials: 'NA' },
 ]
+const publicRegions = [
+  ['Qoraqalpog‘iston Respublikasi', 'Qoraqalpog‘iston'], ['Andijon viloyati', 'Andijon'], ['Buxoro viloyati', 'Buxoro'],
+  ['Farg‘ona viloyati', 'Farg‘ona'], ['Jizzax viloyati', 'Jizzax'], ['Xorazm viloyati', 'Xorazm'],
+  ['Namangan viloyati', 'Namangan'], ['Navoiy viloyati', 'Navoiy'], ['Qashqadaryo viloyati', 'Qashqadaryo'],
+  ['Samarqand viloyati', 'Samarqand'], ['Surxondaryo viloyati', 'Surxondaryo'], ['Sirdaryo viloyati', 'Sirdaryo'],
+  ['Toshkent shahri', 'Toshkent sh.'], ['Toshkent viloyati', 'Toshkent vil.'],
+] as const
+const publicFaqFallbacks = [
+  { question: 'Mediatsiya nima?', answer: 'Mediatsiya — taraflarning ixtiyoriy roziligi asosida nizoni mediator ko‘magida o‘zaro maqbul qarorga kelib hal etish usuli.' },
+  { question: 'Mediatorni qanday topaman?', answer: 'Reyestrdan mediator, hakamlik sudyasi yoki arbitrni ism, ixtisoslik va hudud bo‘yicha qidiring. Profil orqali tanlangan mutaxassisga murojaat yuborishingiz mumkin.' },
+  { question: 'Mediatsiyani onlayn o‘tkazish mumkinmi?', answer: 'Platforma loyihasida taraflar bilan videokonferensaloqa orqali uchrashish, sana va vaqtni kelishish imkoniyati ko‘zda tutilgan.' },
+  { question: 'Mediativ kelishuv bajarilmasa nima bo‘ladi?', answer: 'Qonunga ko‘ra kelishuv taraflar uchun majburiy va avvalo ixtiyoriy bajariladi. Ixtiyoriy bajarilmasa, taraflar uni majburiy ijroga qaratish uchun sudga murojaat qilishi mumkin.' },
+]
+type PublicContentItem = { id: string; titleUz: string; summaryUz?: string | null; bodyUz?: string | null; fileUrl?: string | null; publishedAt?: string | null }
+type PublicContentList = { items: PublicContentItem[] }
 
 const initialCases: PortalRecord[] = []
 const initialApplications: PortalRecord[] = []
