@@ -499,9 +499,35 @@ function GenericModule({ title, description, icon: Icon, items, onCreate, onToas
 }
 
 function RegistryInside({ onToast }: { onToast: (text: string) => void }) {
-  const [q,setQ]=useState(''); const [filter,setFilter]=useState('Barchasi')
-  const rows=registrySeed.filter(r=>(!q||[r.name,r.region,r.specialty].join(' ').toLowerCase().includes(q.toLowerCase()))&&(filter==='Barchasi'||r.region===filter))
-  return <><div className="mt-6 flex flex-col gap-3 sm:flex-row"><label className="relative flex-1"><Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="F.I.Sh. yoki ixtisoslik" className="form-control pl-10"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} className="form-control sm:w-60"><option>Barchasi</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map(x=><option key={x}>{x}</option>)}</select><button onClick={()=>onToast('Hudud, yosh va jins filtrlari qo‘llandi')} className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm"><Filter size={15}/>Qo‘shimcha filtr</button></div><div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="divide-y divide-slate-100">{rows.map(row=><div key={row.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xs font-bold text-emerald-800">{row.initials}</span><div><p className="text-sm font-semibold">{row.name}</p><p className="mt-1 text-xs text-slate-500">{row.specialty} · {row.region}</p></div></div><div className="flex items-center gap-3"><span className="text-xs text-slate-500">★ {row.rating}</span><button onClick={()=>onToast(`${row.name} profili ochildi`)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">Profil</button><button onClick={()=>onToast(`${row.name} profili tahrirlash uchun ochildi`)} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Tafsilotlar</button></div></div>)}</div></div></>
+  const [q, setQ] = useState('')
+  const [filter, setFilter] = useState('Barchasi')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [minExperience, setMinExperience] = useState('0')
+  const [minRating, setMinRating] = useState('0')
+  const activeExtraFilters = Number(Number(minExperience) > 0) + Number(Number(minRating) > 0)
+  const rows = registrySeed.filter((row) => {
+    const matchesSearch = !q || [row.name, row.region, row.specialty].join(' ').toLocaleLowerCase('uz').includes(q.trim().toLocaleLowerCase('uz'))
+    const matchesRegion = filter === 'Barchasi' || row.region === filter
+    const matchesExperience = Number.parseInt(row.experience, 10) >= Number(minExperience)
+    const matchesRating = Number(row.rating) >= Number(minRating)
+    return matchesSearch && matchesRegion && matchesExperience && matchesRating
+  })
+
+  return <>
+    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+      <label className="relative flex-1"><Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="F.I.Sh. yoki ixtisoslik" className="form-control pl-10"/></label>
+      <select aria-label="Hudud" value={filter} onChange={(event) => setFilter(event.target.value)} className="form-control sm:w-60"><option>Barchasi</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map((item) => <option key={item}>{item}</option>)}</select>
+      <button type="button" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((visible) => !visible)} className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm ${showAdvanced || activeExtraFilters ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white'}`}><Filter size={15}/>Qo‘shimcha filtr{activeExtraFilters > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-700 px-1 text-[11px] font-semibold text-white">{activeExtraFilters}</span>}</button>
+    </div>
+    {showAdvanced && <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <label className="block text-xs font-semibold text-slate-600">Eng kam ish tajribasi<select value={minExperience} onChange={(event) => setMinExperience(event.target.value)} className="form-control mt-1"><option value="0">Farqi yo‘q</option><option value="5">5 yil va undan ko‘p</option><option value="10">10 yil va undan ko‘p</option></select></label>
+      <label className="block text-xs font-semibold text-slate-600">Eng kam reyting<select value={minRating} onChange={(event) => setMinRating(event.target.value)} className="form-control mt-1"><option value="0">Farqi yo‘q</option><option value="4.8">4.8 va undan yuqori</option><option value="4.9">4.9 va undan yuqori</option></select></label>
+      <button type="button" onClick={() => { setMinExperience('0'); setMinRating('0') }} disabled={activeExtraFilters === 0} className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">Tozalash</button>
+    </div>}
+    <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70">
+      {rows.length === 0 ? <EmptyState title="Mos mediator topilmadi" detail="Qidiruv yoki filtrlarni o‘zgartirib ko‘ring."/> : <div className="divide-y divide-slate-100">{rows.map((row) => <div key={row.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xs font-bold text-emerald-800">{row.initials}</span><div><p className="text-sm font-semibold">{row.name}</p><p className="mt-1 text-xs text-slate-500">{row.specialty} · {row.region} · {row.experience} tajriba</p></div></div><div className="flex items-center gap-3"><span className="text-xs text-slate-500">★ {row.rating}</span><button onClick={() => onToast(`${row.name} profili ochildi`)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">Profil</button><button onClick={() => onToast(`${row.name} profili tahrirlash uchun ochildi`)} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Tafsilotlar</button></div></div>)}</div>}
+    </div>
+  </>
 }
 
 function PageHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) { return <div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">{eyebrow}</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">{title}</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">{description}</p></div> }
