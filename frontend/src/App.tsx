@@ -15,6 +15,7 @@ import { ExamWorkspace } from './ExamWorkspace'
 import { ContractsWorkspace } from './ContractsWorkspace'
 import { CalendarWorkspace, MediatorApplicationsWorkspace, MessagesWorkspace, ProfileWorkspace, TrainingWorkspace } from './MediatorCabinetWorkspaces'
 import { NotificationsWorkspace } from './NotificationsWorkspace'
+import { ContentWorkspace } from './ContentWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -520,7 +521,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/shartnoma|hujjat/i.test(page)) return <ContractsWorkspace role={role} onToast={onToast}/>
   if (/yozishma/i.test(page)) return <MessagesWorkspace onToast={onToast}/>
   if (/kalendar/i.test(page)) return <CalendarWorkspace onToast={onToast}/>
-  if (/kontent|e’lon/i.test(page)) return <GenericModule title={page} description="Yangiliklar, huquqiy ma’lumotlar va foydalanuvchi e’lonlari." icon={Newspaper} items={genericItems} onCreate={()=>onOpenModal('yangi e’lon')} onToast={onToast} action="Tahrirlash"/>
+  if (/kontent|e’lon/i.test(page)) return <ContentWorkspace role={role} onToast={onToast}/>
   if (/tashkilot|foydalanuvchi|spravochnik|audit|sozlam/i.test(page)) return <GenericModule title={page} description="Ma’muriy boshqaruv bo‘limi. O‘zgarishlar demo holatda saqlanadi." icon={Settings} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action={page==='Audit jurnali'?'Tafsilotlar':'Tahrirlash'}/>
   return <GenericModule title={page} description="Ushbu bo‘limdagi amallar demo rejimida ishlaydi." icon={LayoutDashboard} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action="Batafsil"/>
 }
