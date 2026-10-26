@@ -12,6 +12,7 @@ import { ApplicationDraft, CourtClaimsWorkspace, MediatorApplicationForm, Mediat
 import { PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
 import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
+import { ContractsWorkspace } from './ContractsWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -485,7 +486,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
   if (/portfolio|profil/i.test(page)) return <ProfilePage onToast={onToast} onCreate={()=>onOpenModal('portfolio')}/>
   if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingPage onCreate={()=>onOpenModal('malaka arizasi')} onToast={onToast}/>
-  if (/shartnoma|hujjat/i.test(page)) return <GenericModule title={page} description="Elektron shartnomalar va hujjatlar holati." icon={FileText} items={genericItems} onCreate={()=>onOpenModal('shartnoma')} onToast={onToast} action="Ko‘rish / imzolash"/>
+  if (/shartnoma|hujjat/i.test(page)) return <ContractsWorkspace role={role} onToast={onToast}/>
   if (/yozishma/i.test(page)) return <GenericModule title={page} description="Fuqarolar va mediatorlar o‘rtasidagi murojaatlar va xabarlar." icon={MessageSquare} items={genericItems} onCreate={()=>onOpenModal('yangi yozishma')} onToast={onToast} action="Xabar yuborish"/>
   if (/kalendar/i.test(page)) return <CalendarPage onToast={onToast} onCreate={()=>onOpenModal('uchrashuv')}/>
   if (/kontent|e’lon/i.test(page)) return <GenericModule title={page} description="Yangiliklar, huquqiy ma’lumotlar va foydalanuvchi e’lonlari." icon={Newspaper} items={genericItems} onCreate={()=>onOpenModal('yangi e’lon')} onToast={onToast} action="Tahrirlash"/>
