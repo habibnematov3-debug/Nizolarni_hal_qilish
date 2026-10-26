@@ -205,6 +205,9 @@ export class DocumentExchangeService {
     if (thread.targetOrganizationId !== organization.id) {
       throw new ForbiddenException('Hujjat hozir boshqa tashkilot ko‘rib chiqishida');
     }
+    if ([DocumentExchangeStatus.COMPLETED, DocumentExchangeStatus.REJECTED].includes(thread.status)) {
+      throw new ConflictException('Yakunlangan hujjat oqimida yangi amal bajarib bo‘lmaydi');
+    }
 
     const note = dto.note?.trim();
     let status: DocumentExchangeStatus;
@@ -229,6 +232,9 @@ export class DocumentExchangeService {
       case 'FORWARD_TO_MINISTRY': {
         if (!user.roles.includes('REGIONAL_STAFF') || organization.type !== OrganizationType.REGIONAL_DEPARTMENT) {
           throw new ForbiddenException('Vazirlikka hujjatni faqat hududiy adliya organi yo‘naltiradi');
+        }
+        if (thread.status !== DocumentExchangeStatus.IN_REVIEW) {
+          throw new ConflictException('Vazirlikka yuborishdan oldin hujjatni ko‘rib chiqish uchun qabul qiling');
         }
         const ministry = await this.prisma.organization.findFirst({
           where: { type: OrganizationType.MINISTRY, status: 'ACTIVE' },
