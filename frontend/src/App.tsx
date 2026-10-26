@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
+import { PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -56,7 +57,10 @@ const publicFaqFallbacks = [
 ]
 type PublicContentItem = { id: string; titleUz: string; summaryUz?: string | null; bodyUz?: string | null; fileUrl?: string | null; publishedAt?: string | null }
 type PublicContentList = { items: PublicContentItem[] }
-type PublicMapPoint = { id: string; fullName: string; type: string; region: string; address?: string | null; specialization: string[]; latitude: number; longitude: number }
+type PublicMapPoint = { id: string; fullName: string; type: string; region: string; phone?: string | null; address?: string | null; specialization: string[]; latitude: number; longitude: number }
+type PublicMediatorCard = { id: string; fullName: string; region: string; specialization: string[]; registryNumber?: string | null; rating?: { score?: number | string } | null }
+type PublicRegistryResponse = { items: PublicMediatorCard[]; pagination: { total: number } }
+type PublicRegistryStatistics = { mediators: number; activeMediatorDossiers: number; byRegion: Record<string, number> }
 
 const initialCases: PortalRecord[] = []
 const initialApplications: PortalRecord[] = []
@@ -311,6 +315,9 @@ function RegistrySearchBox({ query, setQuery, region, setRegion, kind, setKind, 
 function PublicHomeSections({ onRegistry, setRegion, onContact }: { onRegistry: () => void; setRegion: (region: string) => void; onContact: (name: string) => void }) {
   const [content, setContent] = useState<Record<string, PublicContentItem[]>>({ news: [], legal_framework: [], templates: [], manuals: [], video_manuals: [], faq: [] })
   const [mapPoints, setMapPoints] = useState<PublicMapPoint[]>([])
+  const [publicMediators, setPublicMediators] = useState<PublicMediatorCard[]>([])
+  const [registryTotal, setRegistryTotal] = useState<number | null>(null)
+  const [regionTotals, setRegionTotals] = useState<Record<string, number>>({})
   const [selectedMapPoint, setSelectedMapPoint] = useState<PublicMapPoint | null>(null)
   const [contentLoaded, setContentLoaded] = useState(false)
   useEffect(() => {
@@ -326,19 +333,30 @@ function PublicHomeSections({ onRegistry, setRegion, onContact }: { onRegistry: 
     apiGetPublic<PublicMapPoint[]>('/public/mediators/map?type=MEDIATOR')
       .then((points) => { if (active) setMapPoints(points.filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude))) })
       .catch(() => { if (active) setMapPoints([]) })
+    Promise.allSettled([
+      apiGetPublic<PublicRegistryResponse>('/public/mediators?type=MEDIATOR&limit=100'),
+      apiGetPublic<PublicRegistryStatistics>('/public/statistics'),
+    ]).then(([directory, statistics]) => {
+      if (!active) return
+      if (directory.status === 'fulfilled') {
+        setPublicMediators(directory.value.items || [])
+        setRegistryTotal(directory.value.pagination?.total ?? directory.value.items?.length ?? 0)
+      }
+      if (statistics.status === 'fulfilled') setRegionTotals(statistics.value.byRegion || {})
+    })
     return () => { active = false }
   }, [])
 
-  const activeMediators = registrySeed.filter((item) => item.status === 'Faol')
-  const coveredRegions = new Set(registrySeed.map((item) => item.region)).size
-  const leadingMediators = [...registrySeed].sort((a, b) => Number(b.rating) - Number(a.rating)).slice(0, 3)
+  const activeMediators = registryTotal ?? publicMediators.length
+  const coveredRegions = Object.keys(regionTotals).length || new Set(publicMediators.map((item) => item.region)).size
+  const leadingMediators = [...publicMediators].filter((item) => item.rating?.score != null).sort((a, b) => Number(b.rating?.score) - Number(a.rating?.score)).slice(0, 3)
   const faqs = content.faq.length ? content.faq.map((item) => ({ question: item.titleUz, answer: item.bodyUz || item.summaryUz || '' })) : publicFaqFallbacks
   const materials = [...content.templates, ...content.manuals, ...content.video_manuals]
 
   return <>
     <section className="relative z-10 mx-auto -mt-7 max-w-[1420px] px-5 sm:px-8 lg:px-10">
       <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
-        {[[String(registrySeed.length), 'Jami mediatorlar', 'Namuna reyestri', 'text-blue-800'], [String(activeMediators.length), 'Faol mutaxassislar', 'Namuna reyestri', 'text-emerald-600'], [String(coveredRegions), 'Hudud qamrovi', 'Reyestrdagi hududlar', 'text-amber-500'], ['3 ta', 'Mutaxassis turi', 'Mediator · sudya · arbitr', 'text-violet-600']].map(([value, label, detail, color]) => <div key={label} className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-4 text-center"><p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p><p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></div>)}
+        {[[String(registryTotal ?? '—'), 'Faol mediatorlar', 'Ochiq reyestr', 'text-blue-800'], [String(publicMediators.length), 'Ko‘rsatilgan profillar', 'Reyting ma’lumoti bilan', 'text-emerald-600'], [String(coveredRegions), 'Hudud qamrovi', 'Reyestrdagi hududlar', 'text-amber-500'], ['3 ta', 'Mutaxassis turi', 'Mediator · sudya · arbitr', 'text-violet-600']].map(([value, label, detail, color]) => <div key={label} className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-4 text-center"><p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p><p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></div>)}
       </div>
     </section>
 
@@ -362,7 +380,7 @@ function PublicHomeSections({ onRegistry, setRegion, onContact }: { onRegistry: 
             </svg>
           </div>
           <div className="flex min-h-[300px] flex-col rounded-2xl border border-white/10 bg-white/[.07] p-4 sm:p-5">
-            {selectedMapPoint ? <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Tanlangan mediator</p><h3 className="mt-3 text-lg font-bold text-white">{selectedMapPoint.fullName}</h3><p className="mt-1 text-sm text-blue-100/75">{selectedMapPoint.region}</p><p className="mt-3 text-xs leading-5 text-blue-100/70">{selectedMapPoint.address || 'Manzil qo‘shilmagan'}</p>{selectedMapPoint.specialization?.length > 0 && <p className="mt-3 text-xs leading-5 text-blue-100/70">Ixtisoslik: {selectedMapPoint.specialization.join(', ')}</p>}<a className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-amber-300 hover:text-amber-200" href={`https://www.openstreetmap.org/?mlat=${selectedMapPoint.latitude}&mlon=${selectedMapPoint.longitude}#map=12/${selectedMapPoint.latitude}/${selectedMapPoint.longitude}`} target="_blank" rel="noreferrer">Xaritada ochish<ArrowUpRight size={15}/></a></> : <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Mediatorlar xaritasi</p><h3 className="mt-3 text-lg font-bold text-white">{mapPoints.length ? `${mapPoints.length} ta manzil` : 'Koordinatalar kiritilmagan'}</h3><p className="mt-2 text-sm leading-6 text-blue-100/70">Xaritadagi belgini tanlab, mediatorning hududi va manzilini ko‘ring. Reyestr yozuviga koordinata kiritilgach, belgi xaritada avtomatik chiqadi.</p><div className="mt-4 grid grid-cols-2 gap-2">{publicRegions.slice(0, 8).map(([regionName, shortName]) => <button key={regionName} onClick={() => { setRegion(regionName); onRegistry() }} className="rounded-lg border border-white/10 bg-white/[.06] px-3 py-2 text-left text-xs font-semibold text-slate-100 hover:bg-white/10">{shortName}<span className="ml-2 text-amber-300">{mapPoints.filter((point) => point.region.toLocaleLowerCase('uz').includes(shortName.toLocaleLowerCase('uz'))).length}</span></button>)}</div></>}
+            {selectedMapPoint ? <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Tanlangan mediator</p><h3 className="mt-3 text-lg font-bold text-white">{selectedMapPoint.fullName}</h3><p className="mt-1 text-sm text-blue-100/75">{selectedMapPoint.region}</p><p className="mt-3 text-xs leading-5 text-blue-100/70">{selectedMapPoint.address || 'Manzil qo‘shilmagan'}</p>{selectedMapPoint.phone && <a className="mt-2 text-xs text-amber-200 hover:underline" href={`tel:${selectedMapPoint.phone}`}>{selectedMapPoint.phone}</a>}{selectedMapPoint.specialization?.length > 0 && <p className="mt-3 text-xs leading-5 text-blue-100/70">Ixtisoslik: {selectedMapPoint.specialization.join(', ')}</p>}<a className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-amber-300 hover:text-amber-200" href={`https://www.openstreetmap.org/?mlat=${selectedMapPoint.latitude}&mlon=${selectedMapPoint.longitude}#map=12/${selectedMapPoint.latitude}/${selectedMapPoint.longitude}`} target="_blank" rel="noreferrer">Xaritada ochish<ArrowUpRight size={15}/></a></> : <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">Mediatorlar xaritasi</p><h3 className="mt-3 text-lg font-bold text-white">{mapPoints.length ? `${mapPoints.length} ta manzil` : 'Koordinatalar kiritilmagan'}</h3><p className="mt-2 text-sm leading-6 text-blue-100/70">Xaritadagi belgini tanlab, mediatorning hududi va manzilini ko‘ring. Reyestr yozuviga koordinata kiritilgach, belgi xaritada avtomatik chiqadi.</p><div className="mt-4 grid grid-cols-2 gap-2">{publicRegions.map(([regionName, shortName]) => <button key={regionName} onClick={() => { setRegion(regionName); onRegistry() }} className="rounded-lg border border-white/10 bg-white/[.06] px-3 py-2 text-left text-xs font-semibold text-slate-100 hover:bg-white/10">{shortName}<span className="ml-2 text-amber-300">{mapPoints.filter((point) => point.region.toLocaleLowerCase('uz').includes(shortName.toLocaleLowerCase('uz'))).length}</span></button>)}</div></>}
           </div>
         </div>
         <p className="mt-3 text-[11px] text-blue-100/50">Xarita nuqtalari ochiq reyestrdagi faol mediatorlar koordinatalaridan olinadi.</p>
@@ -372,8 +390,8 @@ function PublicHomeSections({ onRegistry, setRegion, onContact }: { onRegistry: 
     <section className="bg-slate-50 px-5 py-10 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-[1420px]">
         <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">Reyting</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Yetakchi mediatorlar</h2><p className="mt-2 text-sm text-slate-500">Reyestrdagi mutaxassislar bilan tanishing.</p></div><button onClick={onRegistry} className="inline-flex items-center gap-2 self-start text-sm font-semibold text-blue-800 hover:text-blue-950">Barchasini ko‘rish<ArrowRight size={16}/></button></div>
-        <div className="grid gap-4 md:grid-cols-3">{leadingMediators.map((person) => <article key={person.id} className="flex min-h-52 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-900">{person.initials}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{person.name}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><MapPin size={12}/>{person.region}</p></div><span className="flex items-center gap-1 text-sm font-bold text-slate-800"><Star size={14} className="fill-amber-400 text-amber-400"/>{person.rating}</span></div><div className="mt-5 flex flex-wrap gap-2">{person.specialty.split(' va ').slice(0, 2).map((specialty) => <span key={specialty} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-medium text-slate-600">{specialty}</span>)}</div><div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-500">{person.experience} tajriba</span><button onClick={() => onContact(person.name)} className="rounded-lg bg-blue-800 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-900">Murojaat qilish</button></div></article>)}</div>
-        <p className="mt-3 text-right text-[11px] text-slate-400">Reyting namuna reyestridagi demo ma’lumotlaridan olindi.</p>
+        <div className="grid gap-4 md:grid-cols-3">{leadingMediators.map((person) => <article key={person.id} className="flex min-h-52 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-900">{person.fullName.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{person.fullName}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><MapPin size={12}/>{person.region}</p></div><span className="flex items-center gap-1 text-sm font-bold text-slate-800"><Star size={14} className="fill-amber-400 text-amber-400"/>{Number(person.rating?.score).toFixed(1)}</span></div><div className="mt-5 flex flex-wrap gap-2">{(person.specialization || []).slice(0, 2).map((specialty) => <span key={specialty} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-medium text-slate-600">{specialty}</span>)}</div><div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-500">Reyestr № {person.registryNumber || '—'}</span><button onClick={() => onContact(person.fullName)} className="rounded-lg bg-blue-800 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-900">Murojaat qilish</button></div></article>)}</div>
+        {!leadingMediators.length && <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Reyting shakllangan mediatorlar topilmadi.</p>}
       </div>
     </section>
 
@@ -403,6 +421,7 @@ function formatPublicDate(value?: string | null) {
 }
 
 function PublicInfoPage({ page, registryKind, setRegistryKind, query, setQuery, region, setRegion, onRegistry, onLogin, onToast, onContact }: { page: string; registryKind: string; setRegistryKind: (value: string) => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; onRegistry: () => void; onLogin: () => void; onToast: (text: string) => void; onContact: (name: string) => void }) {
+  if (page === 'Mediatorlar reyestri') return <PublicRegistryDirectory registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} onLogin={onLogin} onContact={onContact}/>
   const source = registryKind === 'Hakamlik sudyalari' ? judgesSeed : registryKind === 'Arbitrlar' ? arbitratorsSeed : registrySeed
   const results = source.filter((item) => [item.name, item.specialty, item.region].join(' ').toLocaleLowerCase('uz').includes(query.toLocaleLowerCase('uz')) && (region === 'Barcha hududlar' || item.region === region))
   if (page === 'Mediatorlar reyestri') return <section className="min-h-[calc(100vh-130px)] bg-slate-50 px-4 py-8 sm:px-8"><div className="mx-auto max-w-6xl"><button onClick={onRegistry} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"><ArrowLeft size={16}/>Bosh sahifa</button><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-xs font-semibold uppercase tracking-wide text-blue-800">Ochiq ma’lumotlar</p><h1 className="mt-2 text-4xl font-semibold tracking-tight">{registryKind}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Reyestr mutaxassislarini ism, ixtisoslik va hudud bo‘yicha toping.</p></div><button onClick={onLogin} className="inline-flex h-11 items-center gap-2 rounded-md bg-blue-800 px-5 text-sm font-semibold text-white hover:bg-blue-900">Kabinetga kirish<LogIn size={16}/></button></div><div className="mt-7 flex gap-2">{['Mediatorlar','Hakamlik sudyalari','Arbitrlar'].map(kind=><button key={kind} onClick={()=>setRegistryKind(kind)} className={`rounded-none border-b-2 px-4 py-2 text-xs font-semibold ${registryKind===kind?'border-blue-800 text-blue-900':'border-transparent text-slate-600'}`}>{kind}</button>)}</div><div className="mt-4 grid gap-3 sm:grid-cols-[1fr_240px]"><label className="relative"><Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="F.I.Sh., hudud yoki ixtisoslik" className="h-12 w-full rounded-md border border-slate-300 bg-white pl-11 pr-4 text-sm outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"/></label><select value={region} onChange={(e)=>setRegion(e.target.value)} className="h-12 rounded-md border border-slate-300 bg-white px-4 text-sm outline-none"><option>Barcha hududlar</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map((r)=><option key={r}>{r}</option>)}</select></div><div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{results.map((person)=><article key={person.id} className="border border-slate-200 bg-white p-5"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-sm bg-slate-100 text-sm font-semibold text-slate-800">{person.initials}</span><div><h2 className="font-semibold">{person.name}</h2><span className="mt-1 inline-flex items-center gap-1 rounded-sm bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"><span className="h-1.5 w-1.5 rounded-full bg-slate-500"/>{person.status}</span></div></div><span className="inline-flex items-center gap-1 text-xs font-semibold"><Star size={14} className="fill-amber-400 text-amber-400"/>{person.rating}</span></div><p className="mt-5 text-sm font-medium text-slate-700">{person.specialty}</p><div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500"><span className="inline-flex items-center gap-1"><MapPin size={13}/>{person.region}</span><span>{person.experience} tajriba</span></div><div className="mt-5 flex gap-2 border-t border-slate-100 pt-4"><button onClick={()=>onToast(`${person.name} profili ochildi`)} className="flex-1 rounded-md border border-slate-300 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Profilni ko‘rish</button><button onClick={()=>onContact(person.name)} className="flex-1 rounded-md bg-blue-800 py-2 text-xs font-semibold text-white hover:bg-blue-900">Murojaat qilish</button></div></article>)}</div>{results.length===0&&<EmptyState title="Mutaxassis topilmadi" detail="Qidiruv so‘zini o‘zgartirib ko‘ring."/>}<div className="mt-7 border border-slate-200 bg-white p-5 text-slate-900"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="font-semibold">Xaritada ko‘rish</p><p className="mt-1 text-xs text-slate-500">Hududingizdagi reyestr mutaxassislarini xarita ko‘rinishida izlang.</p></div><button onClick={()=>onToast('Xarita demo ko‘rinishi — geolokatsiya integratsiyasi keyin ulanadi')} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-blue-800 hover:bg-slate-50"><MapPin size={15}/>Xaritani ochish</button></div></div></div></section>
@@ -520,35 +539,7 @@ function GenericModule({ title, description, icon: Icon, items, onCreate, onToas
 }
 
 function RegistryInside({ onToast }: { onToast: (text: string) => void }) {
-  const [q, setQ] = useState('')
-  const [filter, setFilter] = useState('Barchasi')
-  const [showAdvanced, setShowAdvanced] = useState(false)
-  const [minExperience, setMinExperience] = useState('0')
-  const [minRating, setMinRating] = useState('0')
-  const activeExtraFilters = Number(Number(minExperience) > 0) + Number(Number(minRating) > 0)
-  const rows = registrySeed.filter((row) => {
-    const matchesSearch = !q || [row.name, row.region, row.specialty].join(' ').toLocaleLowerCase('uz').includes(q.trim().toLocaleLowerCase('uz'))
-    const matchesRegion = filter === 'Barchasi' || row.region === filter
-    const matchesExperience = Number.parseInt(row.experience, 10) >= Number(minExperience)
-    const matchesRating = Number(row.rating) >= Number(minRating)
-    return matchesSearch && matchesRegion && matchesExperience && matchesRating
-  })
-
-  return <>
-    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-      <label className="relative flex-1"><Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="F.I.Sh. yoki ixtisoslik" className="form-control pl-10"/></label>
-      <select aria-label="Hudud" value={filter} onChange={(event) => setFilter(event.target.value)} className="form-control sm:w-60"><option>Barchasi</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map((item) => <option key={item}>{item}</option>)}</select>
-      <button type="button" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((visible) => !visible)} className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm ${showAdvanced || activeExtraFilters ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white'}`}><Filter size={15}/>Qo‘shimcha filtr{activeExtraFilters > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-700 px-1 text-[11px] font-semibold text-white">{activeExtraFilters}</span>}</button>
-    </div>
-    {showAdvanced && <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-      <label className="block text-xs font-semibold text-slate-600">Eng kam ish tajribasi<select value={minExperience} onChange={(event) => setMinExperience(event.target.value)} className="form-control mt-1"><option value="0">Farqi yo‘q</option><option value="5">5 yil va undan ko‘p</option><option value="10">10 yil va undan ko‘p</option></select></label>
-      <label className="block text-xs font-semibold text-slate-600">Eng kam reyting<select value={minRating} onChange={(event) => setMinRating(event.target.value)} className="form-control mt-1"><option value="0">Farqi yo‘q</option><option value="4.8">4.8 va undan yuqori</option><option value="4.9">4.9 va undan yuqori</option></select></label>
-      <button type="button" onClick={() => { setMinExperience('0'); setMinRating('0') }} disabled={activeExtraFilters === 0} className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">Tozalash</button>
-    </div>}
-    <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70">
-      {rows.length === 0 ? <EmptyState title="Mos mediator topilmadi" detail="Qidiruv yoki filtrlarni o‘zgartirib ko‘ring."/> : <div className="divide-y divide-slate-100">{rows.map((row) => <div key={row.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xs font-bold text-emerald-800">{row.initials}</span><div><p className="text-sm font-semibold">{row.name}</p><p className="mt-1 text-xs text-slate-500">{row.specialty} · {row.region} · {row.experience} tajriba</p></div></div><div className="flex items-center gap-3"><span className="text-xs text-slate-500">★ {row.rating}</span><button onClick={() => onToast(`${row.name} profili ochildi`)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">Profil</button><button onClick={() => onToast(`${row.name} profili tahrirlash uchun ochildi`)} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Tafsilotlar</button></div></div>)}</div>}
-    </div>
-  </>
+  return <StaffRegistryWorkspace demoRows={registrySeed} onToast={onToast}/>
 }
 
 function PageHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) { return <div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">{eyebrow}</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">{title}</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">{description}</p></div> }

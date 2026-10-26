@@ -33,8 +33,51 @@ export function apiPost<T>(path: string, body: unknown) {
   return request<T>(path, { method: 'POST', body: JSON.stringify(body) })
 }
 
+export function apiPut<T>(path: string, body: unknown) {
+  return request<T>(path, { method: 'PUT', body: JSON.stringify(body) })
+}
+
+export function apiPatch<T>(path: string, body: unknown) {
+  return request<T>(path, { method: 'PATCH', body: JSON.stringify(body) })
+}
+
+export function apiDelete<T>(path: string) {
+  return request<T>(path, { method: 'DELETE' })
+}
+
 export function apiGet<T>(path: string) {
   return request<T>(path)
+}
+
+export function apiUpload<T>(path: string, fieldName: string, file: File) {
+  const form = new FormData()
+  form.append(fieldName, file)
+  return request<T>(path, { method: 'POST', body: form })
+}
+
+export async function apiDownload(path: string, filename: string) {
+  const token = getAccessToken()
+  if (!token) throw new Error('Faylni yuklab olish uchun tizimga kiring.')
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+  } catch {
+    throw new Error('Platforma serveriga ulanib bo‘lmadi.')
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null) as { message?: string | string[] } | null
+    const message = Array.isArray(payload?.message) ? payload.message.join('. ') : payload?.message
+    throw new Error(message || `Faylni yuklab bo‘lmadi (${response.status})`)
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 export async function apiGetPublic<T>(path: string): Promise<T> {

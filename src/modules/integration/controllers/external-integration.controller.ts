@@ -23,7 +23,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
-import { AuthUser } from '../../../common/decorators/current-user.decorator';
+import { AuthUser, CurrentUser } from '../../../common/decorators/current-user.decorator';
 
 @ApiTags('Tashqi tizimlar integratsiyasi (ENT — Integratsiya adapterlari)')
 @Controller('external')
