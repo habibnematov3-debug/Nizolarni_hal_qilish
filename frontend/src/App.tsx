@@ -513,11 +513,11 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
   if (/hisobot|statistika/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
   if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
-  if (/portfolio|profil/i.test(page)) return <ProfilePage onToast={onToast} onCreate={()=>onOpenModal('portfolio')}/>
-  if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingPage role={role} page={page} onCreate={()=>onOpenModal('malaka arizasi')} onToast={onToast}/>
+  if (/portfolio|profil/i.test(page)) return <ProfileWorkspace onToast={onToast}/>
+  if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingWorkspace role={role} onToast={onToast}/>
   if (/shartnoma|hujjat/i.test(page)) return <ContractsWorkspace role={role} onToast={onToast}/>
   if (/yozishma/i.test(page)) return <MessagesWorkspace onToast={onToast}/>
-  if (/kalendar/i.test(page)) return <CalendarPage onToast={onToast} onCreate={()=>onOpenModal('uchrashuv')}/>
+  if (/kalendar/i.test(page)) return <CalendarWorkspace onToast={onToast}/>
   if (/kontent|e’lon/i.test(page)) return <GenericModule title={page} description="Yangiliklar, huquqiy ma’lumotlar va foydalanuvchi e’lonlari." icon={Newspaper} items={genericItems} onCreate={()=>onOpenModal('yangi e’lon')} onToast={onToast} action="Tahrirlash"/>
   if (/tashkilot|foydalanuvchi|spravochnik|audit|sozlam/i.test(page)) return <GenericModule title={page} description="Ma’muriy boshqaruv bo‘limi. O‘zgarishlar demo holatda saqlanadi." icon={Settings} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action={page==='Audit jurnali'?'Tafsilotlar':'Tahrirlash'}/>
   if (/bildirish|xabarnoma/i.test(page)) return <GenericModule title={page} description="Jarayonlar va platforma yangiliklari bo‘yicha xabarnomalar." icon={Bell} items={[{id:'XAB-01',title:'Yangi e’lon: malaka oshirish kurslari',status:'O‘qilmagan',createdAt:'Bugun'},{id:'XAB-02',title:'Ariza holati yangilandi',status:'O‘qilgan',createdAt:'Kecha'}]} onCreate={()=>onToast('Barcha xabarlar o‘qildi deb belgilandi')} onToast={onToast} action="O‘qildi"/>
