@@ -7,7 +7,7 @@ import {
   LayoutDashboard, LogIn, MapPin, Menu, MessageSquare, Newspaper, Pencil, Phone, Search,
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
-import { apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
+import { apiGet, apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 import { PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
 import { ReportsWorkspace } from './ReportsWorkspace'
@@ -112,6 +112,9 @@ export default function App() {
   const [reports, setReports] = useState(() => loadRecords('nizolar.demo.reports', initialReports))
   const [genericItems, setGenericItems] = useState(() => loadRecords('nizolar.demo.items', []))
   const [announcementsAccepted, setAnnouncementsAccepted] = useState(() => localStorage.getItem('nizolar.demo.notice.read') === 'yes')
+  const [pendingAnnouncements, setPendingAnnouncements] = useState<PublicContentItem[]>([])
+  const [announcementError, setAnnouncementError] = useState('')
+  const [announcementReload, setAnnouncementReload] = useState(0)
   const [formName, setFormName] = useState('')
   const [formDetail, setFormDetail] = useState('')
   const [selectedMediator, setSelectedMediator] = useState('')
@@ -124,6 +127,21 @@ export default function App() {
   useEffect(() => { localStorage.setItem('nizolar.demo.items', JSON.stringify(genericItems)) }, [genericItems])
   useEffect(() => { if (role) localStorage.setItem('nizolar.demo.role', role); else localStorage.removeItem('nizolar.demo.role') }, [role])
   useEffect(() => { if (!toast) return; const t = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(t) }, [toast])
+  useEffect(() => {
+    if (role !== 'MEDIATOR' || !getAccessToken()) { setPendingAnnouncements([]); return }
+    let active = true
+    setAnnouncementsAccepted(false)
+    setAnnouncementError('')
+    apiGet<PublicContentItem[]>('/public/announcements/pending')
+      .then((items) => {
+        if (!active) return
+        setPendingAnnouncements(items || [])
+        setAnnouncementsAccepted(!(items || []).length)
+        if (!(items || []).length) setAnnouncementGate(false)
+      })
+      .catch((cause) => { if (active) setAnnouncementError(cause instanceof Error ? cause.message : 'E’lonlarni yuklab bo‘lmadi.') })
+    return () => { active = false }
+  }, [role, announcementReload])
   useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
 
   const currentRole = roles.find((item) => item.key === role)
@@ -135,7 +153,16 @@ export default function App() {
   const goHome = () => { setRole(null); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false) }
   const startRole = (key: RoleKey) => {
     setRole(key); setActivePage(key === 'ADMIN' ? 'Tashkilotlar' : navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
-    if (key === 'MEDIATOR' && !announcementsAccepted) setAnnouncementGate(true)
+    if (key === 'MEDIATOR' && (getAccessToken() || !announcementsAccepted)) setAnnouncementGate(true)
+  }
+  const acknowledgeAnnouncements = async () => {
+    if (getAccessToken() && pendingAnnouncements.length) {
+      try {
+        await Promise.all(pendingAnnouncements.map((item) => apiPost(`/public/announcements/${item.id}/acknowledge`, {})))
+        setPendingAnnouncements([])
+      } catch (cause) { setAnnouncementError(cause instanceof Error ? cause.message : 'E’lon bilan tanishganlikni saqlab bo‘lmadi.'); return }
+    } else localStorage.setItem('nizolar.demo.notice.read', 'yes')
+    setAnnouncementsAccepted(true); setAnnouncementGate(false); setToast('E’lon bilan tanishilgan deb belgilandi')
   }
   const signOut = () => { goHome(); setToast('Demo kabinetdan chiqdingiz') }
 
@@ -267,7 +294,7 @@ export default function App() {
     <div className="md:pl-[264px]">
       <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Menyuni ochish"><Menu size={20}/></button>{role === 'ADMIN' ? <label className="relative hidden max-w-sm flex-1 sm:block"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input aria-label="Dashboard bo‘ylab qidirish" placeholder="Qidirish..." className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"/></label> : <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{activePage}</p><p className="hidden text-xs text-slate-400 sm:block">{currentRole?.title} · Demo rejim</p></div>}</div><div className="flex items-center gap-3">{role !== 'ADMIN' && <button onClick={() => setActivePage(nav.includes('Xabarnomalar') ? 'Xabarnomalar' : nav[nav.length - 1])} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Xabarnomalar"><Bell size={18}/><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"/></button>}<span className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="flex items-center gap-2.5"><div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white ${role === 'ADMIN' ? 'bg-blue-600' : 'bg-slate-950'}`}>{role === 'ADMIN' ? 'A' : currentRole?.title.slice(0,1)}</div><div className="hidden sm:block"><p className="text-xs font-semibold">{role === 'ADMIN' ? 'Admin' : 'Demo foydalanuvchi'}</p><p className="text-[11px] text-slate-400">{currentRole?.title}</p></div></div>{role === 'ADMIN' && <button onClick={signOut} aria-label="Chiqish" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogIn size={18}/></button>}<ChevronDown size={15} className="text-slate-400"/></div></header>
       <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
-        {restricted ? <section className="mx-auto mt-12 max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Newspaper size={25}/></div><p className="mt-5 text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Tanishish talab qilinadi</p><h1 className="mt-2 text-2xl font-semibold">{demoNotice.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{demoNotice.text}</p><button onClick={() => { setAnnouncementsAccepted(true); localStorage.setItem('nizolar.demo.notice.read', 'yes'); setAnnouncementGate(false); setToast('E’lon bilan tanishilgan deb belgilandi') }} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-800"><CheckCheck size={17}/>Tanishdim</button></section> : <WorkspaceContent role={role} page={activePage} cases={cases} applications={applications} reports={reports} genericItems={genericItems} onOpenModal={(key) => { setFormName(''); setFormDetail(''); setModal(key) }} onNavigatePage={setActivePage} onAdvanceCase={advanceCase} onAdvanceApplication={advanceApplication} onAdvanceReport={advanceReport} onToast={setToast} onPublicRegistry={() => setActivePage(nav.includes('Mediatorlar reyestri') ? 'Mediatorlar reyestri' : nav[1])} onStartCourtClaimMediation={(caseNumber) => { setCourtCaseNumber(caseNumber); setModal('mediatsiya') }} />}
+        {restricted ? <section className="mx-auto mt-12 max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Newspaper size={25}/></div><p className="mt-5 text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Tanishish talab qilinadi</p><h1 className="mt-2 text-2xl font-semibold">{pendingAnnouncements[0]?.titleUz || demoNotice.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{pendingAnnouncements[0]?.bodyUz || pendingAnnouncements[0]?.summaryUz || demoNotice.text}</p>{pendingAnnouncements.slice(1).map((item) => <article key={item.id} className="mt-3 rounded-lg border border-slate-200 p-3 text-left"><h2 className="text-sm font-semibold">{item.titleUz}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{item.bodyUz || item.summaryUz}</p></article>)}{announcementError && <p role="alert" className="mt-3 text-xs text-red-700">{announcementError}</p>}{announcementError && getAccessToken() && <button onClick={() => setAnnouncementReload((value) => value + 1)} className="mt-4 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold">E’lonlarni qayta yuklash</button>}<button disabled={Boolean(announcementError && getAccessToken())} onClick={() => void acknowledgeAnnouncements()} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCheck size={17}/>Tanishdim</button></section> : <WorkspaceContent role={role} page={activePage} cases={cases} applications={applications} reports={reports} genericItems={genericItems} onOpenModal={(key) => { setFormName(''); setFormDetail(''); setModal(key) }} onNavigatePage={setActivePage} onAdvanceCase={advanceCase} onAdvanceApplication={advanceApplication} onAdvanceReport={advanceReport} onToast={setToast} onPublicRegistry={() => setActivePage(nav.includes('Mediatorlar reyestri') ? 'Mediatorlar reyestri' : nav[1])} onStartCourtClaimMediation={(caseNumber) => { setCourtCaseNumber(caseNumber); setModal('mediatsiya') }} />}
       </main>
     </div>
     {mobileNav && <button aria-label="Menyuni yopish" onClick={() => setMobileNav(false)} className="fixed inset-0 z-20 bg-slate-950/40 md:hidden"/>}
