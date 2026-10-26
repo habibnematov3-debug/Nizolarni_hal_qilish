@@ -1,4 +1,4 @@
-import { IsArray, IsDateString, IsEmail, IsIn, IsNumber, IsOptional, IsString, IsUUID, MaxLength, MinLength, Min, Max } from 'class-validator';
+import { IsArray, IsDateString, IsEmail, IsIn, IsNumber, IsOptional, IsString, IsUUID, IsUrl, MaxLength, MinLength, Min, Max } from 'class-validator';
 
 export class CreateMkApplicationDto {
   @IsString() @MaxLength(30) phone: string;
@@ -21,6 +21,7 @@ export class InviteToExamDto {
   @IsString() @MaxLength(500) venue: string;
   @IsString() @MaxLength(30) secretaryPhone: string;
   @IsOptional() @IsNumber() @Min(1) @Max(100) questionCount?: number;
+  @IsOptional() @IsUrl({ protocols: ['https'], require_protocol: true }) streamUrl?: string;
 }
 
 export class SubmitScoreDto {

@@ -5,6 +5,9 @@ import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/services/notifications.service';
 import { LegalCapacityIntegrationAdapter } from '../integration/adapters/legal-capacity.adapter';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
+import PDFDocument from 'pdfkit';
+import { FileAccessLevel } from '../platform/files/dto/file-upload.dto';
+import { FileStorageService } from '../platform/files/file-storage.service';
 import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @Injectable()
@@ -14,6 +17,7 @@ export class MkService {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly legalCapacity: LegalCapacityIntegrationAdapter,
+    private readonly files: FileStorageService,
   ) {}
 
   async createApplication(user: AuthUser, dto: CreateMkApplicationDto) {
@@ -133,7 +137,7 @@ export class MkService {
     if (!examPayment) throw new ConflictException('Imtihonga taklif yuborishdan oldin ariza bo‘yicha to‘lov tasdiqlanishi kerak');
     const questions = await this.prisma.mkQuestion.findMany({ where: { isActive: true }, take: dto.questionCount || 20 });
     const selected = questions.sort(() => Math.random() - 0.5).map((question) => question.id);
-    const exam = await this.prisma.mkExam.create({ data: { applicationId: id, scheduledAt: new Date(dto.scheduledAt), venue: dto.venue, secretaryPhone: dto.secretaryPhone, selectedQuestions: selected as unknown as Prisma.InputJsonValue } });
+    const exam = await this.prisma.mkExam.create({ data: { applicationId: id, scheduledAt: new Date(dto.scheduledAt), venue: dto.venue, secretaryPhone: dto.secretaryPhone, selectedQuestions: selected as unknown as Prisma.InputJsonValue, streamUrl: dto.streamUrl } });
     await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.INVITED } });
     await this.notify(item.applicantId, `Imtihon sanasi: ${new Date(dto.scheduledAt).toLocaleString('uz-UZ')}. Joy: ${dto.venue}`, `mk-${id}-exam`);
     return exam;
@@ -158,14 +162,58 @@ export class MkService {
   }
 
   private async finalizeIfComplete(examId: string) {
-    const exam = await this.prisma.mkExam.findUnique({ where: { id: examId }, include: { application: true, assignments: { include: { score: true } } } });
-    if (!exam || !exam.assignments.length || exam.assignments.some((item) => !item.score)) return;
+    const exam = await this.prisma.mkExam.findUnique({ where: { id: examId }, include: { application: true, assignments: { include: { score: true, member: true } } } });
+    if (!exam || exam.status === MkExamStatus.COMPLETED || !exam.assignments.length || exam.assignments.some((item) => !item.score)) return;
     const average = exam.assignments.reduce((sum, item) => sum + Number(item.score!.score), 0) / exam.assignments.length;
     const passed = average >= 60;
-    await this.prisma.mkExam.update({ where: { id: examId }, data: { status: MkExamStatus.COMPLETED } });
+    const committeeUsers = await this.prisma.user.findMany({ where: { id: { in: exam.assignments.map((item) => item.member.userId) } }, select: { id: true, fullName: true } });
+    const applicant = await this.prisma.user.findUnique({ where: { id: exam.application.applicantId }, select: { fullName: true } });
+    const protocol = await this.createExamProtocol(exam, committeeUsers, applicant?.fullName || 'Talabgor', average, passed);
+    const protocolFile = await this.files.upload({
+      fieldname: 'file', originalname: `imtihon-bayonnomasi-${exam.id}.pdf`, encoding: '7bit',
+      mimetype: 'application/pdf', size: protocol.length, buffer: protocol,
+      destination: '', filename: '', path: '', stream: undefined as any,
+    } as Express.Multer.File, exam.application.applicantId, FileAccessLevel.INTERNAL, 'Malaka imtihoni elektron bayonnomasi');
+    await this.prisma.mkExam.update({ where: { id: examId }, data: { status: MkExamStatus.COMPLETED, protocolFileId: protocolFile.id } });
     await this.prisma.mkApplication.update({ where: { id: exam.applicationId }, data: { status: passed ? MkApplicationStatus.PASSED : MkApplicationStatus.FAILED } });
     if (passed) await this.registerApplicant({ id: exam.application.applicantId } as AuthUser, exam.applicationId, 'Imtihon natijasi asosida');
     await this.notify(exam.application.applicantId, passed ? 'Imtihon natijasi: o\'tdingiz.' : 'Imtihon natijasi: o\'ta olmadingiz.', `mk-${exam.applicationId}-result`);
+  }
+
+  async downloadProtocol(user: AuthUser, examId: string) {
+    const exam = await this.prisma.mkExam.findUnique({ where: { id: examId }, include: { application: true, assignments: { include: { member: true } } } });
+    if (!exam?.protocolFileId) throw new NotFoundException('Imtihon bayonnomasi hali tayyor emas');
+    const isApplicant = exam.application.applicantId === user.id;
+    const isAssignedMember = exam.assignments.some((assignment) => assignment.member.userId === user.id);
+    const isStaff = user.roles.some((role) => ['ADMIN', 'REGIONAL_STAFF', 'MINISTRY_STAFF'].includes(role));
+    if (!isApplicant && !isAssignedMember && !isStaff) throw new ForbiddenException('Bayonnomani ko‘rish vakolati yo‘q');
+    return this.files.download(exam.protocolFileId, user.id);
+  }
+
+  private createExamProtocol(exam: any, committee: { id: string; fullName: string }[], applicantName: string, average: number, passed: boolean) {
+    return new Promise<Buffer>((resolve, reject) => {
+      const document = new PDFDocument({ margin: 50 });
+      const chunks: Buffer[] = [];
+      document.on('data', (chunk: Buffer) => chunks.push(chunk));
+      document.on('error', reject);
+      document.on('end', () => resolve(Buffer.concat(chunks)));
+      document.fontSize(18).text('MALAKA IMTIHONI BAYONNOMASI', { align: 'center' });
+      document.moveDown();
+      document.fontSize(11).text(`Ariza raqami: ${exam.applicationId}`);
+      document.text(`Talabgor: ${applicantName}`);
+      document.text(`Imtihon sanasi: ${exam.scheduledAt.toLocaleString('uz-UZ')}`);
+      document.text(`Manzil: ${exam.venue}`);
+      document.text(`O‘rtacha baho: ${average.toFixed(2)}`);
+      document.text(`Natija: ${passed ? 'O‘tdi' : 'O‘tmadi'}`);
+      document.moveDown().fontSize(13).text('Komissiya baholari');
+      document.moveDown(0.5).fontSize(10);
+      for (const assignment of exam.assignments) {
+        const member = committee.find((item) => item.id === assignment.member.userId);
+        document.text(`${member?.fullName || assignment.member.userId}: ${Number(assignment.score.score).toFixed(2)}${assignment.score.comment ? ` — ${assignment.score.comment}` : ''}`);
+      }
+      document.moveDown().fontSize(9).text(`Tizimda shakllantirilgan: ${new Date().toLocaleString('uz-UZ')}`);
+      document.end();
+    });
   }
 
   private async registerApplicant(user: AuthUser, applicationId: string, reason: string) {

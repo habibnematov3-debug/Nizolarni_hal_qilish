@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -37,6 +38,20 @@ export class MkController {
 
   @Get('cabinet/mk/exams/:id') @Roles('TALABGOR') @ApiOperation({ summary: 'Talabgor imtihoni' })
   exam(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.getOwnExam(user, id); }
+
+  @Get('cabinet/mk/exams/:id/protocol') @Roles('TALABGOR') @ApiOperation({ summary: 'Imtihon bayonnomasini yuklab olish' })
+  async applicantProtocol(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() response: Response) {
+    const pdf = await this.service.downloadProtocol(user, id);
+    response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="imtihon-bayonnomasi-${id}.pdf"` });
+    return response.send(pdf);
+  }
+
+  @Get('committee/mk/exams/:id/protocol') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF', 'ADMIN') @ApiOperation({ summary: 'Komissiya uchun imtihon bayonnomasi' })
+  async committeeProtocol(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() response: Response) {
+    const pdf = await this.service.downloadProtocol(user, id);
+    response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="imtihon-bayonnomasi-${id}.pdf"` });
+    return response.send(pdf);
+  }
 
   @Post('committee/mk/exams/:id/score') @Roles('COMMISSION') @ApiOperation({ summary: 'Elektron byulleten bahosi' })
   score(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SubmitScoreDto) { return this.service.submitScore(user, id, dto); }

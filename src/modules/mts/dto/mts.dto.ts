@@ -1,4 +1,5 @@
-import { IsBoolean, IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { MediationType, ParticipantSide, MedResultStatus } from '@prisma/client';
 
 export enum DisputeCategory {
@@ -40,9 +41,16 @@ export class ScheduleSessionDto {
   @IsOptional() @IsInt() @Min(15) @Max(480) durationMin?: number;
 }
 
+export class AgreementObligationDto {
+  @IsEnum(ParticipantSide) side: ParticipantSide;
+  @IsString() @MinLength(3) @MaxLength(2000) description: string;
+  @IsDateString() dueDate: string;
+}
+
 export class RecordResultDto {
   @IsEnum(MedResultStatus) resultStatus: MedResultStatus;
   @IsString() @MaxLength(10000) summary: string;
   @IsOptional() @IsString() agreementText?: string;
   @IsOptional() @IsString() agreementFileUrl?: string;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AgreementObligationDto) obligations?: AgreementObligationDto[];
 }

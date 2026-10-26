@@ -8,6 +8,7 @@ import { NotificationsService } from '../notifications/services/notifications.se
 import { EsignIntegrationAdapter } from '../integration/adapters/esign.adapter';
 import { VideoConferenceIntegrationAdapter } from '../integration/adapters/video-conference.adapter';
 import { CourtSystemIntegrationAdapter } from '../integration/adapters/court-system.adapter';
+import { MonService } from '../mon/mon.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { ConsentDto, CreateAgreementDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
 
@@ -20,6 +21,7 @@ export class MtsService {
     private readonly esign: EsignIntegrationAdapter,
     private readonly video: VideoConferenceIntegrationAdapter,
     private readonly court: CourtSystemIntegrationAdapter,
+    private readonly monitoring: MonService,
   ) {}
 
   async create(user: AuthUser, dto: CreateMediationDto) {
@@ -291,7 +293,22 @@ export class MtsService {
         await this.prisma.mediationCase.update({ where: { id }, data: { courtSyncStatus: 'FAILED', courtSyncError: error instanceof Error ? error.message : String(error) } });
       }
     }
-    if (dto.resultStatus === MedResultStatus.SETTLED) await this.notifyParticipants(id, 'Mediatsiya kelishuvi rasmiylashtirildi.', `mts-${id}-settled`);
+    if (dto.resultStatus === MedResultStatus.SETTLED) {
+      await this.notifyParticipants(id, 'Mediatsiya kelishuvi rasmiylashtirildi.', `mts-${id}-settled`);
+      for (const obligation of dto.obligations || []) {
+        const responsibleParty = item.participants.find((participant) => participant.side === obligation.side);
+        if (!responsibleParty) throw new BadRequestException('Kelishuv majburiyati uchun taraf topilmadi');
+        await this.monitoring.create(user, {
+          agreementId: id,
+          description: obligation.description,
+          dueDate: obligation.dueDate,
+          responsiblePartyId: responsibleParty.userId || undefined,
+          responsiblePartyName: responsibleParty.fullName,
+          mediatorId: item.mediatorId || user.id,
+          region: item.region,
+        });
+      }
+    }
     return updated;
   }
 

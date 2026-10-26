@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ObligationStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -7,8 +7,29 @@ import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { CreateObligationDto, ObligationQueryDto } from './dto/mon.dto';
 
 @Injectable()
-export class MonService {
+export class MonService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(MonService.name);
+  private reminderTimer?: NodeJS.Timeout;
+  private startupReminderTimer?: NodeJS.Timeout;
+
   constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly notifications: NotificationsService) {}
+
+  onModuleInit() {
+    this.startupReminderTimer = setTimeout(() => void this.runScheduledReminderCycle(), 30_000);
+    this.reminderTimer = setInterval(() => void this.runScheduledReminderCycle(), 60 * 60 * 1000);
+    this.startupReminderTimer.unref?.();
+    this.reminderTimer.unref?.();
+  }
+
+  onModuleDestroy() {
+    if (this.startupReminderTimer) clearTimeout(this.startupReminderTimer);
+    if (this.reminderTimer) clearInterval(this.reminderTimer);
+  }
+
+  private async runScheduledReminderCycle() {
+    try { await this.runReminderCycle() }
+    catch (error) { this.logger.error(`Majburiyat eslatmalarini yuborish amalga oshmadi: ${error instanceof Error ? error.message : String(error)}`) }
+  }
 
   async create(user: AuthUser, dto: CreateObligationDto, ipAddress?: string) {
     const dueDate = new Date(dto.dueDate);

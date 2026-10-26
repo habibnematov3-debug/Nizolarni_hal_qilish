@@ -14,6 +14,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import {
   ExternalIntegrationController,
   AdminIntegrationsController,
+  CourtClaimsCabinetController,
 } from './controllers/external-integration.controller';
 
 @Global()
@@ -35,6 +36,7 @@ import {
   controllers: [
     ExternalIntegrationController,
     AdminIntegrationsController,
+    CourtClaimsCabinetController,
   ],
   exports: [
     IntegrationLoggerService,

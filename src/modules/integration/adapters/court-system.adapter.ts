@@ -3,6 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { IntegrationLoggerService } from '../services/integration-logger.service';
 import { CourtClaimDto } from '../dto/court-claim.dto';
 import { CourtClaimStatus, IntegrationDirection, IntegrationStatus, Prisma } from '@prisma/client';
+import { NotificationsService } from '../../notifications/services/notifications.service';
 
 export interface ICourtSystemPort {
   receiveCourtClaim(claim: CourtClaimDto): Promise<any>;
@@ -14,6 +15,7 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
   constructor(
     private readonly prisma: PrismaService,
     private readonly loggerService: IntegrationLoggerService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -66,6 +68,21 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
         durationMs: Date.now() - startTime,
       });
 
+      const participantPinfls = [dto.claimantPinfl, dto.respondentPinfl].filter((value): value is string => Boolean(value));
+      if (participantPinfls.length) {
+        const participants = await this.prisma.user.findMany({ where: { pinfl: { in: participantPinfls }, status: 'ACTIVE' }, select: { id: true, pinfl: true } });
+        await Promise.all(participants.map((participant) => this.notifications.send({
+          userId: participant.id,
+          templateCode: 'APPLICATION_STATUS',
+          variables: {
+            title: 'Sud da’vosi bo‘yicha mediatsiya',
+            content: `Suddagi ${claim.courtCaseNumber} raqamli ish yuzasidan mediatsiya imkoniyati mavjud. Kabinetdagi “Sud da’volari” bo‘limidan ishni ko‘rib, mediatsiya murojaatini boshlashingiz mumkin.`,
+          },
+          idempotencyKey: `court-${claim.id}-${participant.id}-mediation-offer`,
+          channels: ['CABINET', 'SMS'] as any,
+        })));
+      }
+
       return {
         success: true,
         message: 'Sud da\'vosi muvaffaqiyatli qabul qilindi va platformada ro\'yxatga olindi',
@@ -86,6 +103,18 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
 
       throw new BadRequestException(`Sud da'vosini qabul qilishda xatolik: ${err.message}`);
     }
+  }
+
+  async getClaimsForParticipant(pinfl: string) {
+    if (!/^\d{14}$/.test(pinfl)) return [];
+    return this.prisma.courtClaim.findMany({
+      where: { OR: [{ claimantPinfl: pinfl }, { respondentPinfl: pinfl }] },
+      select: {
+        id: true, courtCaseNumber: true, courtName: true, disputeSubject: true,
+        courtOrderDate: true, status: true,
+      },
+      orderBy: { courtOrderDate: 'desc' },
+    });
   }
 
   /**

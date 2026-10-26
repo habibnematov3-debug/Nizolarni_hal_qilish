@@ -23,6 +23,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { AuthUser } from '../../../common/decorators/current-user.decorator';
 
 @ApiTags('Tashqi tizimlar integratsiyasi (ENT — Integratsiya adapterlari)')
 @Controller('external')
@@ -153,5 +154,20 @@ export class AdminIntegrationsController {
   @ApiParam({ name: 'pinfl', example: '31201851230044' })
   async testPersonalization(@Param('pinfl') pinfl: string) {
     return this.personalizationAdapter.verifyBiometrics(pinfl, 'AA7654321');
+  }
+}
+
+@ApiTags('Talabgor kabineti — Sud da’volari')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('cabinet/court-claims')
+export class CourtClaimsCabinetController {
+  constructor(private readonly courtAdapter: CourtSystemIntegrationAdapter) {}
+
+  @Get()
+  @Roles('TALABGOR')
+  @ApiOperation({ summary: 'Foydalanuvchiga tegishli sud da’volari va mediatsiya takliflari' })
+  claims(@CurrentUser() user: AuthUser) {
+    return this.courtAdapter.getClaimsForParticipant(user.pinfl || '');
   }
 }
