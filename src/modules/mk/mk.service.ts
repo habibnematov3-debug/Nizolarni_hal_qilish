@@ -8,6 +8,7 @@ import { AuthUser } from '../../common/decorators/current-user.decorator';
 import PDFDocument from 'pdfkit';
 import { FileAccessLevel } from '../platform/files/dto/file-upload.dto';
 import { FileStorageService } from '../platform/files/file-storage.service';
+import { randomInt } from 'crypto';
 import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @Injectable()
@@ -135,8 +136,13 @@ export class MkService {
       select: { id: true },
     });
     if (!examPayment) throw new ConflictException('Imtihonga taklif yuborishdan oldin ariza bo‘yicha to‘lov tasdiqlanishi kerak');
-    const questions = await this.prisma.mkQuestion.findMany({ where: { isActive: true }, take: dto.questionCount || 20 });
-    const selected = questions.sort(() => Math.random() - 0.5).map((question) => question.id);
+    const questionPool = await this.prisma.mkQuestion.findMany({ where: { isActive: true }, select: { id: true } });
+    const shuffled = [...questionPool];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = randomInt(index + 1);
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+    const selected = shuffled.slice(0, dto.questionCount || 20).map((question) => question.id);
     const exam = await this.prisma.mkExam.create({ data: { applicationId: id, scheduledAt: new Date(dto.scheduledAt), venue: dto.venue, secretaryPhone: dto.secretaryPhone, selectedQuestions: selected as unknown as Prisma.InputJsonValue, streamUrl: dto.streamUrl } });
     await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.INVITED } });
     await this.notify(item.applicantId, `Imtihon sanasi: ${new Date(dto.scheduledAt).toLocaleString('uz-UZ')}. Joy: ${dto.venue}`, `mk-${id}-exam`);
@@ -149,6 +155,16 @@ export class MkService {
     const questionIds = Array.isArray(exam.selectedQuestions) ? exam.selectedQuestions as string[] : [];
     const questions = await this.prisma.mkQuestion.findMany({ where: { id: { in: questionIds } }, select: { id: true, text: true, options: true } });
     return { ...exam, questions };
+  }
+
+  async listAssignedExams(user: AuthUser) {
+    const member = await this.prisma.mkCommitteeMember.findFirst({ where: { userId: user.id, role: MkCommitteeRole.MEMBER, isActive: true } });
+    if (!member) return [];
+    return this.prisma.mkExam.findMany({
+      where: { assignments: { some: { memberId: member.id } } },
+      include: { application: true, assignments: { where: { memberId: member.id }, include: { score: true } } },
+      orderBy: { scheduledAt: 'desc' },
+    });
   }
 
   async submitScore(user: AuthUser, examId: string, dto: SubmitScoreDto) {

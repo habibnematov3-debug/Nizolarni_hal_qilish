@@ -39,6 +39,9 @@ export class MkController {
   @Get('cabinet/mk/exams/:id') @Roles('TALABGOR') @ApiOperation({ summary: 'Talabgor imtihoni' })
   exam(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.getOwnExam(user, id); }
 
+  @Get('committee/mk/exams') @Roles('COMMISSION') @ApiOperation({ summary: 'Komissiya a’zosiga biriktirilgan imtihonlar' })
+  assignedExams(@CurrentUser() user: AuthUser) { return this.service.listAssignedExams(user); }
+
   @Get('cabinet/mk/exams/:id/protocol') @Roles('TALABGOR') @ApiOperation({ summary: 'Imtihon bayonnomasini yuklab olish' })
   async applicantProtocol(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() response: Response) {
     const pdf = await this.service.downloadProtocol(user, id);
