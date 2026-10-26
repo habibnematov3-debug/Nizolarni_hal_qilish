@@ -13,6 +13,7 @@ import { PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirec
 import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
 import { ContractsWorkspace } from './ContractsWorkspace'
+import { CalendarWorkspace, MediatorApplicationsWorkspace, MessagesWorkspace, ProfileWorkspace, TrainingWorkspace } from './MediatorCabinetWorkspaces'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -506,15 +507,16 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (role === 'APPLICANT' && page === 'Sud da’volari') return <CourtClaimsWorkspace onStartMediation={onStartCourtClaimMediation}/>
   if (role === 'APPLICANT' && /ariza|talabgor/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
   if (role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) return <ExamPage role={role} page={page} onToast={onToast}/>
+  if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
   if (page === 'Onlayn uchrashuvlar' || /mediatsiya|tashkilot nizolari/i.test(page)) return <MtsWorkspace role={role} demoItems={cases} onCreate={()=>onOpenModal('mediatsiya')} onToast={onToast}/>
   if (/arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
   if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
   if (/hisobot|statistika/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
   if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
   if (/portfolio|profil/i.test(page)) return <ProfilePage onToast={onToast} onCreate={()=>onOpenModal('portfolio')}/>
-  if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingPage onCreate={()=>onOpenModal('malaka arizasi')} onToast={onToast}/>
+  if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingPage role={role} page={page} onCreate={()=>onOpenModal('malaka arizasi')} onToast={onToast}/>
   if (/shartnoma|hujjat/i.test(page)) return <ContractsWorkspace role={role} onToast={onToast}/>
-  if (/yozishma/i.test(page)) return <GenericModule title={page} description="Fuqarolar va mediatorlar o‘rtasidagi murojaatlar va xabarlar." icon={MessageSquare} items={genericItems} onCreate={()=>onOpenModal('yangi yozishma')} onToast={onToast} action="Xabar yuborish"/>
+  if (/yozishma/i.test(page)) return <MessagesWorkspace onToast={onToast}/>
   if (/kalendar/i.test(page)) return <CalendarPage onToast={onToast} onCreate={()=>onOpenModal('uchrashuv')}/>
   if (/kontent|e’lon/i.test(page)) return <GenericModule title={page} description="Yangiliklar, huquqiy ma’lumotlar va foydalanuvchi e’lonlari." icon={Newspaper} items={genericItems} onCreate={()=>onOpenModal('yangi e’lon')} onToast={onToast} action="Tahrirlash"/>
   if (/tashkilot|foydalanuvchi|spravochnik|audit|sozlam/i.test(page)) return <GenericModule title={page} description="Ma’muriy boshqaruv bo‘limi. O‘zgarishlar demo holatda saqlanadi." icon={Settings} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action={page==='Audit jurnali'?'Tafsilotlar':'Tahrirlash'}/>
