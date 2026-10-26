@@ -14,6 +14,7 @@ import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
 import { ContractsWorkspace } from './ContractsWorkspace'
 import { CalendarWorkspace, MediatorApplicationsWorkspace, MessagesWorkspace, ProfileWorkspace, TrainingWorkspace } from './MediatorCabinetWorkspaces'
+import { NotificationsWorkspace } from './NotificationsWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -73,14 +74,14 @@ const initialReports: PortalRecord[] = [
 ]
 const navByRole: Record<RoleKey, string[]> = {
   CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Shartnomalar', 'Xabarnomalar'],
-  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Tashkilot nizolari', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Shartnomalar'],
+  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Tashkilot nizolari', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Shartnomalar', 'Xabarnomalar'],
   APPLICANT: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Mediator arizam', 'Imtihon', 'Shartnomalar', 'Xabarnomalar'],
-  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'E’lonlar'],
+  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'Xabarnomalar', 'E’lonlar'],
   REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
   MINISTRY: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Hisobotlar tahlili', 'Statistika', 'Malaka oshirish', 'Kontent'],
   COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'],
-  JUDGE: ['Umumiy ko‘rsatkich', 'Hakamlik ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar'],
-  ARBITRATOR: ['Umumiy ko‘rsatkich', 'Arbitraj ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar'],
+  JUDGE: ['Umumiy ko‘rsatkich', 'Hakamlik ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar', 'Xabarnomalar'],
+  ARBITRATOR: ['Umumiy ko‘rsatkich', 'Arbitraj ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar', 'Xabarnomalar'],
   ADMIN: ['Umumiy ko‘rsatkich', 'Tashkilotlar', 'Foydalanuvchilar va rollar', 'Spravochniklar', 'Audit jurnali', 'Tizim sozlamalari', 'Kontent'],
 }
 const mediationSteps = ['Yangi murojaat', 'Mediator tanlash', 'Kelishuv imzolash', 'Uchrashuv belgilash', 'Mediatsiya sessiyasi', 'Kelishuv monitoringi', 'Yakunlandi']
@@ -505,6 +506,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onNavigatePage={onNavigatePage} onPublicRegistry={onPublicRegistry}/>
   if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside onToast={onToast}/></section>
   if (role === 'APPLICANT' && page === 'Sud da’volari') return <CourtClaimsWorkspace onStartMediation={onStartCourtClaimMediation}/>
+  if (/bildirish|xabarnoma/i.test(page)) return <NotificationsWorkspace onToast={onToast}/>
   if (role === 'APPLICANT' && /ariza|talabgor/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
   if (role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) return <ExamPage role={role} page={page} onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
@@ -520,7 +522,6 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/kalendar/i.test(page)) return <CalendarWorkspace onToast={onToast}/>
   if (/kontent|e’lon/i.test(page)) return <GenericModule title={page} description="Yangiliklar, huquqiy ma’lumotlar va foydalanuvchi e’lonlari." icon={Newspaper} items={genericItems} onCreate={()=>onOpenModal('yangi e’lon')} onToast={onToast} action="Tahrirlash"/>
   if (/tashkilot|foydalanuvchi|spravochnik|audit|sozlam/i.test(page)) return <GenericModule title={page} description="Ma’muriy boshqaruv bo‘limi. O‘zgarishlar demo holatda saqlanadi." icon={Settings} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action={page==='Audit jurnali'?'Tafsilotlar':'Tahrirlash'}/>
-  if (/bildirish|xabarnoma/i.test(page)) return <GenericModule title={page} description="Jarayonlar va platforma yangiliklari bo‘yicha xabarnomalar." icon={Bell} items={[{id:'XAB-01',title:'Yangi e’lon: malaka oshirish kurslari',status:'O‘qilmagan',createdAt:'Bugun'},{id:'XAB-02',title:'Ariza holati yangilandi',status:'O‘qilgan',createdAt:'Kecha'}]} onCreate={()=>onToast('Barcha xabarlar o‘qildi deb belgilandi')} onToast={onToast} action="O‘qildi"/>
   return <GenericModule title={page} description="Ushbu bo‘limdagi amallar demo rejimida ishlaydi." icon={LayoutDashboard} items={genericItems} onCreate={()=>onOpenModal(page.toLowerCase())} onToast={onToast} action="Batafsil"/>
 }
 
