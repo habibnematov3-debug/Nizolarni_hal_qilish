@@ -33,7 +33,7 @@ export function DocumentExchangeWorkspace({ role, mediationId, onToast = () => u
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<ExchangeThread | null>(null)
   const [cases, setCases] = useState<MtsCase[]>([])
-  const [folder, setFolder] = useState<'INBOX' | 'OUTBOX'>('INBOX')
+  const [folder, setFolder] = useState<'INBOX' | 'OUTBOX'>(() => ['REGIONAL', 'MINISTRY'].includes(role) ? 'INBOX' : 'OUTBOX')
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [relatedMediationId, setRelatedMediationId] = useState('')

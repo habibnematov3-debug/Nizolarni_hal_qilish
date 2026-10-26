@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CalendarDays, Check, CreditCard, FileText, RefreshCw, ShieldCheck, Upload, Video, X } from 'lucide-react'
 import { apiGet, apiGetPublic, apiPost, getAccessToken } from './api'
+import { DocumentExchangeWorkspace } from './DocumentExchangeWorkspace'
 
 const regions = [
   'Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Jizzax viloyati',
@@ -181,6 +182,7 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
   const [selected, setSelected] = useState<Record<string, string>>({})
   const [privacyChecks, setPrivacyChecks] = useState<Record<string, boolean>>({})
   const [schedule, setSchedule] = useState<Record<string, { at: string; duration: string }>>({})
+  const [documentsOpen, setDocumentsOpen] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
@@ -239,6 +241,7 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
       {remote && role === 'MEDIATOR' && remote.mediatorId === profile?.id && remote.status === 'SCHEDULED' && remote.sessions.length === 0 && <ScheduleMeeting caseId={remote.id} value={schedule[remote.id] || { at: '', duration: '60' }} onChange={(value) => setSchedule((current) => ({ ...current, [remote.id]: value }))} onSchedule={() => act('Videouchrashuv belgilandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/sessions`, { scheduledAt: new Date(schedule[remote.id]?.at || '').toISOString(), durationMin: Number(schedule[remote.id]?.duration || 60) }))}/>}
       {remote?.sessions?.length ? <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">{remote.sessions.map((session) => <div key={session.id} className="flex flex-col justify-between gap-3 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold">Videokonferensiya</p><p className="mt-1 text-xs text-slate-500">{new Date(session.scheduledAt).toLocaleString('uz-UZ')} · {session.durationMin} daqiqa · {mtsLabel(session.status)}</p></div><button onClick={() => act('Uchrashuv havolasi ochildi', async () => { const tab = window.open('', '_blank'); if (tab) tab.opener = null; const result = await apiPost<{ joinUrl: string }>(`/cabinet/mts/mediations/${remote.id}/sessions/${session.id}/join`, {}); if (tab) tab.location.href = result.joinUrl; else window.location.assign(result.joinUrl) })} className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 text-xs font-semibold text-white"><Video size={15}/>Uchrashuvga qo‘shilish</button></div>)}</div> : null}
       {remote && isMediator && remote.status === 'IN_SESSION' && <ResultEditor participants={remote.participants} onSubmit={(resultStatus, summary, agreementText, obligations) => act('Mediatsiya natijasi va monitoring majburiyatlari saqlandi', () => apiPost(`/cabinet/mts/mediations/${remote.id}/result`, { resultStatus, summary, agreementText: agreementText || remote.agreementText || undefined, obligations }))}/>}
+       {remote && <div className="mt-4 border-t border-slate-100 pt-4"><button onClick={() => setDocumentsOpen((current) => ({ ...current, [remote.id]: !current[remote.id] }))} className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"><FileText size={15}/>{documentsOpen[remote.id] ? 'Hujjatlarni yopish' : 'Hujjatlar va yozishmalar'}</button>{documentsOpen[remote.id] && <div className="mt-4"><DocumentExchangeWorkspace role={role} mediationId={remote.id} onToast={onToast}/></div>}</div>}
       </article>
     })}</div>}
   </section>
