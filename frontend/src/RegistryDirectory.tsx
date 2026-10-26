@@ -163,7 +163,7 @@ export function StaffRegistryWorkspace({ demoRows, onToast }: { demoRows: DemoRe
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Excel import bajarilmadi.') }
   }
 
-  const rows = authenticated ? data.items : demoFiltered.map((row) => ({ id: row.id, fullName: row.name, type: 'MEDIATOR', region: row.region, specialization: [row.specialty], status: row.status, rating: { score: row.rating }, phone: null, address: null, gender: null, birthDate: null }))
+  const rows: RegistryEntry[] = authenticated ? data.items : demoFiltered.map((row) => ({ id: row.id, registryNumber: row.id, fullName: row.name, type: 'MEDIATOR', region: row.region, specialization: [row.specialty], status: row.status, rating: { score: row.rating }, phone: null, address: null, gender: null, birthDate: null }))
   const queryString = params.toString()
 
   return <>
