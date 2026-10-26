@@ -270,6 +270,30 @@ enum MedResultStatus {
   NOT_SETTLED
 }
 
+enum DocumentExchangeType {
+  MEDIATION
+  INTERAGENCY
+}
+
+enum DocumentExchangeStatus {
+  SUBMITTED
+  IN_REVIEW
+  NEEDS_CORRECTION
+  FORWARDED
+  COMPLETED
+  REJECTED
+}
+
+enum DocumentExchangeAction {
+  MESSAGE
+  SUBMITTED
+  RECEIVED
+  REQUESTED_CORRECTION
+  FORWARDED_TO_MINISTRY
+  COMPLETED
+  REJECTED
+}
+
 model Organization {
   id        String           @id @default(uuid())
   name      String
@@ -289,6 +313,8 @@ model Organization {
   users            User[]
   quarterlyReports QuarterlyReport[]
   reportSummaries  ReportSummary[]
+  documentExchangeTargets DocumentExchangeThread[] @relation("DocumentExchangeTargetOrganization")
+  documentExchangeParticipants DocumentExchangeParticipant[]
 
   @@map("organizations")
 }
@@ -381,6 +407,9 @@ model User {
   invoicesPayable        ServiceInvoice[] @relation("InvoicePayer")
   quarterlyReports       QuarterlyReport[]
   createdReportSummaries ReportSummary[]   @relation("ReportSummaryCreator")
+  documentExchangeThreads DocumentExchangeThread[] @relation("DocumentExchangeCreator")
+  documentExchangeMessages DocumentExchangeMessage[]
+  documentExchangeParticipants DocumentExchangeParticipant[]
 
   // INT module relations
   disciplineCasesAsMediator DisciplineCase[] @relation("MediatorDiscipline")
@@ -939,6 +968,8 @@ model FileRecord {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  documentExchangeAttachments DocumentExchangeAttachment[]
+
   @@index([uploadedById])
   @@index([accessLevel])
   @@map("file_records")
@@ -1281,6 +1312,8 @@ model MediationCase {
   updatedAt          DateTime         @updatedAt @map("updated_at")
   participants       MediationParticipant[]
   sessions           MediationSession[]
+  documentThread     DocumentExchangeThread? @relation("MediationDocumentThread")
+  documentExchanges  DocumentExchangeThread[] @relation("MediationOfficeExchange")
 
   @@index([courtCaseNumber])
   @@index([status, type])
@@ -1327,6 +1360,77 @@ model MediationSession {
 
   @@index([mediationId, scheduledAt])
   @@map("mediation_sessions")
+}
+
+model DocumentExchangeThread {
+  id                    String                 @id @default(uuid())
+  type                  DocumentExchangeType
+  status                DocumentExchangeStatus @default(SUBMITTED)
+  subject               String
+  region                String?
+  mediationId           String?                @unique @map("mediation_id")
+  mediation             MediationCase?         @relation("MediationDocumentThread", fields: [mediationId], references: [id], onDelete: Cascade)
+  relatedMediationId    String?                @map("related_mediation_id")
+  relatedMediation      MediationCase?         @relation("MediationOfficeExchange", fields: [relatedMediationId], references: [id], onDelete: SetNull)
+  targetOrganizationId  String?                @map("target_organization_id")
+  targetOrganization    Organization?          @relation("DocumentExchangeTargetOrganization", fields: [targetOrganizationId], references: [id], onDelete: SetNull)
+  createdById           String                 @map("created_by_id")
+  createdBy             User                   @relation("DocumentExchangeCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  participants          DocumentExchangeParticipant[]
+  messages              DocumentExchangeMessage[]
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  @@index([type, status, region])
+  @@index([targetOrganizationId, status, updatedAt])
+  @@index([relatedMediationId])
+  @@map("document_exchange_threads")
+}
+
+model DocumentExchangeParticipant {
+  id             String                    @id @default(uuid())
+  threadId       String                    @map("thread_id")
+  userId         String?                   @map("user_id")
+  organizationId String?                   @map("organization_id")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  thread         DocumentExchangeThread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user           User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@unique([threadId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("document_exchange_participants")
+}
+
+model DocumentExchangeMessage {
+  id          String                  @id @default(uuid())
+  threadId    String                  @map("thread_id")
+  senderId    String                  @map("sender_id")
+  action      DocumentExchangeAction  @default(MESSAGE)
+  body        String
+  createdAt   DateTime                @default(now()) @map("created_at")
+  thread      DocumentExchangeThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender      User                    @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  attachments DocumentExchangeAttachment[]
+
+  @@index([threadId, createdAt])
+  @@index([senderId, createdAt])
+  @@map("document_exchange_messages")
+}
+
+model DocumentExchangeAttachment {
+  id        String                  @id @default(uuid())
+  messageId String                  @map("message_id")
+  fileId    String                  @map("file_id")
+  createdAt DateTime                @default(now()) @map("created_at")
+  message   DocumentExchangeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  file      FileRecord              @relation(fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@unique([messageId, fileId])
+  @@index([fileId])
+  @@map("document_exchange_attachments")
 }
 
 model AnnouncementAcknowledgement {

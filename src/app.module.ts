@@ -25,6 +25,7 @@ import { RegModule } from './modules/reg/reg.module';
 import { ReyModule } from './modules/rey/rey.module';
 import { ShaModule } from './modules/sha/sha.module';
 import { TalModule } from './modules/tal/tal.module';
+import { DocumentExchangeModule } from './modules/document-exchange/document-exchange.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -58,6 +59,7 @@ import { AppController } from './app.controller';
     ReyModule,
     ShaModule,
     TalModule,
+    DocumentExchangeModule,
   ],
   controllers: [AppController],
 })

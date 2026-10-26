@@ -201,6 +201,28 @@ export class FileStorageService implements IFileStorageService {
       return true;
     }
 
+    // Private attachments become readable to explicitly listed document-exchange participants.
+    // Office-wide access is limited to regional/ministry staff in the participating organization.
+    if (record.accessLevel === FileAccessLevel.PRIVATE) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { organizationId: true, userRoles: { select: { role: { select: { name: true } } } } },
+      });
+      const hasOfficeRole = user?.userRoles.some(({ role }) => ['REGIONAL_STAFF', 'MINISTRY_STAFF'].includes(role.name));
+      const participantAccess = [
+        { userId },
+        ...(hasOfficeRole && user?.organizationId ? [{ organizationId: user.organizationId }] : []),
+      ];
+      const sharedAttachment = await (this.prisma as any).documentExchangeAttachment.findFirst({
+        where: {
+          fileId,
+          message: { thread: { participants: { some: { OR: participantAccess } } } },
+        },
+        select: { id: true },
+      });
+      if (sharedAttachment) return true;
+    }
+
     // Internal — tizim foydalanuvchilari uchun
     if (record.accessLevel === FileAccessLevel.INTERNAL) {
       const user = await this.prisma.user.findUnique({
