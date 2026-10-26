@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { AlertCircle, CalendarDays, Check, FileText, RefreshCw, ShieldCheck, Upload, Video, X } from 'lucide-react'
+import { AlertCircle, CalendarDays, Check, CreditCard, FileText, RefreshCw, ShieldCheck, Upload, Video, X } from 'lucide-react'
 import { apiGet, apiGetPublic, apiPost, getAccessToken } from './api'
 
 const regions = [
@@ -246,6 +246,7 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
 
 type MkExamSummary = { id: string; scheduledAt: string; venue: string; streamUrl?: string | null; protocolFileId?: string | null; status: string }
 type MkApplication = { id: string; status: string; submittedAt: string; rejectionReason?: string | null; phone: string; autoCheckResult?: { status?: string } | null; exams?: MkExamSummary[] }
+type ExamFee = { id?: string; invoiceNumber: string; amount: number | string; currency?: string; qrCodeUrl?: string; paymentStatus?: string; metadata?: Record<string, unknown>; createdAt?: string }
 type CourtClaimItem = { id: string; courtCaseNumber: string; courtName: string; disputeSubject: string; courtOrderDate: string; status: string }
 
 export function CourtClaimsWorkspace({ onStartMediation }: { onStartMediation: (courtCaseNumber: string) => void }) {
@@ -264,6 +265,8 @@ export function CourtClaimsWorkspace({ onStartMediation }: { onStartMediation: (
 
 export function MkApplicationWorkspace({ role, demoItems, onCreate }: { role: string; demoItems: { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string }[]; onCreate: () => void }) {
   const [remote, setRemote] = useState<MkApplication[] | null>(null)
+  const [feePayments, setFeePayments] = useState<Record<string, ExamFee>>({})
+  const [paymentBusy, setPaymentBusy] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const authenticated = Boolean(getAccessToken())
@@ -275,8 +278,39 @@ export function MkApplicationWorkspace({ role, demoItems, onCreate }: { role: st
       .then((items) => { if (!cancelled) setRemote(items) })
       .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Arizalarni yuklab bo‘lmadi.') })
       .finally(() => { if (!cancelled) setLoading(false) })
+    apiGet<{ items: ExamFee[] }>('/payments?serviceType=QUALIFICATION_EXAM_FEE&page=1&limit=100')
+      .then((result) => {
+        if (cancelled) return
+        const next: Record<string, ExamFee> = {}
+        for (const payment of result.items || []) {
+          const applicationId = typeof payment.metadata?.applicationId === 'string' ? payment.metadata.applicationId : ''
+          if (applicationId && (!next[applicationId] || payment.createdAt && payment.createdAt > (next[applicationId].createdAt || ''))) next[applicationId] = payment
+        }
+        setFeePayments(next)
+      })
+      .catch(() => undefined)
     return () => { cancelled = true }
   }, [demoItems.length])
+
+  const createExamFee = async (applicationId: string) => {
+    setPaymentBusy(applicationId); setError('')
+    try {
+      const result = await apiPost<ExamFee>('/payments/exam-fee', { applicationId, idempotencyKey: `MK_EXAM_FEE:${applicationId}` })
+      setFeePayments((current) => ({ ...current, [applicationId]: { ...result, paymentStatus: 'PENDING' } }))
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Imtihon to‘lovini yaratib bo‘lmadi.') }
+    finally { setPaymentBusy('') }
+  }
+
+  const reconcileExamFee = async (applicationId: string) => {
+    const invoice = feePayments[applicationId]
+    if (!invoice) return
+    setPaymentBusy(applicationId); setError('')
+    try {
+      const result = await apiPost<ExamFee>(`/payments/${encodeURIComponent(invoice.invoiceNumber)}/reconcile`, {})
+      setFeePayments((current) => ({ ...current, [applicationId]: { ...current[applicationId], ...result } }))
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'To‘lov holatini tekshirib bo‘lmadi.') }
+    finally { setPaymentBusy('') }
+  }
 
   return <section>
     <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-700">Mediator-talabgor</p><h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-[28px]">Mediator maqomiga arizalarim</h1><p className="mt-1.5 max-w-2xl text-sm text-slate-500">Hujjatlar, huquqiy tekshiruv va komissiya qarori bo‘yicha ariza holatini kuzating.</p></div><button onClick={onCreate} className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">+ Yangi ariza</button></div>
@@ -285,7 +319,7 @@ export function MkApplicationWorkspace({ role, demoItems, onCreate }: { role: st
     {loading ? <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Arizalar yuklanmoqda…</div> : null}
     {!loading && authenticated && remote?.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-10 text-center"><FileText className="mx-auto text-slate-300" size={28}/><h2 className="mt-3 text-sm font-semibold">Hozircha mediator arizasi yo‘q</h2><p className="mt-1 text-xs text-slate-500">Diplom va zarur hujjatlarni biriktirib, arizani yuboring.</p></div>}
     {!loading && !authenticated && demoItems.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-10 text-center"><FileText className="mx-auto text-slate-300" size={28}/><h2 className="mt-3 text-sm font-semibold">Hozircha ariza yo‘q</h2><p className="mt-1 text-xs text-slate-500">Mediator maqomini olish arizasini yaratish uchun yuqoridagi tugmani bosing.</p></div>}
-    {!loading && <div className="mt-4 space-y-3">{authenticated ? (remote || []).map((application) => <article key={application.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">{application.id}</p><h2 className="mt-2 text-sm font-semibold">Mediator maqomini olish</h2><p className="mt-1 text-xs text-slate-500">Yuborilgan: {new Date(application.submittedAt).toLocaleString('uz-UZ')} · {application.phone}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{mkLabel(application.status)}</span></div>{application.autoCheckResult?.status && <p className="mt-3 text-xs text-slate-600">Davlat reyestri tekshiruvi: {application.autoCheckResult.status === 'IN_PROGRESS' ? 'tekshiruv kutilmoqda' : application.autoCheckResult.status}</p>}{application.rejectionReason && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">Rad etish sababi: {application.rejectionReason}</p>}{application.exams?.map((exam) => <div key={exam.id} className="mt-4 flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-slate-900">Malaka imtihoni · {new Date(exam.scheduledAt).toLocaleString('uz-UZ')}</p><p className="mt-1 text-xs text-slate-600">{exam.venue} · {mkLabel(exam.status)}</p></div><div className="flex flex-wrap gap-2">{exam.streamUrl && <a href={exam.streamUrl} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-800 px-3 text-xs font-semibold text-white"><Video size={14}/>Jonli translyatsiya</a>}{exam.protocolFileId && <button onClick={() => void downloadExamProtocol(exam.id).catch((cause) => window.alert(cause instanceof Error ? cause.message : 'Bayonnomani yuklab bo‘lmadi.'))} className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-xs font-semibold text-blue-900"><FileText size={14}/>Bayonnomani yuklab olish</button>}</div></div>)}</article>) : demoItems.map((application) => <article key={application.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">{application.id}</p><h2 className="mt-2 text-sm font-semibold">{application.title}</h2><p className="mt-1 text-xs text-slate-500">{application.createdAt} · {application.detail}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{application.status}</span></div></article>)}</div>}
+    {!loading && <div className="mt-4 space-y-3">{authenticated ? (remote || []).map((application) => <article key={application.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">{application.id}</p><h2 className="mt-2 text-sm font-semibold">Mediator maqomini olish</h2><p className="mt-1 text-xs text-slate-500">Yuborilgan: {new Date(application.submittedAt).toLocaleString('uz-UZ')} · {application.phone}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{mkLabel(application.status)}</span></div>{application.status === 'ACCEPTED' && <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold text-slate-900">Malaka imtihoni uchun to‘lov</p><p className="mt-1 text-xs text-slate-600">{feePayments[application.id]?.paymentStatus === 'PAID' ? `To‘langan · ${Number(feePayments[application.id].amount).toLocaleString('uz-UZ')} so‘m` : feePayments[application.id] ? `Invoys ${feePayments[application.id].invoiceNumber} · ${feePayments[application.id].paymentStatus || 'PENDING'}` : 'Imtihonga taklifdan oldin billing orqali to‘lov qiling.'}</p></div>{feePayments[application.id]?.paymentStatus === 'PAID' ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">To‘lov tasdiqlandi</span> : <div className="flex gap-2">{feePayments[application.id] && <button disabled={paymentBusy === application.id} onClick={() => void reconcileExamFee(application.id)} className="h-9 rounded-lg border border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-900">Holatini tekshirish</button>}<button disabled={paymentBusy === application.id} onClick={() => void createExamFee(application.id)} className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white disabled:opacity-50"><CreditCard size={14}/>{paymentBusy === application.id ? 'Kutilmoqda…' : feePayments[application.id] ? 'Invoysni ochish' : 'To‘lovni boshlash'}</button></div>}</div>{feePayments[application.id]?.qrCodeUrl && feePayments[application.id]?.paymentStatus !== 'PAID' && <a href={feePayments[application.id].qrCodeUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs font-semibold text-blue-800 underline">Billing QR-kodi / to‘lov sahifasini ochish · {Number(feePayments[application.id].amount).toLocaleString('uz-UZ')} so‘m</a>}</div>}{application.autoCheckResult?.status && <p className="mt-3 text-xs text-slate-600">Davlat reyestri tekshiruvi: {application.autoCheckResult.status === 'IN_PROGRESS' ? 'tekshiruv kutilmoqda' : application.autoCheckResult.status}</p>}{application.rejectionReason && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">Rad etish sababi: {application.rejectionReason}</p>}{application.exams?.map((exam) => <div key={exam.id} className="mt-4 flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-slate-900">Malaka imtihoni · {new Date(exam.scheduledAt).toLocaleString('uz-UZ')}</p><p className="mt-1 text-xs text-slate-600">{exam.venue} · {mkLabel(exam.status)}</p></div><div className="flex flex-wrap gap-2">{exam.streamUrl && <a href={exam.streamUrl} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-800 px-3 text-xs font-semibold text-white"><Video size={14}/>Jonli translyatsiya</a>}{exam.protocolFileId && <button onClick={() => void downloadExamProtocol(exam.id).catch((cause) => window.alert(cause instanceof Error ? cause.message : 'Bayonnomani yuklab bo‘lmadi.'))} className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-xs font-semibold text-blue-900"><FileText size={14}/>Bayonnomani yuklab olish</button>}</div></div>)}</article>) : demoItems.map((application) => <article key={application.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">{application.id}</p><h2 className="mt-2 text-sm font-semibold">{application.title}</h2><p className="mt-1 text-xs text-slate-500">{application.createdAt} · {application.detail}</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{application.status}</span></div></article>)}</div>}
     {role !== 'APPLICANT' && <p className="mt-4 text-xs text-slate-500">Komissiya, hududiy organ va vazirlik ko‘rib chiqish amallari o‘z vakolatli kabinetlarida bajariladi.</p>}
   </section>
 }
