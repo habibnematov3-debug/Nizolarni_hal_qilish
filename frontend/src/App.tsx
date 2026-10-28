@@ -318,7 +318,7 @@ export default function App() {
       setApplications((items) => [item, ...items])
       setToast('Demo ariza saqlandi. Hujjatlar rasmiy serverga yuborilmadi.')
     }
-    setAssignedRoles((items) => [...new Set([...items, 'APPLICANT'])])
+    setAssignedRoles((items) => [...new Set<RoleKey>([...items, 'APPLICANT'])])
     setRole('APPLICANT')
     setActivePage(navByRole.APPLICANT[0])
     setModal('')
