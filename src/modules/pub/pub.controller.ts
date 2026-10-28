@@ -19,9 +19,6 @@ export class PubController {
   @Get('content/:type/:id') @ApiOperation({ summary: 'Nashr qilingan kontent tafsiloti' })
   detail(@Param('type') type: string, @Param('id') id: string) { return this.service.getPublished(type, id); }
 
-  @Get('mediators') @ApiOperation({ summary: 'Ochiq mediatorlar reyestri' })
-  mediators(@Query('search') search?: string, @Query('region') region?: string, @Query('specialization') specialization?: string) { return this.service.mediators(search, region, specialization); }
-
   @Get('statistics') @ApiOperation({ summary: 'Reyestrdan avtomatik statistika' })
   statistics() { return this.service.statistics(); }
 

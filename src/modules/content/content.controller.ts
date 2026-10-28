@@ -22,7 +22,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../../common/decorators/current-user.decorator';
 
-const PUBLIC_CONTENT_TYPES = new Set(['news', 'legal_framework', 'templates', 'faq', 'manuals', 'video_manuals', 'announcements']);
+const PUBLIC_CONTENT_TYPES = new Set(['news', 'legal_framework', 'templates', 'faq', 'manuals', 'video_manuals', 'announcements', 'mandatory_mediation']);
 
 @ApiTags('Ochiq kontent')
 @Controller('public/content')
@@ -49,12 +49,12 @@ export class ContentController {
   @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Kontentlar ro\'yxatini olish',
-    description: 'Turi bo\'yicha (news, legal_framework, templates, faq, manuals, video_manuals, announcements) kontentlar ro\'yxati.',
+    description: 'Turi bo\'yicha (news, legal_framework, templates, faq, manuals, video_manuals, announcements, mandatory_mediation) kontentlar ro\'yxati.',
   })
   @ApiParam({
     name: 'type',
     example: 'news',
-    description: 'Kontent turi: news, legal_framework, templates, faq, manuals, video_manuals, announcements',
+    description: 'Kontent turi: news, legal_framework, templates, faq, manuals, video_manuals, announcements, mandatory_mediation',
   })
   @ApiResponse({ status: 200, description: 'Kontentlar ro\'yxati' })
   async findAll(@Param('type') type: string, @Query() query: QueryContentDto) {

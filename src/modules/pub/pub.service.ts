@@ -5,7 +5,7 @@ import { ContentService } from '../content/content.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { PublicContentQueryDto, PublicPreferenceDto } from './dto/pub.dto';
 
-const PUBLIC_TYPES = new Set(['news', 'legal_framework', 'templates', 'faq', 'manuals', 'video_manuals', 'announcements']);
+const PUBLIC_TYPES = new Set(['news', 'legal_framework', 'templates', 'faq', 'manuals', 'video_manuals', 'announcements', 'mandatory_mediation']);
 
 @Injectable()
 export class PubService {
@@ -42,22 +42,34 @@ export class PubService {
     return item;
   }
 
-  async mediators(search?: string, region?: string, specialization?: string) {
-    const where: Prisma.UserWhereInput = { registryStatus: 'MEDIATOR', status: 'ACTIVE', dossier: { is: { isPublic: true } } };
-    if (search) where.OR = [{ fullName: { contains: search, mode: 'insensitive' } }, { address: { contains: search, mode: 'insensitive' } }];
-    const users = await this.prisma.user.findMany({ where, include: { dossier: true, organization: true }, orderBy: { fullName: 'asc' } });
-    return users.filter((user) => !region || user.dossier?.region === region || user.organization?.region === region).filter((user) => !specialization || user.dossier?.specialization.includes(specialization)).map((user) => ({ id: user.id, fullName: user.fullName, region: user.dossier?.region || user.organization?.region, specialization: user.dossier?.specialization || [], experience: user.dossier?.workExperience, achievements: user.dossier?.achievements, videoUrl: user.dossier?.videoUrl }));
-  }
-
   async statistics() {
-    const [mediators, applicants, dossiers] = await Promise.all([
+    const publicEntryWhere = { status: 'ACTIVE' as const, publicProfile: true, deletedAt: null };
+    const [mediators, applicants, dossiers, judges, arbitrators, mediationCases, settledCases, mandatoryCases, regions] = await Promise.all([
       this.prisma.user.count({ where: { registryStatus: 'MEDIATOR', status: 'ACTIVE' } }),
       this.prisma.user.count({ where: { registryStatus: 'NONE', status: 'ACTIVE' } }),
       this.prisma.mediatorDossier.findMany({ where: { registryStatus: 'ACTIVE' }, select: { region: true } }),
+      this.prisma.registryEntry.count({ where: { ...publicEntryWhere, type: 'ARBITRATION_JUDGE' } }),
+      this.prisma.registryEntry.count({ where: { ...publicEntryWhere, type: 'ARBITRATOR' } }),
+      this.prisma.mediationCase.count(),
+      this.prisma.mediationCase.count({ where: { status: 'SETTLED' } }),
+      this.prisma.mediationCase.count({ where: { type: 'MANDATORY' } }),
+      this.prisma.registryEntry.groupBy({ by: ['region'], where: { ...publicEntryWhere, type: 'MEDIATOR' }, _count: { _all: true } }),
     ]);
     const byRegion: Record<string, number> = {};
-    for (const dossier of dossiers) byRegion[dossier.region] = (byRegion[dossier.region] || 0) + 1;
-    return { mediators, applicants, activeMediatorDossiers: dossiers.length, byRegion };
+    for (const region of regions) byRegion[region.region] = region._count._all;
+    const publicMediators = Object.values(byRegion).reduce((sum, count) => sum + count, 0);
+    return {
+      mediators,
+      applicants,
+      activeMediatorDossiers: dossiers.length,
+      byRegion,
+      publicSpecialistsTotal: publicMediators + judges + arbitrators,
+      registryByType: { MEDIATOR: publicMediators, ARBITRATION_JUDGE: judges, ARBITRATOR: arbitrators },
+      mediationCasesTotal: mediationCases,
+      mediationCasesSettled: settledCases,
+      mandatoryMediationCases: mandatoryCases,
+      generatedAt: new Date().toISOString(),
+    };
   }
 
   async getPreferences(visitorId: string) { return this.prisma.publicPreference.upsert({ where: { visitorId }, create: { visitorId }, update: {} }); }

@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { BookOpen, ExternalLink, FilePlus2, LoaderCircle, Newspaper, Pencil, Send, Trash2 } from 'lucide-react'
 import { apiDelete, apiGet, apiGetPublic, apiPost, apiPut } from './api'
 
-type ContentType = 'news' | 'legal_framework' | 'templates' | 'faq' | 'manuals' | 'video_manuals' | 'announcements'
+type ContentType = 'news' | 'legal_framework' | 'templates' | 'faq' | 'manuals' | 'video_manuals' | 'announcements' | 'mandatory_mediation'
 type ContentItem = {
   id: string
   type: ContentType
@@ -31,6 +31,7 @@ const types: { key: ContentType; label: string }[] = [
   { key: 'manuals', label: 'Qo‘llanmalar' },
   { key: 'video_manuals', label: 'Video qo‘llanmalar' },
   { key: 'announcements', label: 'E’lonlar' },
+  { key: 'mandatory_mediation', label: 'Majburiy mediatsiya toifalari' },
 ]
 
 const emptyDraft: ContentDraft = { titleUz: '', summaryUz: '', bodyUz: '', fileUrl: '', videoUrl: '' }

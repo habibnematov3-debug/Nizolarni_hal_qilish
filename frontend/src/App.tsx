@@ -114,7 +114,18 @@ type PublicContentList = { items: PublicContentItem[] }
 type PublicMapPoint = { id: string; fullName: string; type: string; region: string; phone?: string | null; address?: string | null; specialization: string[]; latitude: number; longitude: number }
 type PublicMediatorCard = { id: string; fullName: string; region: string; specialization: string[]; registryNumber?: string | null; rating?: { score?: number | string } | null }
 type PublicRegistryResponse = { items: PublicMediatorCard[]; pagination: { total: number } }
-type PublicRegistryStatistics = { mediators: number; activeMediatorDossiers: number; byRegion: Record<string, number> }
+type PublicRegistryStatistics = {
+  mediators?: number
+  applicants?: number
+  activeMediatorDossiers?: number
+  byRegion: Record<string, number>
+  publicSpecialistsTotal?: number
+  registryByType?: Partial<Record<'MEDIATOR' | 'ARBITRATION_JUDGE' | 'ARBITRATOR', number>>
+  mediationCasesTotal?: number
+  mediationCasesSettled?: number
+  mandatoryMediationCases?: number
+  generatedAt?: string
+}
 
 const initialCases: PortalRecord[] = []
 const initialApplications: PortalRecord[] = []
@@ -172,6 +183,7 @@ export default function App() {
   const [formName, setFormName] = useState('')
   const [formDetail, setFormDetail] = useState('')
   const [selectedMediator, setSelectedMediator] = useState('')
+  const [pendingPublicMediation, setPendingPublicMediation] = useState(false)
   const [courtCaseNumber, setCourtCaseNumber] = useState('')
   const [announcementGate, setAnnouncementGate] = useState(false)
 
@@ -217,7 +229,7 @@ export default function App() {
       .catch((cause) => { if (active) setAnnouncementError(cause instanceof Error ? cause.message : 'E’lonlarni yuklab bo‘lmadi.') })
     return () => { active = false }
   }, [role, announcementReload])
-  useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
+  useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false); setPendingPublicMediation(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
 
   const currentRole = roles.find((item) => item.key === role)
   const registryRows = useMemo(() => registrySeed.filter((item) => {
@@ -226,6 +238,17 @@ export default function App() {
   }), [query, region])
 
   const goHome = () => { setRole(null); setAssignedRoles([]); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false) }
+  const openLogin = () => { setLoginMethod(''); setShowLogin(true) }
+  const closeLogin = () => { setShowLogin(false); setLoginMethod(''); setPendingPublicMediation(false) }
+  const startPublicMediation = (mediatorName: string) => {
+    setSelectedMediator(mediatorName)
+    if (getAccessToken()) {
+      setModal('mediatsiya')
+      return
+    }
+    setPendingPublicMediation(true)
+    openLogin()
+  }
   const activateRole = (key: RoleKey) => {
     setRole(key); setActivePage(key === 'ADMIN' ? 'Tashkilotlar' : navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
     setAnnouncementGate(false)
@@ -237,6 +260,11 @@ export default function App() {
     setAssignedRoles(unique)
     const defaultRole = unique.includes('CITIZEN') ? 'CITIZEN' : unique.includes('BUSINESS') ? 'BUSINESS' : unique[0]
     activateRole(defaultRole)
+    if (pendingPublicMediation) {
+      setPendingPublicMediation(false)
+      if (unique.includes('CITIZEN') || unique.includes('BUSINESS')) setModal('mediatsiya')
+      else setToast('Mediatsiyaga murojaat yuborish uchun fuqaro yoki yuridik shaxs kabinetiga kiring.')
+    }
   }
   const acknowledgeAnnouncements = async () => {
     if (getAccessToken() && pendingAnnouncements.length) {
@@ -357,13 +385,13 @@ export default function App() {
   }))
 
   if (!role) return <>
-    <PublicSite page={publicPage} setPage={setPublicPage} onLogin={() => { setLoginMethod(''); setShowLogin(true) }} onRegistry={showPublicRegistry} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={(name) => { setSelectedMediator(name); setModal('mediatsiya') }} onToast={setToast} />
-    {showLogin && <ModalShell onClose={() => setShowLogin(false)}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={() => setShowLogin(false)} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
+    <PublicSite page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={startPublicMediation} onToast={setToast} />
+    {showLogin && <ModalShell onClose={closeLogin}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={closeLogin} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
       {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
       {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
     </div></ModalShell>}
-    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => setChooseRole(false)} onChoose={startRoles} />}
+    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false) }} onChoose={startRoles} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} onClose={() => { setModal(''); setSelectedMediator('') }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
