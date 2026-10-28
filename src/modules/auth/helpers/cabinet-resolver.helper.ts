@@ -85,10 +85,10 @@ export function resolveUserCabinetAndRoles(
     };
   }
 
-  // 7. Default: Talabgor (Applicant)
+  // 7. Default: citizen or legal entity (mediation party)
   rolesSet.add('TALABGOR');
   return {
-      cabinetType: CabinetType.APPLICANT,
+      cabinetType: CabinetType.PARTY,
       primaryRole: 'TALABGOR',
       roles: Array.from(rolesSet),
   };

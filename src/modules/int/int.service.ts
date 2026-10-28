@@ -80,7 +80,7 @@ export class IntService {
     if (dto.sanctionType === DisciplineSanctionType.SUSPENSION || dto.sanctionType === DisciplineSanctionType.REVOCATION) {
       const nextStatus = dto.sanctionType === DisciplineSanctionType.SUSPENSION ? MediatorRegistryStatus.SUSPENDED : MediatorRegistryStatus.REVOKED;
       await this.prisma.mediatorDossier.upsert({ where: { mediatorId: item.mediatorId }, create: { mediatorId: item.mediatorId, registeredYear: new Date().getFullYear(), region: item.mediator.organization?.region || '', specialization: [], registryStatus: nextStatus }, update: { registryStatus: nextStatus } });
-      if (dto.sanctionType === DisciplineSanctionType.REVOCATION) await this.prisma.user.update({ where: { id: item.mediatorId }, data: { registryStatus: RegistryStatus.NONE, cabinetType: CabinetType.APPLICANT } });
+      if (dto.sanctionType === DisciplineSanctionType.REVOCATION) await this.prisma.user.update({ where: { id: item.mediatorId }, data: { registryStatus: RegistryStatus.NONE, cabinetType: CabinetType.PARTY } });
       registryUpdated = true;
     }
     const updated = await this.prisma.disciplineDecision.update({ where: { id: decision.id }, data: { registryUpdated, notificationSent: true } });

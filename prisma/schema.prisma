@@ -41,7 +41,8 @@ enum RegistryStatus {
 }
 
 enum CabinetType {
-  APPLICANT // Talabgor kabineti
+  PARTY // Fuqaro yoki yuridik shaxs kabineti
+  APPLICANT // Mediator talabgori kabineti
   MEDIATOR // Mediator kabineti
   ARBITRATION_JUDGE // Hakamlik sudyasi kabineti
   ARBITRATOR // Arbitr kabineti
@@ -381,7 +382,7 @@ model User {
   position             String?
 
   registryStatus    RegistryStatus @default(NONE) @map("registry_status")
-  cabinetType       CabinetType    @default(APPLICANT) @map("cabinet_type")
+  cabinetType       CabinetType    @default(PARTY) @map("cabinet_type")
   authProvider      AuthProvider   @default(LOCAL) @map("auth_provider")
   oneIdUserId       String?        @map("one_id_user_id")
   esignSerialNumber String?        @map("esign_serial_number")

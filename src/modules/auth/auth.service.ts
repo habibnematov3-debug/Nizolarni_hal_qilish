@@ -157,7 +157,7 @@ export class AuthService {
           authProvider: AuthProvider.ONE_ID,
           oneIdUserId: profile.oneIdUserId,
           registryStatus: RegistryStatus.NONE,
-          cabinetType: CabinetType.APPLICANT,
+          cabinetType: CabinetType.PARTY,
           status: UserStatus.ACTIVE,
           ...(talabgorRole
             ? {
@@ -235,7 +235,7 @@ export class AuthService {
           authProvider: AuthProvider.E_SIGN,
           esignSerialNumber: cert.serialNumber,
           registryStatus: RegistryStatus.NONE,
-          cabinetType: CabinetType.APPLICANT,
+          cabinetType: CabinetType.PARTY,
           status: UserStatus.ACTIVE,
           ...(talabgorRole
             ? {
@@ -308,7 +308,7 @@ export class AuthService {
           authProvider: AuthProvider.MOBILE_ID,
           mobileIdPhone: mobileProfile.phone,
           registryStatus: RegistryStatus.NONE,
-          cabinetType: CabinetType.APPLICANT,
+          cabinetType: CabinetType.PARTY,
           status: UserStatus.ACTIVE,
           ...(talabgorRole
             ? {

@@ -273,7 +273,7 @@ async function main() {
       passwordHash: commonPasswordHash,
       status: UserStatus.ACTIVE,
       role: 'TALABGOR',
-      cabinetType: CabinetType.APPLICANT,
+      cabinetType: CabinetType.PARTY,
       registryStatus: RegistryStatus.NONE,
       pinfl: '31201851230044',
       passportSeriesNumber: 'AA7654321',
