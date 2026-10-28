@@ -109,8 +109,8 @@ async function main() {
     });
   }
 
-  // 3. Rollar (Roles) - 9 ta asosiy rol (FT-AUTH-04 / AUTH-03)
-  console.log('Creating all 9 roles...');
+  // 3. Rollar (Roles) - asosiy tizim rollari (FT-AUTH-04 / AUTH-03)
+  console.log('Creating system roles...');
   const rolesData = [
     { name: 'ADMIN', displayName: 'Administrator', description: 'Tizimning to\'liq vakolatli administratori', isSystem: true },
     { name: 'MINISTRY_STAFF', displayName: 'Vazirlik xodimi', description: 'Adliya vazirligi mas\'ul xodimi', isSystem: true },
@@ -119,6 +119,7 @@ async function main() {
     { name: 'MEDIATOR', displayName: 'Professional Mediator', description: 'Reyestrdagi professional mediator', isSystem: false },
     { name: 'ARBITRATION_JUDGE', displayName: 'Hakamlik sudyasi', description: 'Doimiy faoliyat ko\'rsatuvchi hakamlik sudyasi', isSystem: false },
     { name: 'ARBITRATOR', displayName: 'Arbitr', description: 'Xalqaro va mahalliy tijoriy arbitraj arbitri', isSystem: false },
+    { name: 'MEDIATOR_APPLICANT', displayName: 'Mediator talabgori', description: 'Mediator maqomiga ariza bergan va malaka jarayonidagi nomzod', isSystem: false },
     { name: 'TALABGOR', displayName: 'Talabgor', description: 'Ariza beruvchi, nizo ishtirokchisi (jismoniy yoki yuridik shaxs)', isSystem: false },
     { name: 'OPERATOR', displayName: 'Operator', description: 'Qo\'llab-quvvatlash xizmati / Call-center operatori', isSystem: false },
   ];
@@ -143,7 +144,7 @@ async function main() {
     });
   }
 
-  // 4. Foydalanuvchilar (Users) - 9 ta rol va maqomlar bo'yicha
+  // 4. Foydalanuvchilar (Users) - kabinet turlari va rollar bo'yicha
   console.log('Creating initial users for each cabinet type...');
   const commonPasswordHash = await bcrypt.hash('Secret@12345', 10);
   const adminPasswordHash = await bcrypt.hash('Admin@12345', 10);
@@ -175,7 +176,7 @@ async function main() {
       position: 'Bosh mutaxassis',
       status: UserStatus.ACTIVE,
       role: 'MINISTRY_STAFF',
-      cabinetType: CabinetType.MINISTRY_STAFF,
+      cabinetType: CabinetType.PUBLIC_AUTHORITY,
       registryStatus: RegistryStatus.NONE,
       pinfl: '31201801230002',
       passportSeriesNumber: 'AA1000002',
@@ -190,7 +191,7 @@ async function main() {
       position: 'Hududiy inspektor',
       status: UserStatus.ACTIVE,
       role: 'REGIONAL_STAFF',
-      cabinetType: CabinetType.REGIONAL_STAFF,
+      cabinetType: CabinetType.PUBLIC_AUTHORITY,
       registryStatus: RegistryStatus.NONE,
       pinfl: '31201801230003',
       passportSeriesNumber: 'AA1000003',
@@ -205,7 +206,7 @@ async function main() {
       position: 'Komissiya a\'zosi',
       status: UserStatus.ACTIVE,
       role: 'COMMISSION',
-      cabinetType: CabinetType.COMMISSION,
+      cabinetType: CabinetType.PUBLIC_AUTHORITY,
       registryStatus: RegistryStatus.NONE,
       pinfl: '31201801230004',
       passportSeriesNumber: 'AA1000004',
@@ -219,7 +220,7 @@ async function main() {
       status: UserStatus.ACTIVE,
       role: 'MEDIATOR',
       organizationId: tashkentDept.id,
-      cabinetType: CabinetType.MEDIATOR,
+      cabinetType: CabinetType.SPECIALIST,
       registryStatus: RegistryStatus.MEDIATOR,
       pinfl: '31201851230011',
       passportSeriesNumber: 'AA1000005',
@@ -237,7 +238,7 @@ async function main() {
       passwordHash: commonPasswordHash,
       status: UserStatus.ACTIVE,
       role: 'ARBITRATION_JUDGE',
-      cabinetType: CabinetType.ARBITRATION_JUDGE,
+      cabinetType: CabinetType.SPECIALIST,
       registryStatus: RegistryStatus.ARBITRATION_JUDGE,
       pinfl: '31201851230022',
       passportSeriesNumber: 'AA1000006',
@@ -255,7 +256,7 @@ async function main() {
       passwordHash: commonPasswordHash,
       status: UserStatus.ACTIVE,
       role: 'ARBITRATOR',
-      cabinetType: CabinetType.ARBITRATOR,
+      cabinetType: CabinetType.SPECIALIST,
       registryStatus: RegistryStatus.ARBITRATOR,
       pinfl: '31201851230033',
       passportSeriesNumber: 'AA1000007',
@@ -295,7 +296,7 @@ async function main() {
       position: 'Texnik operator',
       status: UserStatus.ACTIVE,
       role: 'OPERATOR',
-      cabinetType: CabinetType.OPERATOR,
+      cabinetType: CabinetType.ADMIN,
       registryStatus: RegistryStatus.NONE,
       pinfl: '31201801230009',
       passportSeriesNumber: 'AA1000009',

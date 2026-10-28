@@ -42,15 +42,17 @@ enum RegistryStatus {
 
 enum CabinetType {
   PARTY // Fuqaro yoki yuridik shaxs kabineti
-  APPLICANT // Mediator talabgori kabineti
-  MEDIATOR // Mediator kabineti
-  ARBITRATION_JUDGE // Hakamlik sudyasi kabineti
-  ARBITRATOR // Arbitr kabineti
-  COMMISSION // Malaka komissiyasi kabineti
-  REGIONAL_STAFF // Hududiy adliya xodimi kabineti
-  MINISTRY_STAFF // Vazirlik xodimi kabineti
+  SPECIALIST // Talabgor, mediator, hakamlik sudyasi va arbitr rollari uchun umumiy kabinet
+  PUBLIC_AUTHORITY // Komissiya, hududiy adliya organi va vazirlik rollari uchun umumiy kabinet
   ADMIN // Administrator paneli
   OPERATOR // Operator kabineti
+  APPLICANT // Eski CabinetType qiymati; yangi profillar SPECIALIST oladi
+  MEDIATOR // Eski CabinetType qiymati; yangi profillar SPECIALIST oladi
+  ARBITRATION_JUDGE // Eski CabinetType qiymati; yangi profillar SPECIALIST oladi
+  ARBITRATOR // Eski CabinetType qiymati; yangi profillar SPECIALIST oladi
+  COMMISSION // Eski CabinetType qiymati; yangi profillar PUBLIC_AUTHORITY oladi
+  REGIONAL_STAFF // Eski CabinetType qiymati; yangi profillar PUBLIC_AUTHORITY oladi
+  MINISTRY_STAFF // Eski CabinetType qiymati; yangi profillar PUBLIC_AUTHORITY oladi
 }
 
 enum AuthProvider {

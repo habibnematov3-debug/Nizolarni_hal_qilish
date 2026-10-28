@@ -74,6 +74,22 @@ export class MkService {
       },
     });
 
+    const applicantRole = await this.prisma.role.upsert({
+      where: { name: 'MEDIATOR_APPLICANT' },
+      update: {},
+      create: {
+        name: 'MEDIATOR_APPLICANT',
+        displayName: 'Mediator talabgori',
+        description: 'Mediator maqomiga ariza bergan va malaka jarayonidagi nomzod',
+        isSystem: false,
+      },
+    });
+    await this.prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: applicantRole.id } },
+      update: {},
+      create: { userId: user.id, roleId: applicantRole.id },
+    });
+
     return application;
   }
 
@@ -233,7 +249,9 @@ export class MkService {
   }
 
   private async registerApplicant(user: AuthUser, applicationId: string, reason: string) {
-    await this.prisma.user.update({ where: { id: user.id }, data: { registryStatus: RegistryStatus.MEDIATOR, cabinetType: CabinetType.MEDIATOR } });
+    await this.prisma.user.update({ where: { id: user.id }, data: { registryStatus: RegistryStatus.MEDIATOR, cabinetType: CabinetType.SPECIALIST } });
+    const applicantRole = await this.prisma.role.findUnique({ where: { name: 'MEDIATOR_APPLICANT' }, select: { id: true } });
+    if (applicantRole) await this.prisma.userRole.deleteMany({ where: { userId: user.id, roleId: applicantRole.id } });
     await this.prisma.mediatorDossier.upsert({ where: { mediatorId: user.id }, create: { mediatorId: user.id, registeredYear: new Date().getFullYear(), region: user.region || '', specialization: [] }, update: { registryStatus: 'ACTIVE' } });
     await this.prisma.mkApplication.update({ where: { id: applicationId }, data: { status: MkApplicationStatus.REGISTERED } });
     await this.notify(user.id, 'Siz mediatorlar reyestriga kiritildingiz. Mediator kabineti ochildi.', `mk-${applicationId}-registered`);

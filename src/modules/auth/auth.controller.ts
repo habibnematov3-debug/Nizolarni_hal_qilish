@@ -82,7 +82,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Joriy foydalanuvchi, rollari va kabinet turi (AUTH-02, AUTH-03)',
-    description: 'Tizimga kirgan foydalanuvchining shaxsiy ma\'lumotlari, ochiladigan kabinet turi (PARTY, APPLICANT, MEDIATOR, ARBITRATION_JUDGE, va h.k.), rollari va barcha ruxsat etilgan huquqlari.',
+    description: 'Tizimga kirgan foydalanuvchining shaxsiy ma\'lumotlari, kabinet turi (PARTY: fuqaro/yuridik shaxs; SPECIALIST: talabgor, mediator, hakamlik sudyasi, arbitr; PUBLIC_AUTHORITY: komissiya va adliya organlari; ADMIN: administrator), aniq rollari va ruxsatlari.',
   })
   @ApiResponse({ status: 200, description: 'Foydalanuvchi va kabinet ma\'lumotlari' })
   async getMe(@CurrentUser() user: AuthUser) {

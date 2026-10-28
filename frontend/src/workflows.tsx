@@ -187,7 +187,7 @@ export function MtsWorkspace({ role, demoItems, onCreate, onToast }: { role: str
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
   const isAuthenticated = Boolean(getAccessToken())
-  const canCreate = ['PARTY', 'APPLICANT'].includes(role)
+  const canCreate = ['CITIZEN', 'BUSINESS', 'APPLICANT'].includes(role)
 
   useEffect(() => {
     if (!getAccessToken()) { setCases(null); setProfile(null); return }

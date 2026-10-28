@@ -752,9 +752,9 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       [RegistryType.ARBITRATOR]: RegistryStatus.ARBITRATOR,
     }[entry.type];
     const cabinetType = {
-      [RegistryType.MEDIATOR]: CabinetType.MEDIATOR,
-      [RegistryType.ARBITRATION_JUDGE]: CabinetType.ARBITRATION_JUDGE,
-      [RegistryType.ARBITRATOR]: CabinetType.ARBITRATOR,
+      [RegistryType.MEDIATOR]: CabinetType.SPECIALIST,
+      [RegistryType.ARBITRATION_JUDGE]: CabinetType.SPECIALIST,
+      [RegistryType.ARBITRATOR]: CabinetType.SPECIALIST,
     }[entry.type];
     await tx.user.update({
       where: { id: userId },

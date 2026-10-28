@@ -6,90 +6,43 @@ export interface CabinetResolutionResult {
   roles: string[];
 }
 
+const AUTHORITY_ROLES = ['MINISTRY_STAFF', 'REGIONAL_STAFF', 'COMMISSION'];
+const SPECIALIST_ROLES = ['MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR', 'MEDIATOR_APPLICANT'];
+
 export function resolveUserCabinetAndRoles(
   userRoles: string[],
   registryStatus: RegistryStatus,
 ): CabinetResolutionResult {
   const rolesSet = new Set(userRoles);
 
-  // 1. ADMIN
   if (rolesSet.has('ADMIN')) {
-    return {
-      cabinetType: CabinetType.ADMIN,
-      primaryRole: 'ADMIN',
-      roles: Array.from(rolesSet),
-    };
+    return { cabinetType: CabinetType.ADMIN, primaryRole: 'ADMIN', roles: [...rolesSet] };
   }
 
-  // 2. MINISTRY_STAFF
-  if (rolesSet.has('MINISTRY_STAFF')) {
-    return {
-      cabinetType: CabinetType.MINISTRY_STAFF,
-      primaryRole: 'MINISTRY_STAFF',
-      roles: Array.from(rolesSet),
-    };
-  }
-
-  // 3. REGIONAL_STAFF
-  if (rolesSet.has('REGIONAL_STAFF')) {
-    return {
-      cabinetType: CabinetType.REGIONAL_STAFF,
-      primaryRole: 'REGIONAL_STAFF',
-      roles: Array.from(rolesSet),
-    };
-  }
-
-  // 4. COMMISSION
-  if (rolesSet.has('COMMISSION')) {
-    return {
-      cabinetType: CabinetType.COMMISSION,
-      primaryRole: 'COMMISSION',
-      roles: Array.from(rolesSet),
-    };
-  }
-
-  // 5. OPERATOR
   if (rolesSet.has('OPERATOR')) {
-    return {
-      cabinetType: CabinetType.OPERATOR,
-      primaryRole: 'OPERATOR',
-      roles: Array.from(rolesSet),
-    };
+    // Operators use the administrator cabinet shell but keep a distinct role and its restricted permissions.
+    return { cabinetType: CabinetType.ADMIN, primaryRole: 'OPERATOR', roles: [...rolesSet] };
   }
 
-  // 6. Registry based cabinets (Mediator, Hakamlik sudyasi, Arbitr)
-  if (registryStatus === RegistryStatus.MEDIATOR || rolesSet.has('MEDIATOR')) {
-    rolesSet.add('MEDIATOR');
-    return {
-      cabinetType: CabinetType.MEDIATOR,
-      primaryRole: 'MEDIATOR',
-      roles: Array.from(rolesSet),
-    };
+  if (AUTHORITY_ROLES.some((role) => rolesSet.has(role))) {
+    const primaryRole = AUTHORITY_ROLES.find((role) => rolesSet.has(role))!;
+    return { cabinetType: CabinetType.PUBLIC_AUTHORITY, primaryRole, roles: [...rolesSet] };
   }
 
-  if (registryStatus === RegistryStatus.ARBITRATION_JUDGE || rolesSet.has('ARBITRATION_JUDGE')) {
-    rolesSet.add('ARBITRATION_JUDGE');
-    return {
-      cabinetType: CabinetType.ARBITRATION_JUDGE,
-      primaryRole: 'ARBITRATION_JUDGE',
-      roles: Array.from(rolesSet),
-    };
+  const registryRole = {
+    [RegistryStatus.MEDIATOR]: 'MEDIATOR',
+    [RegistryStatus.ARBITRATION_JUDGE]: 'ARBITRATION_JUDGE',
+    [RegistryStatus.ARBITRATOR]: 'ARBITRATOR',
+    [RegistryStatus.NONE]: undefined,
+  }[registryStatus];
+  if (registryRole) rolesSet.add(registryRole);
+
+  if (SPECIALIST_ROLES.some((role) => rolesSet.has(role))) {
+    const primaryRole = registryRole || SPECIALIST_ROLES.find((role) => rolesSet.has(role))!;
+    return { cabinetType: CabinetType.SPECIALIST, primaryRole, roles: [...rolesSet] };
   }
 
-  if (registryStatus === RegistryStatus.ARBITRATOR || rolesSet.has('ARBITRATOR')) {
-    rolesSet.add('ARBITRATOR');
-    return {
-      cabinetType: CabinetType.ARBITRATOR,
-      primaryRole: 'ARBITRATOR',
-      roles: Array.from(rolesSet),
-    };
-  }
-
-  // 7. Default: citizen or legal entity (mediation party)
+  // A new OneID/E-IMZO account receives the shared citizen/business cabinet.
   rolesSet.add('TALABGOR');
-  return {
-      cabinetType: CabinetType.PARTY,
-      primaryRole: 'TALABGOR',
-      roles: Array.from(rolesSet),
-  };
+  return { cabinetType: CabinetType.PARTY, primaryRole: 'TALABGOR', roles: [...rolesSet] };
 }

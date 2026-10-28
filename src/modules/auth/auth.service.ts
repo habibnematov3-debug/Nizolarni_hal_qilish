@@ -30,6 +30,25 @@ export class AuthService {
     private readonly mobileIdAdapter: MobileIdAdapter,
   ) {}
 
+  private async ensureUserRole(userId: string, name: string, displayName: string, description: string) {
+    const role = await this.prisma.role.upsert({
+      where: { name },
+      update: {},
+      create: { name, displayName, description, isSystem: false },
+    });
+    await this.prisma.userRole.upsert({
+      where: { userId_roleId: { userId, roleId: role.id } },
+      update: {},
+      create: { userId, roleId: role.id },
+    });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { organization: true, userRoles: { include: { role: true } } },
+    });
+    if (!user) throw new UnauthorizedException('Foydalanuvchi topilmadi');
+    return user;
+  }
+
   /**
    * Helper: generate access & refresh tokens and persist session
    */
@@ -199,6 +218,7 @@ export class AuthService {
       throw new UnauthorizedException('Foydalanuvchi hisobi faol emas yoki bloklangan');
     }
 
+    user = await this.ensureUserRole(user.id, 'CITIZEN', 'Fuqaro', 'OneID orqali tasdiqlangan jismoniy shaxs');
     return this.createSession(user, 'ONE_ID', ipAddress, userAgent);
   }
 
@@ -267,6 +287,11 @@ export class AuthService {
       throw new UnauthorizedException('Foydalanuvchi hisobi faol emas yoki bloklangan');
     }
 
+    if (cert.tin && cert.organizationName) {
+      user = await this.ensureUserRole(user.id, 'BUSINESS', 'Tadbirkor / yuridik shaxs', 'E-IMZO sertifikatidagi STIR bilan tasdiqlangan yuridik shaxs vakili');
+    } else {
+      user = await this.ensureUserRole(user.id, 'CITIZEN', 'Fuqaro', 'E-IMZO orqali tasdiqlangan jismoniy shaxs');
+    }
     return this.createSession(user, 'E_SIGN', ipAddress, userAgent);
   }
 
@@ -341,6 +366,7 @@ export class AuthService {
       throw new UnauthorizedException('Foydalanuvchi hisobi faol emas yoki bloklangan');
     }
 
+    user = await this.ensureUserRole(user.id, 'CITIZEN', 'Fuqaro', 'Mobile ID orqali tasdiqlangan jismoniy shaxs');
     return this.createSession(user, 'MOBILE_ID', ipAddress, userAgent);
   }
 

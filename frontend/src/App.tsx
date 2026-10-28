@@ -18,30 +18,47 @@ import { NotificationsWorkspace } from './NotificationsWorkspace'
 import { ContentWorkspace } from './ContentWorkspace'
 import { DocumentExchangeWorkspace } from './DocumentExchangeWorkspace'
 
-type RoleKey = 'PARTY' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN'
+type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
 type Role = { key: RoleKey; title: string; summary: string; icon: typeof UserRound }
 type Metric = [string, number, string, typeof UserRound]
+type CabinetGroup = { title: string; summary: string; roles: RoleKey[] }
 
 const roles: Role[] = [
-  { key: 'PARTY', title: 'Fuqaro / yuridik shaxs kabineti', summary: 'JSHSHIR yoki STIR orqali tasdiqlangan yagona kabinet: nizo arizalari, mediator tanlash va shartnomalar', icon: UserRound },
+  { key: 'CITIZEN', title: 'Fuqaro', summary: 'JSHSHIR/OneID orqali: nizo arizalari, mediator tanlash va ishlaringiz', icon: UserRound },
+  { key: 'BUSINESS', title: 'Tadbirkor / yuridik shaxs', summary: 'STIR/E-IMZO orqali: tashkilot nomidan nizolar va shartnomalar', icon: BriefcaseBusiness },
   { key: 'APPLICANT', title: 'Mediator talabgori', summary: 'Mediator maqomiga ariza, malaka imtihoni va natijalar', icon: FileCheck2 },
-  { key: 'MEDIATOR', title: 'Mediator kabineti', summary: 'Malaka, yozishmalar, hisobot, portfolio va mediatsiya', icon: Handshake },
+  { key: 'MEDIATOR', title: 'Mediator', summary: 'Malaka, yozishmalar, hisobot, portfolio va mediatsiya', icon: Handshake },
   { key: 'JUDGE', title: 'Hakamlik sudyasi', summary: 'Shaxsiy kabinet va hakamlik muhokamasi shartnomalari', icon: Gavel },
-  { key: 'ARBITRATOR', title: 'Arbitr kabineti', summary: 'Reyestr, arbitraj shartnomalari va masofaviy xizmatlar', icon: Landmark },
+  { key: 'ARBITRATOR', title: 'Arbitr', summary: 'Reyestr, arbitraj shartnomalari va masofaviy xizmatlar', icon: Landmark },
   { key: 'COMMISSION', title: 'Malaka komissiyasi', summary: 'Nomzodlar va elektron imtihon byulleteni', icon: GraduationCap },
   { key: 'REGIONAL', title: 'Hududiy adliya organi', summary: 'Hududiy reyestr va hisobotlarni ko‘rib chiqish', icon: Building2 },
-  { key: 'MINISTRY', title: 'Adliya vazirligi', summary: 'Respublika miqyosida tahlil va boshqaruv', icon: Landmark },
-  { key: 'ADMIN', title: 'Administrator', summary: 'Tizim foydalanuvchilari va platforma materiallarini boshqarish', icon: Settings },
+  { key: 'MINISTRY', title: 'Adliya vazirligi xodimi', summary: 'Respublika miqyosida tahlil va boshqaruv', icon: Landmark },
+  { key: 'ADMIN', title: 'Administrator', summary: 'Uzluksiz ishlash va zaxira, rollar, klassifikatorlar, audit/xavfsizlik va SI topshiriqlarini tasdiqlash', icon: Settings },
+  { key: 'OPERATOR', title: 'Operator', summary: 'Cheklangan foydalanuvchi ko‘magi va murojaatlar bilan ishlash', icon: CircleHelp },
+]
+
+const cabinetGroups: CabinetGroup[] = [
+  { title: 'Fuqaro / yuridik shaxs kabineti', summary: 'Jismoniy va yuridik shaxslar uchun umumiy xizmatlar', roles: ['CITIZEN', 'BUSINESS'] },
+  { title: 'Mutaxassislar kabineti', summary: 'Mediatsiya, hakamlik va arbitraj rollari', roles: ['APPLICANT', 'MEDIATOR', 'JUDGE', 'ARBITRATOR'] },
+  { title: 'Adliya organlari kabineti', summary: 'Komissiya, hududiy organ va vazirlik vakolatlari', roles: ['COMMISSION', 'REGIONAL', 'MINISTRY'] },
+  { title: 'Administrator kabineti', summary: 'Tizim barqarorligi, zaxiralash, huquqlar, audit va konfiguratsiya nazorati', roles: ['ADMIN', 'OPERATOR'] },
 ]
 
 function normalizeRoleKey(value: string | null): RoleKey | null {
-  if (value === 'CITIZEN' || value === 'BUSINESS') return 'PARTY'
+  if (value === 'PARTY') return 'CITIZEN'
   return roles.some((item) => item.key === value) ? value as RoleKey : null
 }
 
+function cabinetGroupTitle(role: RoleKey | null): string {
+  return cabinetGroups.find((group) => role && group.roles.includes(role))?.title || 'Shaxsiy kabinet'
+}
+
 const backendRoleToCabinetRole: Record<string, RoleKey> = {
-  TALABGOR: 'PARTY',
+  TALABGOR: 'CITIZEN',
+  MEDIATOR_APPLICANT: 'APPLICANT',
+  CITIZEN: 'CITIZEN',
+  BUSINESS: 'BUSINESS',
   MEDIATOR: 'MEDIATOR',
   ARBITRATION_JUDGE: 'JUDGE',
   ARBITRATOR: 'ARBITRATOR',
@@ -49,6 +66,7 @@ const backendRoleToCabinetRole: Record<string, RoleKey> = {
   REGIONAL_STAFF: 'REGIONAL',
   MINISTRY_STAFF: 'MINISTRY',
   ADMIN: 'ADMIN',
+  OPERATOR: 'OPERATOR',
 }
 
 function readDemoRoles(): RoleKey[] {
@@ -104,7 +122,8 @@ const initialReports: PortalRecord[] = [
   { id: 'HIS-2026-Q3', title: '2026-yil III chorak hisoboti', status: 'Hududiy ko‘rib chiqishda', detail: 'Mediatsiya ishlari: 24 · Yakunlangan: 18', region: 'Toshkent shahri', createdAt: '10.10.2026' },
 ]
 const navByRole: Record<RoleKey, string[]> = {
-  PARTY: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Shartnomalar', 'Xabarnomalar'],
+  CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Mediator bo‘lish', 'Shartnomalar', 'Xabarnomalar'],
+  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Mediator bo‘lish', 'Shartnomalar', 'Xabarnomalar'],
   APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'Imtihon', 'Shartnomalar', 'Onlayn uchrashuvlar', 'Xabarnomalar'],
   MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'Xabarnomalar', 'E’lonlar'],
   REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
@@ -113,6 +132,7 @@ const navByRole: Record<RoleKey, string[]> = {
   JUDGE: ['Umumiy ko‘rsatkich', 'Hakamlik ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar', 'Xabarnomalar'],
   ARBITRATOR: ['Umumiy ko‘rsatkich', 'Arbitraj ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar', 'Xabarnomalar'],
   ADMIN: ['Umumiy ko‘rsatkich', 'Tashkilotlar', 'Foydalanuvchilar va rollar', 'Spravochniklar', 'Audit jurnali', 'Tizim sozlamalari', 'Kontent'],
+  OPERATOR: ['Umumiy ko‘rsatkich', 'Foydalanuvchilar bilan ishlash', 'Yordam so‘rovlari'],
 }
 const mediationSteps = ['Yangi murojaat', 'Mediator tanlash', 'Kelishuv imzolash', 'Uchrashuv belgilash', 'Mediatsiya sessiyasi', 'Kelishuv monitoringi', 'Yakunlandi']
 const applicationSteps = ['Yangi yuborildi', 'Ko‘rib chiqilmoqda', 'Imtihonga ruxsat', 'To‘lov kutilmoqda', 'Imtihonga chaqirildi', 'Imtihon topshirildi', 'Komissiya bahosi', 'Reyestrga kiritildi']
@@ -164,14 +184,17 @@ export default function App() {
   useEffect(() => {
     if (!getAccessToken()) return
     let active = true
-    apiGet<{ roles?: string[] }>('/auth/me').then((profile) => {
+    apiGet<{ roles?: string[]; primaryRole?: string }>('/auth/me').then((profile) => {
       if (!active) return
       const verifiedRoles = [...new Set((profile.roles || []).map((name) => backendRoleToCabinetRole[name]).filter((name): name is RoleKey => Boolean(name)))]
       if (!verifiedRoles.length) return
       const savedActiveRole = normalizeRoleKey(localStorage.getItem('nizolar.demo.role'))
+      const serverPrimaryRole = profile.primaryRole ? backendRoleToCabinetRole[profile.primaryRole] : undefined
       const activeRole = savedActiveRole && verifiedRoles.includes(savedActiveRole)
         ? savedActiveRole
-        : verifiedRoles.includes('PARTY') ? 'PARTY' : verifiedRoles[0]
+        : serverPrimaryRole && verifiedRoles.includes(serverPrimaryRole) ? serverPrimaryRole
+          : verifiedRoles.includes('ADMIN') ? 'ADMIN'
+            : verifiedRoles.includes('CITIZEN') ? 'CITIZEN' : verifiedRoles[0]
       setAssignedRoles(verifiedRoles)
       setRole(activeRole)
       setActivePage(activeRole === 'ADMIN' ? 'Tashkilotlar' : navByRole[activeRole][0])
@@ -212,7 +235,8 @@ export default function App() {
     if (!keys.length) return
     const unique = [...new Set(keys)]
     setAssignedRoles(unique)
-    activateRole(unique.includes('PARTY') ? 'PARTY' : unique[0])
+    const defaultRole = unique.includes('CITIZEN') ? 'CITIZEN' : unique.includes('BUSINESS') ? 'BUSINESS' : unique[0]
+    activateRole(defaultRole)
   }
   const acknowledgeAnnouncements = async () => {
     if (getAccessToken() && pendingAnnouncements.length) {
@@ -294,6 +318,9 @@ export default function App() {
       setApplications((items) => [item, ...items])
       setToast('Demo ariza saqlandi. Hujjatlar rasmiy serverga yuborilmadi.')
     }
+    setAssignedRoles((items) => [...new Set([...items, 'APPLICANT'])])
+    setRole('APPLICANT')
+    setActivePage(navByRole.APPLICANT[0])
     setModal('')
   }
   const createReport = (title: string, detail = '') => {
@@ -336,7 +363,7 @@ export default function App() {
       {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
     </div></ModalShell>}
-    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['PARTY']} onClose={() => setChooseRole(false)} onChoose={startRoles} />}
+    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => setChooseRole(false)} onChoose={startRoles} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} onClose={() => { setModal(''); setSelectedMediator('') }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
@@ -346,7 +373,7 @@ export default function App() {
   return <div className="min-h-screen bg-slate-50 text-slate-900">
     <aside className={`fixed inset-y-0 left-0 z-30 flex w-[264px] flex-col ${role === 'ADMIN' ? 'bg-slate-900' : 'bg-slate-950'} text-white transition-transform md:translate-x-0 ${mobileNav ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex items-center gap-3 px-5 py-6"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-300 text-slate-950"><Handshake size={22} /></div><div><p className="text-sm font-semibold">Nizolarni hal etish</p><p className="mt-1 text-[10px] uppercase tracking-[.18em] text-slate-400">Elektron platforma</p></div><button onClick={() => setMobileNav(false)} className="ml-auto p-2 text-slate-400 md:hidden" aria-label="Menyuni yopish"><X size={18} /></button></div>
-      <div className="mx-5 border-t border-white/10"/><div className="mx-4 mt-5 rounded-xl bg-white/[.06] p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="text-xs text-slate-300">Bitta shaxsiy kabinet</span></div><p className="mt-2 text-sm font-semibold">{assignedRoles.length} ta biriktirilgan rol</p><p className="mt-1 text-[11px] leading-4 text-slate-400">Faol rol: {currentRole?.title}</p></div>
+      <div className="mx-5 border-t border-white/10"/><div className="mx-4 mt-5 rounded-xl bg-white/[.06] p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="text-xs text-slate-300">{cabinetGroupTitle(role)}</span></div><p className="mt-2 text-sm font-semibold">Bitta foydalanuvchi kabineti</p><p className="mt-1 text-[11px] leading-4 text-slate-400">{assignedRoles.length} ta rol biriktirilgan · faol rol: {currentRole?.title}</p></div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Kabinet bo‘limlari">{nav.map((item, index) => { const Icon = navIcon(item); const active = activePage === item; return <button key={item} onClick={() => { setActivePage(item); setMobileNav(false) }} aria-current={active ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${active ? role === 'ADMIN' ? 'bg-blue-500/20 text-blue-100 shadow-[inset_3px_0_0_#60a5fa]' : 'bg-emerald-300/15 text-emerald-200 shadow-[inset_3px_0_0_#6ee7b7]' : 'text-slate-400 hover:bg-white/[.06] hover:text-white'}`}><Icon size={17}/><span>{item}</span>{index === nav.length - 1 && <ChevronRight className="ml-auto" size={14}/>}</button> })}</nav>
       <div className="border-t border-white/10 p-4"><button onClick={goHome} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[.06]"><ArrowLeft size={17}/>Ochiq sahifaga qaytish</button><button onClick={signOut} className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-white/[.06] hover:text-white"><LogIn size={17}/>Demo kabinetdan chiqish</button></div>
     </aside>
@@ -358,8 +385,8 @@ export default function App() {
     </div>
     {mobileNav && <button aria-label="Menyuni yopish" onClick={() => setMobileNav(false)} className="fixed inset-0 z-20 bg-slate-950/40 md:hidden"/>}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialCourtCaseNumber={courtCaseNumber} onClose={() => { setModal(''); setSelectedMediator(''); setCourtCaseNumber('') }} onSubmit={submitMediation} />}
-    {modal === 'ariza' && role === 'APPLICANT' && <MediatorApplicationForm onClose={() => setModal('')} onSubmit={submitMediatorApplication} />}
-    {modal && modal !== 'mediatsiya' && !(modal === 'ariza' && role === 'APPLICANT') && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
+    {modal === 'ariza' && ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && <MediatorApplicationForm onClose={() => setModal('')} onSubmit={submitMediatorApplication} />}
+    {modal && modal !== 'mediatsiya' && !(modal === 'ariza' && ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role)) && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
     {announcementGate && <div className="sr-only" aria-live="polite">Mediator kabinetini ochish uchun e’lon bilan tanishing.</div>}
     {toast && <Toast text={toast} />}
   </div>
@@ -523,25 +550,57 @@ function PublicFooter({ onLogin, setPage }: { onLogin: () => void; setPage: (p: 
 }
 
 function RolePicker({ initialRoles, onClose, onChoose }: { initialRoles: RoleKey[]; onClose: () => void; onChoose: (roles: RoleKey[]) => void }) {
-  const [selectedRoles, setSelectedRoles] = useState<RoleKey[]>(initialRoles)
+  const initialGroup = cabinetGroups.find((group) => initialRoles.some((role) => group.roles.includes(role))) || cabinetGroups[0]
+  const [selectedGroupTitle, setSelectedGroupTitle] = useState(initialGroup.title)
+  const selectedGroup = cabinetGroups.find((group) => group.title === selectedGroupTitle) || cabinetGroups[0]
+  const [selectedRoles, setSelectedRoles] = useState<RoleKey[]>(() => {
+    const inGroup = initialRoles.filter((role) => initialGroup.roles.includes(role))
+    return inGroup.length ? inGroup : [initialGroup.roles[0]]
+  })
   const toggleRole = (key: RoleKey) => setSelectedRoles((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
   return <ModalShell onClose={onClose}>
     <div className="bg-slate-950 px-7 py-6 text-white sm:px-8">
       <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-300">Demo ko‘rinishi</p>
-      <h2 className="mt-2 text-2xl font-semibold">Bitta kabinet uchun rollarni tanlang</h2>
-      <p className="mt-1 text-sm text-slate-400">Bir foydalanuvchiga bir nechta rol biriktiriladi. Demo uchun ko‘rmoqchi bo‘lgan rollaringizni belgilang; haqiqiy tizimda ular tasdiqlangan maqomingizdan olinadi.</p>
+      <h2 className="mt-2 text-2xl font-semibold">Kabinet turini tanlang</h2>
+      <p className="mt-1 text-sm text-slate-400">Platformada to‘rtta kabinet bor. Kabinet tanlangach, uning ichidagi tegishli rolni belgilang.</p>
       <button onClick={onClose} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20}/></button>
     </div>
-    <div className="grid max-h-[65vh] gap-2 overflow-y-auto p-5 sm:grid-cols-2 sm:p-7">
-      {roles.map(({key,title,summary,icon:Icon})=>{const selected=selectedRoles.includes(key);return <button key={key} type="button" aria-pressed={selected} onClick={()=>toggleRole(key)} className={`group flex items-center gap-3 rounded-xl border p-3.5 text-left transition ${selected?'border-emerald-300 bg-emerald-50/70':'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${selected?'bg-emerald-100 text-emerald-800':'bg-slate-100 text-slate-800'}`}><Icon size={20}/></span>
-        <span className="min-w-0 flex-1"><strong className="block text-sm font-semibold text-slate-900">{title}</strong><span className="mt-1 block text-xs leading-4 text-slate-500">{summary}</span></span>
-        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected?'border-emerald-600 bg-emerald-600 text-white':'border-slate-300 text-transparent'}`}><Check size={14}/></span>
-      </button>})}
+    <div className="max-h-[68vh] overflow-y-auto p-5 sm:p-7">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {cabinetGroups.map((group) => {
+          const firstRole = roles.find((item) => item.key === group.roles[0])!
+          const Icon = firstRole.icon
+          const selected = selectedGroup.title === group.title
+          return <button key={group.title} type="button" aria-pressed={selected} onClick={() => {
+            setSelectedGroupTitle(group.title)
+            setSelectedRoles((current) => {
+              const inGroup = current.filter((role) => group.roles.includes(role))
+              return inGroup.length ? inGroup : [group.roles[0]]
+            })
+          }} className={`flex min-h-24 items-center gap-3 rounded-xl border p-4 text-left transition ${selected ? 'border-emerald-300 bg-emerald-50/70 ring-1 ring-emerald-200' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}><Icon size={20}/></span>
+            <span className="min-w-0 flex-1"><strong className="block text-sm font-semibold text-slate-900">{group.title}</strong><span className="mt-1 block text-xs leading-4 text-slate-500">{group.summary}</span><span className="mt-1.5 block text-[11px] font-medium text-slate-400">{group.roles.length} ta rol shu kabinet ichida</span></span>
+            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 text-transparent'}`}><Check size={14}/></span>
+          </button>
+        })}
+      </div>
+      <section className="mt-5 rounded-xl border border-slate-200 p-4">
+        <div className="mb-3"><h3 className="text-sm font-semibold text-slate-900">{selectedGroup.title} ichidagi rollar</h3><p className="mt-1 text-xs text-slate-500">Bir foydalanuvchiga bir nechta mos rol biriktirilishi mumkin.</p></div>
+        <div className="flex flex-wrap gap-2">
+          {selectedGroup.roles.map((key) => {
+            const item = roles.find((candidate) => candidate.key === key)!
+            const selected = selectedRoles.includes(key)
+            return <button key={key} type="button" aria-pressed={selected} onClick={() => toggleRole(key)} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition ${selected ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}>
+              <span className={`flex h-4 w-4 items-center justify-center rounded border ${selected ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 text-transparent'}`}><Check size={11}/></span>
+              <span className="text-xs font-medium">{item.title}</span>
+            </button>
+          })}
+        </div>
+      </section>
     </div>
     <div className="flex flex-col-reverse items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row">
       <p className="text-center text-[11px] leading-4 text-slate-400">Demo tanlovi faqat interfeysni ko‘rsatadi. Haqiqiy rollar OneID/ERI va vakolatli reyestrlar orqali belgilanadi.</p>
-      <button type="button" disabled={!selectedRoles.length} onClick={()=>onChoose(selectedRoles)} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">Bitta kabinetga kirish <ArrowRight size={15}/></button>
+      <button type="button" disabled={!selectedRoles.length} onClick={()=>onChoose(selectedRoles)} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">Bitta kabinetga kirish · {selectedRoles.length} rol <ArrowRight size={15}/></button>
     </div>
   </ModalShell>
 }
@@ -582,10 +641,10 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
   if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onNavigatePage={onNavigatePage} onPublicRegistry={onPublicRegistry}/>
   if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside onToast={onToast}/></section>
-  if (role === 'PARTY' && page === 'Sud da’volari') return <CourtClaimsWorkspace onStartMediation={onStartCourtClaimMediation}/>
+  if (['CITIZEN', 'BUSINESS'].includes(role) && page === 'Sud da’volari') return <CourtClaimsWorkspace onStartMediation={onStartCourtClaimMediation}/>
   if (/bildirish|xabarnoma/i.test(page)) return <NotificationsWorkspace onToast={onToast}/>
   if (page === 'Hujjat almashinuvi') return <DocumentExchangeWorkspace role={role} onToast={onToast}/>
-  if (role === 'APPLICANT' && /ariza|talabgor/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
+  if (['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && /ariza|talabgor|mediator bo‘lish/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
   if (role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) return <ExamPage role={role} page={page} onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
   if (page === 'Onlayn uchrashuvlar' || /mediatsiya|tashkilot nizolari/i.test(page)) return <MtsWorkspace role={role} demoItems={cases} onCreate={()=>onOpenModal('mediatsiya')} onToast={onToast}/>
@@ -605,7 +664,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
 
 function Overview({ role, cases, applications, reports, onOpenModal, onNavigatePage, onPublicRegistry }: { role: RoleKey; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; onOpenModal: (key: string) => void; onNavigatePage: (page: string) => void; onPublicRegistry: () => void }) {
   const roleTitle = roles.find(r=>r.key===role)?.title || 'Kabinet'
-  const isMediationClient = role === 'PARTY'
+  const isMediationClient = role === 'CITIZEN' || role === 'BUSINESS'
   const stats: Metric[] = role==='MEDIATOR' ? [['Ochiq ishlar',cases.filter(x=>x.status!=='Yakunlandi').length,'faol jarayon',Handshake],['Yakunlangan',cases.filter(x=>x.status==='Yakunlandi').length,'muvaffaqiyatli ishlar',Check],['Xabarnomalar',2,'yangi xabarlar',Bell]] : role==='APPLICANT' ? [['Mediatorlik arizalari',applications.length,'ko‘rib chiqilayotgan arizalar',FileCheck2],['Imtihon bosqichi',applications.filter(x=>/imtihon/i.test(x.status)).length,'malaka imtihoniga oid',GraduationCap],['Xabarnomalar',2,'ariza va imtihon xabarlari',Bell]] : role==='COMMISSION' ? [['Arizalar',applications.length,'jarayonlarda',FileCheck2],['Imtihon bosqichi',applications.filter(x=>/imtihon/i.test(x.status)).length,'ko‘rib chiqish kerak',GraduationCap],['Reyestr',registrySeed.length,'demo mutaxassis',Users]] : isMediationClient ? [['Faol mediatsiyalar',cases.filter(x=>x.status!=='Yakunlandi').length,'siz yuborgan murojaatlar',Handshake],['Mediatorlar reyestri',registrySeed.length,'mutaxassislar',Users],['Shartnomalar',0,'imzolash va ko‘rish',FileText]] : [['Reyestr mutaxassislari',registrySeed.length,'ochiq reyestr',Users],['Faol mediatsiyalar',cases.filter(x=>x.status!=='Yakunlandi').length,'joriy jarayon',Handshake],['Hisobotlar',reports.length,'hisobotlar oqimi',ClipboardList]]
   const shortcuts: [string, string, typeof UserRound, () => void][] = isMediationClient
     ? [['Mediatorni tanlash','Ochiq reyestrdan qidiring',Users,onPublicRegistry],['Mediatsiya boshlash','Fuqaro yoki tashkilot nomidan murojaat',Handshake,()=>onOpenModal('mediatsiya')],['Mediatsiyalarim','Murojaat holatini kuzatish',FileClock,()=>onNavigatePage('Mediatsiyalarim')],['Shartnomalar','Mediatsiya hujjatlarini ko‘rish',FileText,()=>onNavigatePage('Shartnomalar')]]
