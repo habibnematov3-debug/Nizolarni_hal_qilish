@@ -40,6 +40,17 @@ function normalizeRoleKey(value: string | null): RoleKey | null {
   return roles.some((item) => item.key === value) ? value as RoleKey : null
 }
 
+const backendRoleToCabinetRole: Record<string, RoleKey> = {
+  TALABGOR: 'PARTY',
+  MEDIATOR: 'MEDIATOR',
+  ARBITRATION_JUDGE: 'JUDGE',
+  ARBITRATOR: 'ARBITRATOR',
+  COMMISSION: 'COMMISSION',
+  REGIONAL_STAFF: 'REGIONAL',
+  MINISTRY_STAFF: 'MINISTRY',
+  ADMIN: 'ADMIN',
+}
+
 function readDemoRoles(): RoleKey[] {
   try {
     const saved = JSON.parse(localStorage.getItem('nizolar.demo.roles') || 'null')
@@ -150,6 +161,23 @@ export default function App() {
   useEffect(() => { localStorage.setItem('nizolar.demo.items', JSON.stringify(genericItems)) }, [genericItems])
   useEffect(() => { if (role) localStorage.setItem('nizolar.demo.role', role); else localStorage.removeItem('nizolar.demo.role') }, [role])
   useEffect(() => { if (role && assignedRoles.length) localStorage.setItem('nizolar.demo.roles', JSON.stringify(assignedRoles)); else localStorage.removeItem('nizolar.demo.roles') }, [assignedRoles, role])
+  useEffect(() => {
+    if (!getAccessToken()) return
+    let active = true
+    apiGet<{ roles?: string[] }>('/auth/me').then((profile) => {
+      if (!active) return
+      const verifiedRoles = [...new Set((profile.roles || []).map((name) => backendRoleToCabinetRole[name]).filter((name): name is RoleKey => Boolean(name)))]
+      if (!verifiedRoles.length) return
+      const savedActiveRole = normalizeRoleKey(localStorage.getItem('nizolar.demo.role'))
+      const activeRole = savedActiveRole && verifiedRoles.includes(savedActiveRole)
+        ? savedActiveRole
+        : verifiedRoles.includes('PARTY') ? 'PARTY' : verifiedRoles[0]
+      setAssignedRoles(verifiedRoles)
+      setRole(activeRole)
+      setActivePage(activeRole === 'ADMIN' ? 'Tashkilotlar' : navByRole[activeRole][0])
+    }).catch(() => { /* A stale demo token must not block the public/demo cabinet. */ })
+    return () => { active = false }
+  }, [])
   useEffect(() => { if (!toast) return; const t = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(t) }, [toast])
   useEffect(() => {
     if (role !== 'MEDIATOR' || !getAccessToken()) { setPendingAnnouncements([]); return }
