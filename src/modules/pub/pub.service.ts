@@ -17,7 +17,7 @@ export class PubService {
       this.prisma.content.findMany({ where: { type: 'announcements', status: ContentStatus.PUBLISHED }, orderBy: { publishedAt: 'desc' }, take: 5 }),
       this.statistics(),
     ]);
-    return { language, news, announcements, statistics, blocks: ['news', 'mediators', 'legal_framework', 'statistics', 'map'] };
+    return { language, news, announcements, statistics, blocks: ['adr_routes', 'news', 'announcements', 'mediators', 'ratings', 'statistics', 'map', 'mandatory_mediation', 'legal_framework', 'templates', 'manuals', 'video_manuals', 'faq'] };
   }
 
   async listPublished(type: string, query: PublicContentQueryDto) {

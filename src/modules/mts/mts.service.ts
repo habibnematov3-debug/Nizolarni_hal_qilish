@@ -25,7 +25,7 @@ export class MtsService {
   ) {}
 
   async create(user: AuthUser, dto: CreateMediationDto) {
-    if (!user.roles.includes('TALABGOR')) throw new ForbiddenException('Mediatsiya murojaatini fuqaro yoki talabgor yuborishi mumkin');
+    if (!user.roles.some((role) => role === 'TALABGOR' || role === 'BUSINESS')) throw new ForbiddenException('Mediatsiya murojaatini fuqaro yoki yuridik shaxs yuborishi mumkin');
     if (dto.privacyAccepted !== true) throw new BadRequestException('Shaxsiy ma’lumotlardan foydalanishga rozilik talab qilinadi');
     const privacyConsentVersion = this.getPrivacyConsentVersion();
     const privacyConsentAt = new Date();
