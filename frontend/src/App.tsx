@@ -550,52 +550,30 @@ function PublicFooter({ onLogin, setPage }: { onLogin: () => void; setPage: (p: 
 }
 
 function RolePicker({ initialRoles, onClose, onChoose }: { initialRoles: RoleKey[]; onClose: () => void; onChoose: (roles: RoleKey[]) => void }) {
-  const [selectedGroupTitle, setSelectedGroupTitle] = useState<string | null>(null)
-  const selectedGroup = cabinetGroups.find((group) => group.title === selectedGroupTitle) || null
-  const [selectedRoles, setSelectedRoles] = useState<RoleKey[]>(initialRoles)
-  const toggleRole = (key: RoleKey) => setSelectedRoles((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
-  const openGroup = (group: CabinetGroup) => {
-    setSelectedGroupTitle(group.title)
-    setSelectedRoles((current) => current.filter((role) => group.roles.includes(role)))
-  }
+  const currentGroup = cabinetGroups.find((group) => initialRoles.some((role) => group.roles.includes(role)))
   return <ModalShell onClose={onClose}>
     <div className="bg-slate-950 px-7 py-6 text-white sm:px-8">
       <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-300">Demo ko‘rinishi</p>
-      <h2 className="mt-2 text-2xl font-semibold">{selectedGroup ? selectedGroup.title : 'Kabinet turini tanlang'}</h2>
-      <p className="mt-1 text-sm text-slate-400">{selectedGroup ? 'Bu kabinet ichidagi rol yoki rollarni belgilang.' : 'Avval quyidagi to‘rtta kabinetdan birini tanlang.'}</p>
+      <h2 className="mt-2 text-2xl font-semibold">Kabinet turini tanlang</h2>
+      <p className="mt-1 text-sm text-slate-400">To‘rtta kabinetdan biriga kiring. Rolni kabinet ichidagi yuqori o‘ng menyudan tanlaysiz.</p>
       <button onClick={onClose} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20}/></button>
     </div>
     <div className="max-h-[68vh] overflow-y-auto p-5 sm:p-7">
-      {!selectedGroup ? <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {cabinetGroups.map((group) => {
           const firstRole = roles.find((item) => item.key === group.roles[0])!
           const Icon = firstRole.icon
-          return <button key={group.title} type="button" onClick={() => openGroup(group)} className="flex min-h-24 items-center gap-3 rounded-xl border border-slate-200 p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/50">
+          const isCurrentGroup = currentGroup?.title === group.title
+          return <button key={group.title} type="button" onClick={() => onChoose(group.roles)} className={`flex min-h-24 items-center gap-3 rounded-xl border p-4 text-left transition ${isCurrentGroup ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'}`}>
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><Icon size={20}/></span>
             <span className="min-w-0 flex-1"><strong className="block text-sm font-semibold text-slate-900">{group.title}</strong><span className="mt-1 block text-xs leading-4 text-slate-500">{group.summary}</span><span className="mt-1.5 block text-[11px] font-medium text-slate-400">Ichida {group.roles.length} ta rol mavjud</span></span>
             <ArrowRight size={17} className="shrink-0 text-slate-400"/>
           </button>
         })}
-      </div> : <section className="rounded-xl border border-slate-200 p-4">
-        <button type="button" onClick={() => setSelectedGroupTitle(null)} className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900"><ArrowLeft size={15}/>4 ta kabinetga qaytish</button>
-        <div className="mb-3"><h3 className="text-sm font-semibold text-slate-900">Kabinet ichidagi rollar</h3><p className="mt-1 text-xs text-slate-500">Faqat shu kabinetga tegishli rollarni tanlang. Bir nechta vakolat tasdiqlansa, bir nechta rol belgilanadi.</p></div>
-        <div className="space-y-2">
-          {selectedGroup.roles.map((key) => {
-            const item = roles.find((candidate) => candidate.key === key)!
-            const Icon = item.icon
-            const selected = selectedRoles.includes(key)
-            return <button key={key} type="button" aria-pressed={selected} onClick={() => toggleRole(key)} className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${selected ? 'border-emerald-300 bg-emerald-50/70' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${selected ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}><Icon size={17}/></span>
-              <span className="min-w-0 flex-1"><strong className="block text-xs font-semibold text-slate-900">{item.title}</strong><span className="mt-0.5 block text-[11px] leading-4 text-slate-500">{item.summary}</span></span>
-              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 text-transparent'}`}><Check size={12}/></span>
-            </button>
-          })}
-        </div>
-      </section>}
+      </div>
     </div>
     <div className="flex flex-col-reverse items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row">
-      <p className="text-center text-[11px] leading-4 text-slate-400">Demo tanlovi faqat interfeysni ko‘rsatadi. Haqiqiy rollar OneID/ERI va vakolatli reyestrlar orqali belgilanadi.</p>
-      <button type="button" disabled={!selectedGroup || !selectedRoles.some((role) => selectedGroup.roles.includes(role))} onClick={()=>onChoose(selectedRoles.filter((role) => selectedGroup?.roles.includes(role)))} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">{selectedGroup ? `Shu kabinetga kirish · ${selectedRoles.length} rol` : 'Avval kabinetni tanlang'} <ArrowRight size={15}/></button>
+      <p className="w-full text-center text-[11px] leading-4 text-slate-400">Demo tanlovi interfeysni ko‘rsatadi. Kabinetga kirgach, faqat shu kabinet rollari yuqori o‘ngdagi menyuda chiqadi; haqiqiy tizimda rollar tasdiqlangan vakolatdan olinadi.</p>
     </div>
   </ModalShell>
 }
