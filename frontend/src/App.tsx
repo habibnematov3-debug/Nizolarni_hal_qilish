@@ -109,7 +109,7 @@ const publicFaqFallbacks = [
   { question: 'Mediatsiyani onlayn o‘tkazish mumkinmi?', answer: 'Platforma loyihasida taraflar bilan videokonferensaloqa orqali uchrashish, sana va vaqtni kelishish imkoniyati ko‘zda tutilgan.' },
   { question: 'Mediativ kelishuv bajarilmasa nima bo‘ladi?', answer: 'Qonunga ko‘ra kelishuv taraflar uchun majburiy va avvalo ixtiyoriy bajariladi. Ixtiyoriy bajarilmasa, taraflar uni majburiy ijroga qaratish uchun sudga murojaat qilishi mumkin.' },
 ]
-type PublicContentItem = { id: string; titleUz: string; summaryUz?: string | null; bodyUz?: string | null; fileUrl?: string | null; publishedAt?: string | null }
+type PublicContentItem = { id: string; titleUz: string; summaryUz?: string | null; bodyUz?: string | null; fileUrl?: string | null; videoUrl?: string | null; publishedAt?: string | null }
 type PublicContentList = { items: PublicContentItem[] }
 type PublicMapPoint = { id: string; fullName: string; type: string; region: string; phone?: string | null; address?: string | null; specialization: string[]; latitude: number; longitude: number }
 type PublicMediatorCard = { id: string; fullName: string; region: string; specialization: string[]; registryNumber?: string | null; rating?: { score?: number | string } | null }
