@@ -35,6 +35,23 @@ const roles: Role[] = [
   { key: 'ADMIN', title: 'Administrator', summary: 'Tizim foydalanuvchilari va platforma materiallarini boshqarish', icon: Settings },
 ]
 
+function normalizeRoleKey(value: string | null): RoleKey | null {
+  if (value === 'CITIZEN' || value === 'BUSINESS') return 'PARTY'
+  return roles.some((item) => item.key === value) ? value as RoleKey : null
+}
+
+function readDemoRoles(): RoleKey[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem('nizolar.demo.roles') || 'null')
+    if (Array.isArray(saved)) {
+      const valid = saved.map((item) => normalizeRoleKey(String(item))).filter((item): item is RoleKey => Boolean(item))
+      if (valid.length) return [...new Set(valid)]
+    }
+  } catch { /* Migrate the previous single-role demo setting below. */ }
+  const legacyRole = normalizeRoleKey(localStorage.getItem('nizolar.demo.role'))
+  return legacyRole ? [legacyRole] : []
+}
+
 const registrySeed = [
   { id: 'm1', name: 'Dilnoza Karimova', specialty: 'Oilaviy va fuqarolik nizolari', region: 'Toshkent shahri', experience: '8 yil', rating: '4.9', status: 'Faol', initials: 'DK' },
   { id: 'm2', name: 'Jasur Raximov', specialty: 'Tadbirkorlik va shartnoma nizolari', region: 'Samarqand viloyati', experience: '11 yil', rating: '4.8', status: 'Faol', initials: 'JR' },
@@ -96,10 +113,11 @@ function loadRecords(key: string, initial: PortalRecord[]): PortalRecord[] {
 }
 
 export default function App() {
+  const [assignedRoles, setAssignedRoles] = useState<RoleKey[]>(readDemoRoles)
   const [role, setRole] = useState<RoleKey | null>(() => {
-    const savedRole = localStorage.getItem('nizolar.demo.role')
-    if (savedRole === 'CITIZEN' || savedRole === 'BUSINESS') return 'PARTY'
-    return roles.some((item) => item.key === savedRole) ? savedRole as RoleKey : null
+    const savedRole = normalizeRoleKey(localStorage.getItem('nizolar.demo.role'))
+    const availableRoles = readDemoRoles()
+    return savedRole && availableRoles.includes(savedRole) ? savedRole : availableRoles[0] || null
   })
   const [publicPage, setPublicPage] = useState('Bosh sahifa')
   const [showLogin, setShowLogin] = useState(false)
@@ -131,6 +149,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('nizolar.demo.reports', JSON.stringify(reports)) }, [reports])
   useEffect(() => { localStorage.setItem('nizolar.demo.items', JSON.stringify(genericItems)) }, [genericItems])
   useEffect(() => { if (role) localStorage.setItem('nizolar.demo.role', role); else localStorage.removeItem('nizolar.demo.role') }, [role])
+  useEffect(() => { if (role && assignedRoles.length) localStorage.setItem('nizolar.demo.roles', JSON.stringify(assignedRoles)); else localStorage.removeItem('nizolar.demo.roles') }, [assignedRoles, role])
   useEffect(() => { if (!toast) return; const t = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(t) }, [toast])
   useEffect(() => {
     if (role !== 'MEDIATOR' || !getAccessToken()) { setPendingAnnouncements([]); return }
@@ -155,10 +174,17 @@ export default function App() {
     return (!q || [item.name, item.specialty, item.region].join(' ').toLocaleLowerCase('uz').includes(q)) && (region === 'Barcha hududlar' || item.region === region)
   }), [query, region])
 
-  const goHome = () => { setRole(null); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false) }
-  const startRole = (key: RoleKey) => {
+  const goHome = () => { setRole(null); setAssignedRoles([]); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false) }
+  const activateRole = (key: RoleKey) => {
     setRole(key); setActivePage(key === 'ADMIN' ? 'Tashkilotlar' : navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
+    setAnnouncementGate(false)
     if (key === 'MEDIATOR' && (getAccessToken() || !announcementsAccepted)) setAnnouncementGate(true)
+  }
+  const startRoles = (keys: RoleKey[]) => {
+    if (!keys.length) return
+    const unique = [...new Set(keys)]
+    setAssignedRoles(unique)
+    activateRole(unique.includes('PARTY') ? 'PARTY' : unique[0])
   }
   const acknowledgeAnnouncements = async () => {
     if (getAccessToken() && pendingAnnouncements.length) {
@@ -282,7 +308,7 @@ export default function App() {
       {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
     </div></ModalShell>}
-    {chooseRole && <RolePicker onClose={() => setChooseRole(false)} onChoose={startRole} />}
+    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['PARTY']} onClose={() => setChooseRole(false)} onChoose={startRoles} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} onClose={() => { setModal(''); setSelectedMediator('') }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
@@ -292,12 +318,12 @@ export default function App() {
   return <div className="min-h-screen bg-slate-50 text-slate-900">
     <aside className={`fixed inset-y-0 left-0 z-30 flex w-[264px] flex-col ${role === 'ADMIN' ? 'bg-slate-900' : 'bg-slate-950'} text-white transition-transform md:translate-x-0 ${mobileNav ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex items-center gap-3 px-5 py-6"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-300 text-slate-950"><Handshake size={22} /></div><div><p className="text-sm font-semibold">Nizolarni hal etish</p><p className="mt-1 text-[10px] uppercase tracking-[.18em] text-slate-400">Elektron platforma</p></div><button onClick={() => setMobileNav(false)} className="ml-auto p-2 text-slate-400 md:hidden" aria-label="Menyuni yopish"><X size={18} /></button></div>
-      <div className="mx-5 border-t border-white/10"/><div className="mx-4 mt-5 rounded-xl bg-white/[.06] p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="text-xs text-slate-300">Demo kabinet</span></div><p className="mt-2 text-sm font-semibold">{currentRole?.title}</p></div>
+      <div className="mx-5 border-t border-white/10"/><div className="mx-4 mt-5 rounded-xl bg-white/[.06] p-3"><div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400"/><span className="text-xs text-slate-300">Bitta shaxsiy kabinet</span></div><p className="mt-2 text-sm font-semibold">{assignedRoles.length} ta biriktirilgan rol</p><p className="mt-1 text-[11px] leading-4 text-slate-400">Faol rol: {currentRole?.title}</p></div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Kabinet bo‘limlari">{nav.map((item, index) => { const Icon = navIcon(item); const active = activePage === item; return <button key={item} onClick={() => { setActivePage(item); setMobileNav(false) }} aria-current={active ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${active ? role === 'ADMIN' ? 'bg-blue-500/20 text-blue-100 shadow-[inset_3px_0_0_#60a5fa]' : 'bg-emerald-300/15 text-emerald-200 shadow-[inset_3px_0_0_#6ee7b7]' : 'text-slate-400 hover:bg-white/[.06] hover:text-white'}`}><Icon size={17}/><span>{item}</span>{index === nav.length - 1 && <ChevronRight className="ml-auto" size={14}/>}</button> })}</nav>
       <div className="border-t border-white/10 p-4"><button onClick={goHome} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[.06]"><ArrowLeft size={17}/>Ochiq sahifaga qaytish</button><button onClick={signOut} className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-white/[.06] hover:text-white"><LogIn size={17}/>Demo kabinetdan chiqish</button></div>
     </aside>
     <div className="md:pl-[264px]">
-      <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Menyuni ochish"><Menu size={20}/></button>{role === 'ADMIN' ? <label className="relative hidden max-w-sm flex-1 sm:block"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input aria-label="Dashboard bo‘ylab qidirish" placeholder="Qidirish..." className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"/></label> : <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{activePage}</p><p className="hidden text-xs text-slate-400 sm:block">{currentRole?.title} · Demo rejim</p></div>}</div><div className="flex items-center gap-3">{role !== 'ADMIN' && <button onClick={() => setActivePage(nav.includes('Xabarnomalar') ? 'Xabarnomalar' : nav[nav.length - 1])} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Xabarnomalar"><Bell size={18}/><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"/></button>}<span className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="flex items-center gap-2.5"><div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white ${role === 'ADMIN' ? 'bg-blue-600' : 'bg-slate-950'}`}>{role === 'ADMIN' ? 'A' : currentRole?.title.slice(0,1)}</div><div className="hidden sm:block"><p className="text-xs font-semibold">{role === 'ADMIN' ? 'Admin' : 'Demo foydalanuvchi'}</p><p className="text-[11px] text-slate-400">{currentRole?.title}</p></div></div>{role === 'ADMIN' && <button onClick={signOut} aria-label="Chiqish" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogIn size={18}/></button>}<ChevronDown size={15} className="text-slate-400"/></div></header>
+      <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Menyuni ochish"><Menu size={20}/></button>{role === 'ADMIN' ? <label className="relative hidden max-w-sm flex-1 sm:block"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input aria-label="Dashboard bo‘ylab qidirish" placeholder="Qidirish..." className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"/></label> : <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{activePage}</p><p className="hidden text-xs text-slate-400 sm:block">{currentRole?.title} · bitta kabinet</p></div>}</div><div className="flex items-center gap-3">{role !== 'ADMIN' && <button onClick={() => setActivePage(nav.includes('Xabarnomalar') ? 'Xabarnomalar' : nav[nav.length - 1])} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Xabarnomalar"><Bell size={18}/><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"/></button>}<span className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="flex items-center gap-2.5"><div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white ${role === 'ADMIN' ? 'bg-blue-600' : 'bg-slate-950'}`}>{role === 'ADMIN' ? 'A' : currentRole?.title.slice(0,1)}</div><div className={assignedRoles.length > 1 ? 'min-w-0' : 'hidden sm:block'}><p className="hidden text-xs font-semibold sm:block">Demo foydalanuvchi</p>{assignedRoles.length > 1 ? <select aria-label="Faol rolni almashtirish" value={role} onChange={(event) => activateRole(event.target.value as RoleKey)} className="max-w-[130px] border-0 bg-transparent p-0 pr-5 text-[11px] text-slate-500 outline-none focus:ring-0 sm:max-w-52">{assignedRoles.map((assignedRole) => <option key={assignedRole} value={assignedRole}>{roles.find((item) => item.key === assignedRole)?.title || assignedRole}</option>)}</select> : <p className="text-[11px] text-slate-400">{currentRole?.title}</p>}</div></div>{role === 'ADMIN' && <button onClick={signOut} aria-label="Chiqish" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogIn size={18}/></button>}<ChevronDown size={15} className="text-slate-400"/></div></header>
       <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
         {restricted ? <section className="mx-auto mt-12 max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Newspaper size={25}/></div><p className="mt-5 text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Tanishish talab qilinadi</p><h1 className="mt-2 text-2xl font-semibold">{pendingAnnouncements[0]?.titleUz || demoNotice.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{pendingAnnouncements[0]?.bodyUz || pendingAnnouncements[0]?.summaryUz || demoNotice.text}</p>{pendingAnnouncements.slice(1).map((item) => <article key={item.id} className="mt-3 rounded-lg border border-slate-200 p-3 text-left"><h2 className="text-sm font-semibold">{item.titleUz}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{item.bodyUz || item.summaryUz}</p></article>)}{announcementError && <p role="alert" className="mt-3 text-xs text-red-700">{announcementError}</p>}{announcementError && getAccessToken() && <button onClick={() => setAnnouncementReload((value) => value + 1)} className="mt-4 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold">E’lonlarni qayta yuklash</button>}<button disabled={Boolean(announcementError && getAccessToken())} onClick={() => void acknowledgeAnnouncements()} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCheck size={17}/>Tanishdim</button></section> : <WorkspaceContent role={role} page={activePage} cases={cases} applications={applications} reports={reports} genericItems={genericItems} onOpenModal={(key) => { setFormName(''); setFormDetail(''); setModal(key) }} onNavigatePage={setActivePage} onAdvanceCase={advanceCase} onAdvanceApplication={advanceApplication} onAdvanceReport={advanceReport} onToast={setToast} onPublicRegistry={() => setActivePage(nav.includes('Mediatorlar reyestri') ? 'Mediatorlar reyestri' : nav[1])} onStartCourtClaimMediation={(caseNumber) => { setCourtCaseNumber(caseNumber); setModal('mediatsiya') }} />}
       </main>
@@ -468,22 +494,27 @@ function PublicFooter({ onLogin, setPage }: { onLogin: () => void; setPage: (p: 
   return <footer className="bg-slate-950 px-5 py-10 text-white md:px-10"><div className="mx-auto grid max-w-[1420px] gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]"><div><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-slate-950"><Handshake size={22}/></span><strong className="text-sm">Nizolarni muqobil hal etish</strong></div><p className="mt-4 max-w-sm text-xs leading-5 text-slate-400">Fuqarolar va tashkilotlar uchun nizolarni tinch yo‘l bilan hal etishning yagona elektron platformasi.</p></div>{[['Platforma','Bosh sahifa','Mediatorlar reyestri','Statistika'],['Foydali ma’lumotlar','Qonunchilik','Hududlar','Reyting'],['Kabinetlar','Tizimga kirish','Administrator','Mediator']].map(([title,...items])=><div key={title}><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</p><div className="mt-3 space-y-2">{items.map((item)=><button key={item} onClick={item==='Tizimga kirish'||item==='Administrator'||item==='Mediator'?onLogin:()=>setPage(item)} className="block text-left text-sm text-slate-300 hover:text-white">{item}</button>)}</div></div>)}</div><div className="mx-auto mt-8 max-w-[1420px] border-t border-white/10 pt-5 text-xs text-slate-500">© 2026 Nizolarni muqobil hal etish elektron platformasi</div></footer>
 }
 
-function RolePicker({ onClose, onChoose }: { onClose: () => void; onChoose: (role: RoleKey) => void }) {
+function RolePicker({ initialRoles, onClose, onChoose }: { initialRoles: RoleKey[]; onClose: () => void; onChoose: (roles: RoleKey[]) => void }) {
+  const [selectedRoles, setSelectedRoles] = useState<RoleKey[]>(initialRoles)
+  const toggleRole = (key: RoleKey) => setSelectedRoles((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
   return <ModalShell onClose={onClose}>
     <div className="bg-slate-950 px-7 py-6 text-white sm:px-8">
       <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-300">Demo ko‘rinishi</p>
-      <h2 className="mt-2 text-2xl font-semibold">Demo kabinet ko‘rinishini tanlang</h2>
-      <p className="mt-1 text-sm text-slate-400">Fuqaro va yuridik shaxs uchun bitta kabinet ochiladi. Shaxs turi va tegishli huquqlar identifikatsiya ma’lumotlaridan belgilanadi.</p>
+      <h2 className="mt-2 text-2xl font-semibold">Bitta kabinet uchun rollarni tanlang</h2>
+      <p className="mt-1 text-sm text-slate-400">Bir foydalanuvchiga bir nechta rol biriktiriladi. Demo uchun ko‘rmoqchi bo‘lgan rollaringizni belgilang; haqiqiy tizimda ular tasdiqlangan maqomingizdan olinadi.</p>
       <button onClick={onClose} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20}/></button>
     </div>
     <div className="grid max-h-[65vh] gap-2 overflow-y-auto p-5 sm:grid-cols-2 sm:p-7">
-      {roles.map(({key,title,summary,icon:Icon})=><button key={key} onClick={()=>onChoose(key)} className="group flex items-center gap-3 rounded-xl border border-slate-200 p-3.5 text-left transition hover:border-emerald-300 hover:bg-emerald-50/60">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-800 group-hover:bg-emerald-100"><Icon size={20}/></span>
+      {roles.map(({key,title,summary,icon:Icon})=>{const selected=selectedRoles.includes(key);return <button key={key} type="button" aria-pressed={selected} onClick={()=>toggleRole(key)} className={`group flex items-center gap-3 rounded-xl border p-3.5 text-left transition ${selected?'border-emerald-300 bg-emerald-50/70':'border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}>
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${selected?'bg-emerald-100 text-emerald-800':'bg-slate-100 text-slate-800'}`}><Icon size={20}/></span>
         <span className="min-w-0 flex-1"><strong className="block text-sm font-semibold text-slate-900">{title}</strong><span className="mt-1 block text-xs leading-4 text-slate-500">{summary}</span></span>
-        <ArrowRight size={15} className="shrink-0 text-slate-400 group-hover:text-emerald-700"/>
-      </button>)}
+        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected?'border-emerald-600 bg-emerald-600 text-white':'border-slate-300 text-transparent'}`}><Check size={14}/></span>
+      </button>})}
     </div>
-    <div className="border-t border-slate-100 px-6 py-3 text-center text-[11px] text-slate-400">Demo tanlovi faqat sahifalarni ko‘rsatadi. Haqiqiy tizimda OneID/JSHSHIR yoki ERI/STIR tekshirilib, kabinet avtomatik ochiladi.</div>
+    <div className="flex flex-col-reverse items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row">
+      <p className="text-center text-[11px] leading-4 text-slate-400">Demo tanlovi faqat interfeysni ko‘rsatadi. Haqiqiy rollar OneID/ERI va vakolatli reyestrlar orqali belgilanadi.</p>
+      <button type="button" disabled={!selectedRoles.length} onClick={()=>onChoose(selectedRoles)} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">Bitta kabinetga kirish <ArrowRight size={15}/></button>
+    </div>
   </ModalShell>
 }
 
