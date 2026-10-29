@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { CalendarDays, Check, FileCheck2, FilePlus2, LoaderCircle, MessageSquare, Trash2, Upload } from 'lucide-react'
-import { apiGet, apiGetPublic, apiPatch, apiPost, getAccessToken, uploadPrivateDocument } from './api'
+import { apiDownload, apiGet, apiGetPublic, apiPatch, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 
 type Notice = (text: string) => void
 type CalendarEvent = { id: string; title: string; eventDate: string; notes?: string | null }
@@ -74,6 +74,33 @@ export function CalendarWorkspace({ onToast }: { onToast: Notice }) {
   if (!getAccessToken()) return <Heading title="Kalendar" detail="Uchrashuvlarni ko‘rish va belgilash uchun tasdiqlangan kabinetga kiring."/>
   return <section><Heading title="Kalendar" detail="Mediatsiya uchrashuvlari, sessiyalar va muhim muddatlar."/>{error && <ErrorNotice text={error}/ >}<form onSubmit={create} className="mt-5 grid gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:grid-cols-2"><Field label="Tadbir nomi"><input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} className="form-control"/></Field><Field label="Sana va vaqt"><input required type="datetime-local" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="form-control"/></Field><Field label="Izoh"><input value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={2000} className="form-control"/></Field><button disabled={busy} className="mt-5 h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Uchrashuv belgilash</button></form>{loading ? <Loading/> : <div className="mt-4 space-y-2">{events.map((item) => <article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start gap-3"><CalendarDays className="mt-1 text-emerald-700" size={18}/><div><h2 className="text-sm font-semibold">{item.title}</h2><p className="mt-1 text-xs text-slate-500">{new Date(item.eventDate).toLocaleString('uz-UZ')} · {item.notes || 'Izoh yo‘q'}</p></div></div><button onClick={() => void remove(item.id)} className="inline-flex items-center gap-1 rounded-lg border border-red-100 px-3 py-2 text-xs font-semibold text-red-700"><Trash2 size={14}/>Bekor qilish</button></article>)}{!events.length && <Empty text="Kalendar tadbirlari yo‘q."/>}</div>}</section>
 }
+
+export function MediatorCertificateWorkspace({ onToast }: { onToast: Notice }) {
+  const [certificates, setCertificates] = useState<TrainingItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [busyId, setBusyId] = useState('')
+  useEffect(() => {
+    if (!getAccessToken()) { setLoading(false); return }
+    let active = true
+    apiGet<{ items: TrainingItem[] }>('/cabinet/certificates?page=1&limit=50')
+      .then((result) => { if (active) setCertificates(result.items || []) })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Guvohnomalarni yuklab bo‘lmadi.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [])
+  const download = async (item: TrainingItem) => {
+    setBusyId(item.id); setError('')
+    try { await apiDownload(`/certificates/${item.id}/file`, `malaka-guvohnomasi-${item.certificateNumber || item.id}.pdf`) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Guvohnomani yuklab bo‘lmadi.') }
+    finally { setBusyId('') }
+  }
+  if (!getAccessToken()) return <section><Heading title="Malaka guvohnomalari" detail="QR-kodli elektron malaka guvohnomalaringiz va amal qilish muddatlari."/><div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Haqiqiy guvohnomalarni ko‘rish uchun mediator hisobiga kiring. Demo rejimida reyestr hujjatlari mavjud emas.</div></section>
+  const expiring = certificates.filter((item) => item.expiresAt && new Date(item.expiresAt).getTime() - Date.now() <= 30 * 86400000 && new Date(item.expiresAt).getTime() >= Date.now())
+  return <section><Heading title="Malaka guvohnomalari" detail="QR-kodli elektron guvohnomalar va amal qilish muddatlari."/>{expiring.length > 0 && <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{expiring.length} ta guvohnomaning muddati yaqin 30 kun ichida tugaydi.</div>}{error && <ErrorNotice text={error}/ >}{loading ? <Loading/> : <div className="mt-5 grid gap-3 md:grid-cols-2">{certificates.map((item) => { const expires = item.expiresAt ? new Date(item.expiresAt) : null; const expired = Boolean(expires && expires.getTime() < Date.now()); const near = Boolean(expires && !expired && expires.getTime() - Date.now() <= 30 * 86400000); return <article key={item.id} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{item.course || item.courseName || 'Malaka guvohnomasi'}</p><p className="mt-1 text-xs text-slate-500">№ {item.certificateNumber || '—'}</p></div><FileCheck2 size={19} className={expired ? 'text-red-600' : near ? 'text-amber-600' : 'text-emerald-700'}/></div><div className="mt-4 space-y-2 text-xs"><Info label="Berilgan sana" value={item.issuedAt ? new Date(item.issuedAt).toLocaleDateString('uz-UZ') : '—'}/><Info label="Amal qilish muddati" value={expires ? expires.toLocaleDateString('uz-UZ') : 'Ko‘rsatilmagan'}/></div><div className="mt-4 flex items-center justify-between gap-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${expired ? 'bg-red-50 text-red-700' : near ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>{expired ? 'Muddati tugagan' : near ? 'Muddat yaqin' : item.status || 'Amalda'}</span><button disabled={busyId === item.id} onClick={() => void download(item)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">{busyId === item.id ? 'Yuklanmoqda…' : 'Yuklab olish'}</button></div></article>})}{!certificates.length && <div className="md:col-span-2"><Empty text="Guvohnomalar topilmadi."/></div>}</div>}</section>
+}
+
+function Info({ label: name, value }: { label: string; value: string }) { return <div className="flex justify-between gap-3"><span className="text-slate-500">{name}</span><span className="text-right font-medium text-slate-800">{value}</span></div> }
 
 export function MediatorApplicationsWorkspace({ onToast }: { onToast: Notice }) {
   const [items, setItems] = useState<MediatorApplication[]>([])

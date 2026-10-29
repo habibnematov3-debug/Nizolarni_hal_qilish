@@ -13,13 +13,15 @@ import { BusinessSpecialistDirectory, PublicRegistryDirectory, StaffRegistryWork
 import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
 import { ContractsWorkspace } from './ContractsWorkspace'
-import { CalendarWorkspace, MediatorApplicationsWorkspace, MessagesWorkspace, ProfileWorkspace, TrainingWorkspace } from './MediatorCabinetWorkspaces'
+import { CalendarWorkspace, MediatorApplicationsWorkspace, MediatorCertificateWorkspace, MessagesWorkspace, ProfileWorkspace, TrainingWorkspace } from './MediatorCabinetWorkspaces'
 import { NotificationsWorkspace } from './NotificationsWorkspace'
 import { ContentWorkspace } from './ContentWorkspace'
 import { DocumentExchangeWorkspace } from './DocumentExchangeWorkspace'
 import { CitizenProfileWorkspace, ObligationMonitoringWorkspace } from './CitizenWorkspace'
 import { BusinessWorkspace } from './BusinessWorkspace'
 import { BusinessPaymentsWorkspace } from './BusinessPaymentsWorkspace'
+import { SpecialistProceedingsWorkspace } from './SpecialistProceedingsWorkspace'
+import { ApplicantLearningWorkspace } from './ApplicantLearningWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -140,13 +142,13 @@ const initialReports: PortalRecord[] = [
 const navByRole: Record<RoleKey, string[]> = {
   CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'To‘lovlar', 'Mediator bo‘lish', 'Shartnomalar', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
   BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'To‘lovlar', 'Shartnomalar', 'Tashkilot profili', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
-  APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'Imtihon', 'Shartnomalar', 'Onlayn uchrashuvlar', 'Xabarnomalar'],
-  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'Xabarnomalar', 'E’lonlar'],
+  APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'O‘quv kurslari', 'Malaka imtihoni', 'Malaka guvohnomasi', 'Xabarnomalar'],
+  MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Guvohnomalar', 'Reyting va statistika', 'Arizalar', 'Shartnomalar', 'Xabarnomalar', 'E’lonlar'],
   REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
   MINISTRY: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Hujjat almashinuvi', 'Hisobotlar tahlili', 'Statistika', 'Malaka oshirish', 'Kontent'],
   COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'],
-  JUDGE: ['Umumiy ko‘rsatkich', 'Hakamlik ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar', 'Xabarnomalar'],
-  ARBITRATOR: ['Umumiy ko‘rsatkich', 'Arbitraj ishlari', 'Shartnomalar', 'Kalendar', 'Hujjatlar', 'Xabarnomalar'],
+  JUDGE: ['Umumiy ko‘rsatkich', 'Reyestr va profil', 'Hakamlik da’volari', 'Hakamlik eshituvlari', 'Qarorlar va hujjatlar', 'Ijro monitoringi', 'Reyting va statistika', 'Shartnomalar', 'Xabarnomalar'],
+  ARBITRATOR: ['Umumiy ko‘rsatkich', 'Reyestr va profil', 'Arbitraj da’volari', 'Arbitraj eshituvlari', 'Qarorlar va hujjatlar', 'Ijro monitoringi', 'Reyting va statistika', 'Shartnomalar', 'Xabarnomalar'],
   ADMIN: ['Umumiy ko‘rsatkich', 'Tashkilotlar', 'Foydalanuvchilar va rollar', 'Spravochniklar', 'Audit jurnali', 'Tizim sozlamalari', 'Kontent'],
   OPERATOR: ['Umumiy ko‘rsatkich', 'Foydalanuvchilar bilan ishlash', 'Yordam so‘rovlari'],
 }
@@ -785,9 +787,13 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/bildirish|xabarnoma/i.test(page)) return <NotificationsWorkspace onToast={onToast}/>
   if (page === 'Hujjat almashinuvi') return <DocumentExchangeWorkspace role={role} onToast={onToast}/>
   if (['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && /ariza|talabgor|mediator bo‘lish/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
+  if (role === 'APPLICANT' && ['O‘quv kurslari', 'Malaka imtihoni', 'Malaka guvohnomasi'].includes(page)) return <ApplicantLearningWorkspace page={page} onNavigate={onNavigatePage} onToast={onToast}/>
   if (role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) return <ExamPage role={role} page={page} onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
+  if (role === 'MEDIATOR' && page === 'Guvohnomalar') return <MediatorCertificateWorkspace onToast={onToast}/>
+  if (role === 'MEDIATOR' && page === 'Reyting va statistika') return <MediatorRatingWorkspace onToast={onToast}/>
   if (page === 'Onlayn uchrashuvlar' || /mediatsiya|tashkilot nizolari/i.test(page)) return <MtsWorkspace role={role} demoItems={cases} onCreate={()=>onOpenModal('mediatsiya')} onToast={onToast}/>
+  if ((role === 'JUDGE' || role === 'ARBITRATOR') && !/xabarnoma/i.test(page) && !/shartnoma/i.test(page)) return <SpecialistProceedingsWorkspace key={role} role={role} page={page} onToast={onToast}/>
   if (/arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
   if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
   if (/hisobot|statistika/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
@@ -828,6 +834,27 @@ function RecordPage({ title, subtitle, items, actionLabel, onCreate, onAdvance, 
 
 function ReportsPage({ title, items, onCreate, onAdvance, role }: { title: string; items: PortalRecord[]; onCreate: () => void; onAdvance: (id: string) => void; role: RoleKey }) {
   return <ReportsWorkspace title={title} items={items} onCreate={onCreate} onAdvance={onAdvance} role={role}/>
+}
+
+function MediatorRatingWorkspace({ onToast }: { onToast: (text: string) => void }) {
+  const [result, setResult] = useState<PublicRatingResponse | null>(null)
+  const [fullName, setFullName] = useState('')
+  const [error, setError] = useState('')
+  useEffect(() => {
+    let active = true
+    Promise.allSettled([
+      apiGetPublic<PublicRatingResponse>('/public/ratings?type=MEDIATOR&limit=100'),
+      getAccessToken() ? apiGet<{ fullName?: string }>('/cabinet/profile') : Promise.resolve({ fullName: '' }),
+    ]).then(([ratingResult, profileResult]) => {
+      if (!active) return
+      if (ratingResult.status === 'fulfilled') setResult(ratingResult.value)
+      else setError(ratingResult.reason instanceof Error ? ratingResult.reason.message : 'Reyting ma’lumotlarini yuklab bo‘lmadi.')
+      if (profileResult.status === 'fulfilled') setFullName(profileResult.value.fullName || '')
+    })
+    return () => { active = false }
+  }, [])
+  const own = result?.items.find((item) => fullName && item.profile.fullName.toLocaleLowerCase('uz') === fullName.toLocaleLowerCase('uz'))
+  return <section><PageHeading eyebrow="Ochiq reyting" title="Mediator reytingi va statistika" description="Reyting ko‘rib chiqilgan ishlar, muvaffaqiyatli kelishuvlar, ijro va taraflar bahosi asosida shakllanadi."/><div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">Mening reyestr reytingim</p><Star size={18} className="text-amber-500"/></div><p className="mt-3 text-3xl font-semibold">{own?.rating?.score ?? '—'}</p><p className="mt-2 text-xs text-slate-500">{own ? `${own.profile.fullName} · ${own.profile.region}` : getAccessToken() ? 'Reyestrda ism bo‘yicha mos reyting topilmadi' : 'Shaxsiy reyting uchun tizimga kiring'}</p></article><article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><p className="text-sm text-slate-500">Reyting davri</p><p className="mt-3 text-3xl font-semibold">{result?.periodYear || new Date().getFullYear()}</p><p className="mt-2 text-xs text-slate-500">Reyestrdagi ochiq ma’lumotlar</p></article><article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><p className="text-sm text-slate-500">Reyting mezonlari</p><p className="mt-3 text-sm font-semibold">Ishlar · kelishuv · ijro · qoniqish</p><p className="mt-2 text-xs text-slate-500">Ko‘rsatkichlar davriy yangilanadi</p></article></div>{error && <p role="alert" className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{error}</p>}<section className="mt-5 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="border-b border-slate-100 p-5"><h2 className="font-semibold">Ochiq mediatorlar reytingi</h2><p className="mt-1 text-xs text-slate-500">Reyestrdagi ko‘rsatkichlar</p></div><div className="divide-y divide-slate-100">{(result?.items || []).slice(0, 10).map((item, index) => <div key={item.profile.id} className="flex items-center gap-3 p-4"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-sm font-semibold text-emerald-800">{index + 1}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{item.profile.fullName}</p><p className="mt-1 text-xs text-slate-500">{item.profile.specialization.join(', ')} · {item.profile.region}</p></div><span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800"><Star size={13}/>{item.rating?.score ?? '—'}</span></div>)}{!result?.items.length && !error && <EmptyState title="Reyting yozuvlari topilmadi" detail="Ochiq reyting ma’lumotlari paydo bo‘lgach shu yerda ko‘rinadi."/>}</div><div className="border-t border-slate-100 p-4"><button onClick={() => onToast('Reyting reyestrdagi tasdiqlangan ko‘rsatkichlardan shakllanadi.')} className="text-xs font-semibold text-blue-800">Reyting mezonlari haqida</button></div></section></section>
 }
 
 function ExamPage({ role, page, onToast }: { role: RoleKey; page: string; onToast: (text: string) => void }) {
