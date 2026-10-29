@@ -357,7 +357,7 @@ export class MtsService {
     const organizationTins = await this.getBusinessOrganizationTins(user);
     const participant = item.participants.find((candidate) => candidate.userId === user.id || candidate.pinfl === user.pinfl || (!!candidate.organizationTin && organizationTins.includes(candidate.organizationTin)));
     if (!participant || participant.consentStatus !== ConsentStatus.CONSENTED) throw new ForbiddenException('Kelishuvni faqat rozilik bergan taraf imzolaydi');
-    if (participant.organizationTin && verified.tin !== participant.organizationTin) throw new ForbiddenException('E-IMZO sertifikatidagi STIR ushbu tashkilotga mos emas');
+    if (participant.organizationTin && verified.tin?.replace(/\D/g, '') !== participant.organizationTin.replace(/\D/g, '')) throw new ForbiddenException('E-IMZO sertifikatidagi STIR ushbu tashkilotga mos emas');
     if (participant.signaturePkcs7) throw new ConflictException('Siz kelishuvni avval imzolagansiz');
     const signatureCount = await this.prisma.mediationParticipant.updateMany({ where: { id: participant.id, signaturePkcs7: null }, data: { signaturePkcs7: dto.pkcs7, signedAt: new Date() } });
     if (signatureCount.count !== 1) throw new ConflictException('Imzo oldinroq qayd etilgan');

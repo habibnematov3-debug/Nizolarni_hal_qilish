@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { IntegrationLoggerService } from '../services/integration-logger.service';
 import { CourtClaimDto } from '../dto/court-claim.dto';
-import { CourtClaimStatus, IntegrationDirection, IntegrationStatus, Prisma } from '@prisma/client';
+import { CourtClaimStatus, IntegrationDirection, IntegrationStatus, OrganizationType, Prisma } from '@prisma/client';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { AuthUser } from '../../../common/decorators/current-user.decorator';
 
@@ -75,36 +75,28 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
 
       const participantPinfls = [dto.claimantPinfl, dto.respondentPinfl].filter((value): value is string => Boolean(value));
       const participantTins = [dto.claimantTin, dto.respondentTin].filter((value): value is string => Boolean(value));
+      const recipientIds = new Set<string>();
       if (participantPinfls.length) {
         const participants = await this.prisma.user.findMany({ where: { pinfl: { in: participantPinfls }, status: 'ACTIVE' }, select: { id: true, pinfl: true } });
-        await Promise.all(participants.map((participant) => this.notifications.send({
-          userId: participant.id,
-          templateCode: 'APPLICATION_STATUS',
-          variables: {
-            title: 'Sud da’vosi bo‘yicha mediatsiya',
-            content: `Suddagi ${claim.courtCaseNumber} raqamli ish yuzasidan mediatsiya imkoniyati mavjud. Kabinetdagi “Sud da’volari” bo‘limidan ishni ko‘rib, mediatsiya murojaatini boshlashingiz mumkin.`,
-          },
-          idempotencyKey: `court-${claim.id}-${participant.id}-mediation-offer`,
-          channels: ['CABINET', 'SMS'] as any,
-        })));
+        participants.forEach((participant) => recipientIds.add(participant.id));
       }
       if (participantTins.length) {
         const organizations = await this.prisma.organization.findMany({
-          where: { type: 'BUSINESS', status: 'ACTIVE', code: { in: participantTins } },
+          where: { type: OrganizationType.BUSINESS, status: 'ACTIVE', code: { in: participantTins } },
           select: { businessMembers: { select: { userId: true } } },
         });
-        const memberIds = [...new Set(organizations.flatMap((organization) => organization.businessMembers.map((member) => member.userId)))];
-        await Promise.all(memberIds.map((userId) => this.notifications.send({
+        organizations.forEach((organization) => organization.businessMembers.forEach((member) => recipientIds.add(member.userId)));
+      }
+      await Promise.all([...recipientIds].map((userId) => this.notifications.send({
           userId,
           templateCode: 'APPLICATION_STATUS',
           variables: {
             title: 'Sud da’vosi bo‘yicha mediatsiya',
-            content: `Tashkilotingiz ishtirokidagi ${claim.courtCaseNumber} raqamli sud ishi platformaga kelib tushdi. Kabinetdagi “Sud da’volari” bo‘limidan ishni ko‘ring.`,
+            content: `Siz yoki tashkilotingiz ishtirokidagi ${claim.courtCaseNumber} raqamli sud ishi platformaga kelib tushdi. Kabinetdagi “Sud da’volari” bo‘limidan ishni ko‘ring.`,
           },
           idempotencyKey: `court-${claim.id}-${userId}-mediation-offer`,
           channels: ['CABINET', 'SMS'] as any,
         })));
-      }
 
       return {
         success: true,
@@ -131,7 +123,7 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
   async getClaimsForParticipant(user: AuthUser) {
     const organizationTins = user.roles.includes('BUSINESS')
       ? (await this.prisma.businessOrganizationMember.findMany({
-          where: { userId: user.id, organization: { type: 'BUSINESS', status: 'ACTIVE', code: { not: null } } },
+          where: { userId: user.id, organization: { type: OrganizationType.BUSINESS, status: 'ACTIVE', code: { not: null } } },
           select: { organization: { select: { code: true } } },
         })).map((membership) => membership.organization.code).filter((code): code is string => Boolean(code))
       : [];

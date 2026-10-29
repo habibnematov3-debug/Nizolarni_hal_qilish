@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { ObligationStatus, Prisma } from '@prisma/client';
+import { ObligationStatus, OrganizationType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/services/notifications.service';
@@ -110,7 +110,7 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
       const recipients = new Set([item.responsiblePartyId, item.mediatorId].filter((id): id is string => Boolean(id)));
       if (item.responsiblePartyOrganizationTin) {
         const organization = await this.prisma.organization.findFirst({
-          where: { type: 'BUSINESS', status: 'ACTIVE', code: item.responsiblePartyOrganizationTin },
+          where: { type: OrganizationType.BUSINESS, status: 'ACTIVE', code: item.responsiblePartyOrganizationTin },
           select: { businessMembers: { select: { userId: true } } },
         });
         organization?.businessMembers.forEach((member) => recipients.add(member.userId));
@@ -127,7 +127,7 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
   private async getBusinessOrganizationTins(user: AuthUser) {
     if (!user.roles.includes('BUSINESS')) return [];
     const memberships = await this.prisma.businessOrganizationMember.findMany({
-      where: { userId: user.id, organization: { type: 'BUSINESS', status: 'ACTIVE', code: { not: null } } },
+      where: { userId: user.id, organization: { type: OrganizationType.BUSINESS, status: 'ACTIVE', code: { not: null } } },
       select: { organization: { select: { code: true } } },
     });
     return memberships.map((membership) => membership.organization.code).filter((code): code is string => Boolean(code));
