@@ -63,6 +63,15 @@ export class UsersService {
     }
 
     const roleNamesList = roleRecords.map((r) => r.name);
+    if (roleNamesList.includes('ADMIN')) {
+      const adminRole = roleRecords.find((role) => role.name === 'ADMIN');
+      const adminAccounts = adminRole
+        ? await this.prisma.userRole.count({ where: { roleId: adminRole.id } })
+        : 0;
+      if (adminAccounts >= 20) {
+        throw new ConflictException('Tizim administratorlari soni 20 nafardan oshmasligi kerak');
+      }
+    }
     const resolved = resolveUserCabinetAndRoles(roleNamesList, dto.registryStatus || RegistryStatus.NONE);
 
     const newUser = await this.prisma.$transaction(async (tx) => {
@@ -334,6 +343,15 @@ export class UsersService {
 
     const oldRoles = user.roles;
     const newRoleNames = roles.map((r) => r.name);
+    if (newRoleNames.includes('ADMIN') && !oldRoles.includes('ADMIN')) {
+      const adminRole = roles.find((role) => role.name === 'ADMIN');
+      const adminAccounts = adminRole
+        ? await this.prisma.userRole.count({ where: { roleId: adminRole.id } })
+        : 0;
+      if (adminAccounts >= 20) {
+        throw new ConflictException('Tizim administratorlari soni 20 nafardan oshmasligi kerak');
+      }
+    }
     const ministryRoleAssignment = currentUser.roles.includes('MINISTRY_STAFF') && !currentUser.roles.includes('ADMIN');
     if (ministryRoleAssignment) {
       const protectedTarget = oldRoles.some((role) => ['ADMIN', 'MINISTRY_STAFF'].includes(role));

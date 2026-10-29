@@ -23,6 +23,7 @@ import { BusinessPaymentsWorkspace } from './BusinessPaymentsWorkspace'
 import { SpecialistProceedingsWorkspace } from './SpecialistProceedingsWorkspace'
 import { ApplicantLearningWorkspace, CommissionTrainingWorkspace } from './ApplicantLearningWorkspace'
 import { JusticeOfficeDashboard, JusticeRegistryWorkspace, MinistryAssistantWorkspace, MinistryRoleMatrixWorkspace, MinistryStaffRolesWorkspace } from './JusticeOfficeWorkspace'
+import AdminWorkspace from './AdminWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -150,7 +151,7 @@ const navByRole: Record<RoleKey, string[]> = {
   COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar', 'O‘quv nazorati'],
   JUDGE: ['Umumiy ko‘rsatkich', 'Reyestr va profil', 'Hakamlik da’volari', 'Hakamlik eshituvlari', 'Qarorlar va hujjatlar', 'Ijro monitoringi', 'Reyting va statistika', 'Shartnomalar', 'Xabarnomalar'],
   ARBITRATOR: ['Umumiy ko‘rsatkich', 'Reyestr va profil', 'Arbitraj da’volari', 'Arbitraj eshituvlari', 'Qarorlar va hujjatlar', 'Ijro monitoringi', 'Reyting va statistika', 'Shartnomalar', 'Xabarnomalar'],
-  ADMIN: ['Umumiy ko‘rsatkich', 'Tashkilotlar', 'Foydalanuvchilar va rollar', 'Spravochniklar', 'Audit jurnali', 'Tizim sozlamalari', 'Kontent'],
+  ADMIN: ['Umumiy ko‘rsatkich', 'Foydalanuvchilar va rollar', 'Huquqlar matritsasi', 'Ma’lumotnomalar', 'Texnik ekspluatatsiya', 'Xavfsizlik va audit', 'SI takliflarini ko‘rib chiqish', 'Tizim sozlamalari', 'Tashkilotlar', 'Kontent'],
   OPERATOR: ['Umumiy ko‘rsatkich', 'Foydalanuvchilar bilan ishlash', 'Yordam so‘rovlari'],
 }
 const mediationSteps = ['Yangi murojaat', 'Mediator tanlash', 'Kelishuv imzolash', 'Uchrashuv belgilash', 'Mediatsiya sessiyasi', 'Kelishuv monitoringi', 'Yakunlandi']
@@ -174,7 +175,7 @@ export default function App() {
   const [loginMethod, setLoginMethod] = useState('')
   const [chooseRole, setChooseRole] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
-  const [activePage, setActivePage] = useState(() => localStorage.getItem('nizolar.demo.role') === 'ADMIN' ? 'Tashkilotlar' : 'Umumiy ko‘rsatkich')
+  const [activePage, setActivePage] = useState('Umumiy ko‘rsatkich')
   const [query, setQuery] = useState('')
   const [region, setRegion] = useState('Barcha hududlar')
   const [registryKind, setRegistryKind] = useState('Mediatorlar')
@@ -218,7 +219,7 @@ export default function App() {
             : verifiedRoles.includes('CITIZEN') ? 'CITIZEN' : verifiedRoles[0]
       setAssignedRoles(verifiedRoles)
       setRole(activeRole)
-      setActivePage(activeRole === 'ADMIN' ? 'Tashkilotlar' : navByRole[activeRole][0])
+      setActivePage(navByRole[activeRole][0])
     }).catch(() => { /* A stale demo token must not block the public/demo cabinet. */ })
     return () => { active = false }
   }, [])
@@ -260,7 +261,7 @@ export default function App() {
     openLogin()
   }
   const activateRole = (key: RoleKey) => {
-    setRole(key); setActivePage(key === 'ADMIN' ? 'Tashkilotlar' : navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
+    setRole(key); setActivePage(navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
     setAnnouncementGate(false)
     if (key === 'MEDIATOR' && (getAccessToken() || !announcementsAccepted)) setAnnouncementGate(true)
   }
@@ -778,6 +779,7 @@ function OrganizationsAdmin({ onToast }: { onToast: (text: string) => void }) {
 
 function WorkspaceContent({ role, page, cases, applications, reports, genericItems, onOpenModal, onNavigatePage, onAdvanceCase, onAdvanceApplication, onAdvanceReport, onToast, onPublicRegistry, onSelectSpecialist, onStartCourtClaimMediation }: { role: RoleKey; page: string; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; genericItems: PortalRecord[]; onOpenModal: (key: string) => void; onNavigatePage: (page: string) => void; onAdvanceCase: (id: string) => void; onAdvanceApplication: (id: string) => void; onAdvanceReport: (id: string) => void; onToast: (text: string) => void; onPublicRegistry: () => void; onSelectSpecialist: (person: { id: string; fullName: string; type: string }) => void; onStartCourtClaimMediation: (courtCaseNumber: string) => void }) {
   if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
+  if (role === 'ADMIN' && page !== 'Kontent') return <AdminWorkspace page={page} onToast={onToast} onNavigate={onNavigatePage}/>
   if (['REGIONAL', 'MINISTRY', 'COMMISSION'].includes(role) && (page === 'Umumiy ko‘rsatkich' || page === 'Hududiy monitoring' || page === 'Respublika monitoringi')) return <JusticeOfficeDashboard role={role as 'REGIONAL' | 'MINISTRY' | 'COMMISSION'} page={page}/>
   if (['REGIONAL', 'MINISTRY'].includes(role) && page === 'Mutaxassislar reyestri') return <JusticeRegistryWorkspace role={role as 'REGIONAL' | 'MINISTRY'}/>
   if (role === 'MINISTRY' && page === 'Xodimlar va rollar') return <MinistryStaffRolesWorkspace onToast={onToast}/>

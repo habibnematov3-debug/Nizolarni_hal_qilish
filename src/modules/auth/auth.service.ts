@@ -580,6 +580,58 @@ export class AuthService {
   /**
    * Dev/Admin fallback login (POST /auth/login)
    */
+  private async recordFailedPasswordLogin(
+    username: string,
+    user: { id: string; username: string; fullName: string; status: UserStatus } | null,
+    reason: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    await this.auditService.log({
+      userId: null,
+      username: user?.username || username,
+      userFullName: user?.fullName,
+      action: 'LOGIN_FAILED',
+      entityType: 'AUTH',
+      entityId: user?.id,
+      newValues: { reason, attemptedIdentifier: username },
+      ipAddress,
+      userAgent,
+    });
+
+    if (!user || user.status !== UserStatus.ACTIVE) return;
+
+    const windowStart = new Date(Date.now() - 15 * 60 * 1000);
+    const recentFailures = await this.prisma.auditLog.count({
+      where: {
+        username: user.username,
+        action: 'LOGIN_FAILED',
+        entityType: 'AUTH',
+        createdAt: { gte: windowStart },
+      },
+    });
+
+    if (recentFailures < 5) return;
+
+    const blocked = await this.prisma.user.updateMany({
+      where: { id: user.id, status: UserStatus.ACTIVE },
+      data: { status: UserStatus.BLOCKED, refreshToken: null },
+    });
+    if (!blocked.count) return;
+
+    await this.auditService.log({
+      username: 'system',
+      userFullName: 'Avtomatik xavfsizlik nazorati',
+      action: 'ACCOUNT_AUTO_BLOCK',
+      entityType: 'USER',
+      entityId: user.id,
+      oldValues: { status: UserStatus.ACTIVE },
+      newValues: { status: UserStatus.BLOCKED, reason: '15 daqiqa ichida 5 ta noto‘g‘ri parol urinishlari' },
+      ipAddress,
+      userAgent,
+    });
+  }
+
   async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string) {
     const { username, password } = loginDto;
 
@@ -594,15 +646,18 @@ export class AuthService {
     });
 
     if (!user || !user.passwordHash) {
+      await this.recordFailedPasswordLogin(username, user, 'INVALID_CREDENTIALS', ipAddress, userAgent);
       throw new UnauthorizedException('Login yoki parol noto\'g\'ri');
     }
 
     if (user.status !== 'ACTIVE') {
+      await this.recordFailedPasswordLogin(username, user, 'ACCOUNT_NOT_ACTIVE', ipAddress, userAgent);
       throw new UnauthorizedException('Foydalanuvchi hisobi faol emas yoki bloklangan');
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      await this.recordFailedPasswordLogin(username, user, 'INVALID_CREDENTIALS', ipAddress, userAgent);
       throw new UnauthorizedException('Login yoki parol noto\'g\'ri');
     }
 

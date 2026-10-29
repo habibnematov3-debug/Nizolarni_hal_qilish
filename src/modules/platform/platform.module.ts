@@ -5,6 +5,7 @@ import { memoryStorage } from 'multer';
 // Monitoring
 import { MonitoringService } from './monitoring/monitoring.service';
 import { MonitoringController } from './monitoring/monitoring.controller';
+import { MaintenanceService } from './monitoring/maintenance.service';
 
 // Audit
 import { PlatformAuditService } from './audit/platform-audit.service';
@@ -37,6 +38,7 @@ import { SecretsService } from './security/secrets.service';
   providers: [
     // Monitoring
     MonitoringService,
+    MaintenanceService,
 
     // Platform Audit
     PlatformAuditService,
@@ -54,6 +56,7 @@ import { SecretsService } from './security/secrets.service';
   ],
   exports: [
     MonitoringService,
+    MaintenanceService,
     PlatformAuditService,
     FileStorageService,
     SecretsService,

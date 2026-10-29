@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as crypto from 'crypto';
+import { MaintenanceService } from '../monitoring/maintenance.service';
 
 /**
  * Xavfsizlik Middleware
@@ -25,7 +26,7 @@ export class SecurityMiddleware implements NestMiddleware {
   /** Ruxsat berilgan CORS manzillar */
   private readonly allowedOrigins: string[];
 
-  constructor() {
+  constructor(private readonly maintenanceService: MaintenanceService) {
     const corsEnv = process.env.CORS_ORIGINS || 'http://localhost:3001';
     this.allowedOrigins = corsEnv.split(',').map((o) => o.trim());
   }
@@ -42,13 +43,26 @@ export class SecurityMiddleware implements NestMiddleware {
     // 3. CORS sozlash
     this.handleCors(req, res);
 
-    // 4. Rate limiting (health endpoint uchun yo'q)
-    if (req.path !== '/platform/health') {
-      const isRateLimited = this.checkRateLimit(req, res);
-      if (isRateLimited) return;
-    }
+    // 4. Texnik xizmat rejimi: health va admin rejimni o‘chiradigan endpoint ochiq qoladi.
+    this.maintenanceService.isEnabled().then((maintenanceEnabled) => {
+      const maintenanceControlPath = req.path === '/platform/maintenance';
+      if (maintenanceEnabled && req.path !== '/platform/health' && !maintenanceControlPath) {
+        res.status(503).json({
+          statusCode: 503,
+          message: 'Platforma rejalashtirilgan texnik xizmat rejimida.',
+          maintenance: true,
+        });
+        return;
+      }
 
-    next();
+      // 5. Rate limiting (health endpoint uchun yo‘q)
+      if (req.path !== '/platform/health') {
+        const isRateLimited = this.checkRateLimit(req, res);
+        if (isRateLimited) return;
+      }
+
+      next();
+    }).catch(() => next());
   }
 
   /**

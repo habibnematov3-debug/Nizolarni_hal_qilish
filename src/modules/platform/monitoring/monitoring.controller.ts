@@ -2,10 +2,14 @@ import {
   Controller,
   Get,
   Query,
+  Put,
+  Body,
+  Req,
   UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -18,6 +22,10 @@ import { HealthStatusDto, MetricsDto, LogsResponseDto } from './health.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { CurrentUser, AuthUser } from '../../../common/decorators/current-user.decorator';
+import { AuditService } from '../../audit/audit.service';
+import { UpdateMaintenanceDto } from './dto/update-maintenance.dto';
+import { MaintenanceService } from './maintenance.service';
 
 /**
  * Platform Monitoring Controller
@@ -26,7 +34,47 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 @ApiTags('Platform — Monitoring')
 @Controller('platform')
 export class MonitoringController {
-  constructor(private readonly monitoringService: MonitoringService) {}
+  constructor(
+    private readonly monitoringService: MonitoringService,
+    private readonly maintenanceService: MaintenanceService,
+    private readonly auditService: AuditService,
+  ) {}
+
+  @Get('maintenance')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xizmat rejimini ko‘rish' })
+  async getMaintenance() {
+    return this.maintenanceService.getState();
+  }
+
+  @Put('maintenance')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Texnik xizmat rejimini yoqish yoki o‘chirish' })
+  async updateMaintenance(
+    @Body() dto: UpdateMaintenanceDto,
+    @CurrentUser() user: AuthUser,
+    @Req() req: Request,
+  ) {
+    const oldState = await this.maintenanceService.getState();
+    const nextState = await this.maintenanceService.update(dto.enabled, dto.message || '', user.username);
+    await this.auditService.log({
+      userId: user.id,
+      username: user.username,
+      userFullName: user.fullName,
+      action: 'PLATFORM_MODE_CHANGE',
+      entityType: 'PLATFORM',
+      entityId: 'maintenance',
+      oldValues: oldState,
+      newValues: nextState,
+      ipAddress: req.ip || req.socket.remoteAddress,
+      userAgent: req.headers['user-agent'],
+    });
+    return nextState;
+  }
 
   /**
    * Tizim salomatligi holati
