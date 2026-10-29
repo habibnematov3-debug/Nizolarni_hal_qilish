@@ -1,7 +1,7 @@
 import { RegistryEntryStatus, RegistryType } from '@prisma/client';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination.dto';
 
 export class RegistryQueryDto extends PaginationQueryDto {
@@ -69,4 +69,12 @@ export class PublicRegistryQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   specialization?: string;
+
+  @ApiPropertyOptional({ example: 'en', description: 'Mutaxassis xizmat ko‘rsatadigan til' })
+  @IsOptional() @IsString()
+  language?: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 5, description: 'Minimal tasdiqlangan reyestr reytingi' })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(5)
+  minimumRating?: number;
 }

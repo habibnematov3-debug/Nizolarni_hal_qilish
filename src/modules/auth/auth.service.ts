@@ -17,7 +17,7 @@ import { MobileIdLoginDto } from './dto/mobile-id-login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LoginDto } from './dto/login.dto';
 import { resolveUserCabinetAndRoles } from './helpers/cabinet-resolver.helper';
-import { AuthProvider, CabinetType, RegistryStatus, UserStatus } from '@prisma/client';
+import { AuthProvider, CabinetType, OrganizationType, RegistryStatus, UserStatus } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -289,10 +289,50 @@ export class AuthService {
 
     if (cert.tin && cert.organizationName) {
       user = await this.ensureUserRole(user.id, 'BUSINESS', 'Tadbirkor / yuridik shaxs', 'E-IMZO sertifikatidagi STIR bilan tasdiqlangan yuridik shaxs vakili');
+      await this.ensureBusinessOrganization(user.id, cert.tin, cert.organizationName);
     } else {
       user = await this.ensureUserRole(user.id, 'CITIZEN', 'Fuqaro', 'E-IMZO orqali tasdiqlangan jismoniy shaxs');
     }
     return this.createSession(user, 'E_SIGN', ipAddress, userAgent);
+  }
+
+  private async ensureBusinessOrganization(userId: string, tinValue: string, organizationName: string) {
+    const tin = tinValue.replace(/\D/g, '');
+    if (!/^\d{9}$/.test(tin) || !organizationName.trim()) {
+      throw new BadRequestException('E-IMZO sertifikatida tashkilot nomi va 9 raqamli STIR bo‘lishi kerak');
+    }
+    const existing = await this.prisma.organization.findFirst({
+      where: { type: OrganizationType.BUSINESS, code: tin },
+      select: { id: true },
+    });
+    let organization = existing
+      ? await this.prisma.organization.update({
+          where: { id: existing.id },
+          data: { name: organizationName.trim(), status: 'ACTIVE' },
+          select: { id: true },
+        })
+      : null;
+    if (!organization) {
+      try {
+        organization = await this.prisma.organization.create({
+          data: { type: OrganizationType.BUSINESS, code: tin, name: organizationName.trim() },
+          select: { id: true },
+        });
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'P2002') throw error;
+        const concurrentlyCreated = await this.prisma.organization.findFirst({
+          where: { type: OrganizationType.BUSINESS, code: tin }, select: { id: true },
+        });
+        if (!concurrentlyCreated) throw error;
+        organization = concurrentlyCreated;
+      }
+    }
+    if (!organization) throw new BadRequestException('E-IMZO tashkilot profilini yaratib bo‘lmadi');
+    await this.prisma.businessOrganizationMember.upsert({
+      where: { organizationId_userId: { organizationId: organization.id, userId } },
+      update: {},
+      create: { organizationId: organization.id, userId },
+    });
   }
 
   /**

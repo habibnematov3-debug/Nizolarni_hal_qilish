@@ -4,6 +4,7 @@ import { IntegrationLoggerService } from '../services/integration-logger.service
 import { CourtClaimDto } from '../dto/court-claim.dto';
 import { CourtClaimStatus, IntegrationDirection, IntegrationStatus, Prisma } from '@prisma/client';
 import { NotificationsService } from '../../notifications/services/notifications.service';
+import { AuthUser } from '../../../common/decorators/current-user.decorator';
 
 export interface ICourtSystemPort {
   receiveCourtClaim(claim: CourtClaimDto): Promise<any>;
@@ -31,9 +32,11 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
           judgeName: dto.judgeName,
           claimantName: dto.claimantName,
           claimantPinfl: dto.claimantPinfl,
+          claimantTin: dto.claimantTin,
           claimantPhone: dto.claimantPhone,
           respondentName: dto.respondentName,
           respondentPinfl: dto.respondentPinfl,
+          respondentTin: dto.respondentTin,
           respondentPhone: dto.respondentPhone,
           disputeSubject: dto.disputeSubject,
           claimAmount: dto.claimAmount !== undefined ? new Prisma.Decimal(dto.claimAmount) : null,
@@ -46,9 +49,11 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
           judgeName: dto.judgeName,
           claimantName: dto.claimantName,
           claimantPinfl: dto.claimantPinfl,
+          claimantTin: dto.claimantTin,
           claimantPhone: dto.claimantPhone,
           respondentName: dto.respondentName,
           respondentPinfl: dto.respondentPinfl,
+          respondentTin: dto.respondentTin,
           respondentPhone: dto.respondentPhone,
           disputeSubject: dto.disputeSubject,
           claimAmount: dto.claimAmount !== undefined ? new Prisma.Decimal(dto.claimAmount) : null,
@@ -69,6 +74,7 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
       });
 
       const participantPinfls = [dto.claimantPinfl, dto.respondentPinfl].filter((value): value is string => Boolean(value));
+      const participantTins = [dto.claimantTin, dto.respondentTin].filter((value): value is string => Boolean(value));
       if (participantPinfls.length) {
         const participants = await this.prisma.user.findMany({ where: { pinfl: { in: participantPinfls }, status: 'ACTIVE' }, select: { id: true, pinfl: true } });
         await Promise.all(participants.map((participant) => this.notifications.send({
@@ -79,6 +85,23 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
             content: `Suddagi ${claim.courtCaseNumber} raqamli ish yuzasidan mediatsiya imkoniyati mavjud. Kabinetdagi “Sud da’volari” bo‘limidan ishni ko‘rib, mediatsiya murojaatini boshlashingiz mumkin.`,
           },
           idempotencyKey: `court-${claim.id}-${participant.id}-mediation-offer`,
+          channels: ['CABINET', 'SMS'] as any,
+        })));
+      }
+      if (participantTins.length) {
+        const organizations = await this.prisma.organization.findMany({
+          where: { type: 'BUSINESS', status: 'ACTIVE', code: { in: participantTins } },
+          select: { businessMembers: { select: { userId: true } } },
+        });
+        const memberIds = [...new Set(organizations.flatMap((organization) => organization.businessMembers.map((member) => member.userId)))];
+        await Promise.all(memberIds.map((userId) => this.notifications.send({
+          userId,
+          templateCode: 'APPLICATION_STATUS',
+          variables: {
+            title: 'Sud da’vosi bo‘yicha mediatsiya',
+            content: `Tashkilotingiz ishtirokidagi ${claim.courtCaseNumber} raqamli sud ishi platformaga kelib tushdi. Kabinetdagi “Sud da’volari” bo‘limidan ishni ko‘ring.`,
+          },
+          idempotencyKey: `court-${claim.id}-${userId}-mediation-offer`,
           channels: ['CABINET', 'SMS'] as any,
         })));
       }
@@ -105,10 +128,19 @@ export class CourtSystemIntegrationAdapter implements ICourtSystemPort {
     }
   }
 
-  async getClaimsForParticipant(pinfl: string) {
-    if (!/^\d{14}$/.test(pinfl)) return [];
+  async getClaimsForParticipant(user: AuthUser) {
+    const organizationTins = user.roles.includes('BUSINESS')
+      ? (await this.prisma.businessOrganizationMember.findMany({
+          where: { userId: user.id, organization: { type: 'BUSINESS', status: 'ACTIVE', code: { not: null } } },
+          select: { organization: { select: { code: true } } },
+        })).map((membership) => membership.organization.code).filter((code): code is string => Boolean(code))
+      : [];
+    const partyConditions: Prisma.CourtClaimWhereInput[] = [];
+    if (user.pinfl && /^\d{14}$/.test(user.pinfl)) partyConditions.push({ claimantPinfl: user.pinfl }, { respondentPinfl: user.pinfl });
+    if (organizationTins.length) partyConditions.push({ claimantTin: { in: organizationTins } }, { respondentTin: { in: organizationTins } });
+    if (!partyConditions.length) return [];
     return this.prisma.courtClaim.findMany({
-      where: { OR: [{ claimantPinfl: pinfl }, { respondentPinfl: pinfl }] },
+      where: { OR: partyConditions },
       select: {
         id: true, courtCaseNumber: true, courtName: true, disputeSubject: true,
         courtOrderDate: true, status: true,

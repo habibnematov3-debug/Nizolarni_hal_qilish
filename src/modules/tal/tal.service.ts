@@ -1,9 +1,10 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ContentStatus, Prisma, RegistryEntryStatus, RegistryType } from '@prisma/client';
+import { ContentStatus, OrganizationType, Prisma, RegistryEntryStatus, RegistryType } from '@prisma/client';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { SendThreadMessageDto, StartMediatorThreadDto, UpdateApplicantProfileDto } from './dto/tal.dto';
+import { RegisterBusinessAuthorityDocumentDto, UpdateBusinessOrganizationDto } from './dto/business.dto';
 
 @Injectable()
 export class TalService {
@@ -44,7 +45,7 @@ export class TalService {
       select: {
         id: true, username: true, fullName: true, pinfl: true, passportSeriesNumber: true,
         passportGivenDate: true, passportExpireDate: true, birthDate: true, birthPlace: true,
-        nationality: true, gender: true, address: true, phone: true, email: true,
+        nationality: true, gender: true, address: true, phone: true, email: true, position: true,
         registryStatus: true, cabinetType: true, notificationChannels: true,
       },
     });
@@ -64,6 +65,75 @@ export class TalService {
       if ((error as { code?: string }).code === 'P2002') throw new ConflictException('Ushbu telefon yoki elektron pochta boshqa foydalanuvchida ro‘yxatdan o‘tgan');
       throw error;
     }
+  }
+
+  async getBusinessOrganizations(actor: AuthUser) {
+    this.assertBusinessRole(actor);
+    return this.prisma.organization.findMany({
+      where: { type: OrganizationType.BUSINESS, businessMembers: { some: { userId: actor.id } } },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true, name: true, code: true, address: true, phone: true, email: true, bankAccount: true,
+        authorityDocuments: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true, type: true, documentNumber: true, validUntil: true, createdAt: true,
+            file: { select: { id: true, originalName: true, sizeBytes: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async updateBusinessOrganization(actor: AuthUser, organizationId: string, dto: UpdateBusinessOrganizationDto) {
+    this.assertBusinessRole(actor);
+    if (dto.address === undefined && dto.phone === undefined && dto.email === undefined && dto.bankAccount === undefined) {
+      throw new BadRequestException('Tashkilot manzili, aloqa ma’lumotlari yoki bank hisobvarag‘ini kiriting');
+    }
+    const membership = await this.prisma.businessOrganizationMember.findUnique({
+      where: { organizationId_userId: { organizationId, userId: actor.id } },
+      select: { id: true },
+    });
+    if (!membership) throw new NotFoundException('Tashkilot topilmadi yoki uni boshqarish vakolati yo‘q');
+    const updated = await this.prisma.organization.update({ where: { id: organizationId }, data: dto });
+    await this.audit.log({
+      userId: actor.id, username: actor.username, userFullName: actor.fullName,
+      action: 'UPDATE_BUSINESS_ORGANIZATION_PROFILE', entityType: 'ORGANIZATION', entityId: organizationId,
+      newValues: dto,
+    });
+    return { id: updated.id, name: updated.name, code: updated.code, address: updated.address, phone: updated.phone, email: updated.email, bankAccount: updated.bankAccount };
+  }
+
+  async addBusinessAuthorityDocument(actor: AuthUser, organizationId: string, dto: RegisterBusinessAuthorityDocumentDto) {
+    this.assertBusinessRole(actor);
+    const membership = await this.prisma.businessOrganizationMember.findUnique({
+      where: { organizationId_userId: { organizationId, userId: actor.id } },
+      select: { id: true },
+    });
+    if (!membership) throw new NotFoundException('Tashkilot topilmadi yoki uni boshqarish vakolati yo‘q');
+    const file = await this.prisma.fileRecord.findFirst({
+      where: { id: dto.fileId, uploadedById: actor.id, accessLevel: 'PRIVATE' },
+      select: { id: true },
+    });
+    if (!file) throw new ForbiddenException('Faqat o‘zingiz yuklagan shaxsiy faylni vakolat hujjati sifatida biriktiring');
+    const document = await this.prisma.businessAuthorityDocument.create({
+      data: {
+        organizationId, fileId: dto.fileId, uploadedById: actor.id, type: dto.type,
+        documentNumber: dto.documentNumber?.trim() || null,
+        validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
+      },
+      select: { id: true, type: true, documentNumber: true, validUntil: true, createdAt: true, file: { select: { id: true, originalName: true, sizeBytes: true } } },
+    });
+    await this.audit.log({
+      userId: actor.id, username: actor.username, userFullName: actor.fullName,
+      action: 'ADD_BUSINESS_AUTHORITY_DOCUMENT', entityType: 'ORGANIZATION', entityId: organizationId,
+      newValues: { documentId: document.id, type: dto.type, fileId: dto.fileId },
+    });
+    return document;
+  }
+
+  private assertBusinessRole(actor: AuthUser) {
+    if (!actor.roles.includes('BUSINESS')) throw new ForbiddenException('Bu bo‘lim yuridik shaxs vakillari uchun');
   }
 
   async getCourseInfo() {

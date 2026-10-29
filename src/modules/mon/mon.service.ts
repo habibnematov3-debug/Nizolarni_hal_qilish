@@ -34,8 +34,15 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
   async create(user: AuthUser, dto: CreateObligationDto, ipAddress?: string) {
     const dueDate = new Date(dto.dueDate);
     if (Number.isNaN(dueDate.getTime())) throw new BadRequestException('Muddat noto\'g\'ri');
+    if (dto.responsiblePartyOrganizationTin) {
+      const relatedCase = await this.prisma.mediationCase.findFirst({
+        where: { id: dto.agreementId, mediatorId: user.id, participants: { some: { organizationTin: dto.responsiblePartyOrganizationTin } } },
+        select: { id: true },
+      });
+      if (!relatedCase) throw new ForbiddenException('Tashkilot majburiyatini faqat shu mediatsiyaning biriktirilgan mediatori qayd etishi mumkin');
+    }
     const obligation = await this.prisma.monitoringObligation.create({ data: {
-      agreementId: dto.agreementId, description: dto.description, dueDate, responsiblePartyId: dto.responsiblePartyId, responsiblePartyPinfl: dto.responsiblePartyPinfl,
+      agreementId: dto.agreementId, description: dto.description, dueDate, responsiblePartyId: dto.responsiblePartyId, responsiblePartyPinfl: dto.responsiblePartyPinfl, responsiblePartyOrganizationTin: dto.responsiblePartyOrganizationTin,
       responsiblePartyName: dto.responsiblePartyName, mediatorId: dto.mediatorId || user.id, region: dto.region || user.region,
       reminderDaysBefore: dto.reminderDaysBefore ?? 3, reminderIntervalDays: dto.reminderIntervalDays ?? 1, createdById: user.id,
     } });
@@ -44,15 +51,18 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
   }
 
   async list(user: AuthUser, query: ObligationQueryDto) {
-    const where: Prisma.MonitoringObligationWhereInput = this.accessWhere(user, query);
+    const where: Prisma.MonitoringObligationWhereInput = await this.accessWhere(user, query);
     if (query.status && Object.values(ObligationStatus).includes(query.status as ObligationStatus)) where.status = query.status as ObligationStatus;
     return this.prisma.monitoringObligation.findMany({ where, orderBy: { dueDate: 'asc' } });
   }
 
-  private accessWhere(user: AuthUser, query: ObligationQueryDto): Prisma.MonitoringObligationWhereInput {
+  private async accessWhere(user: AuthUser, query: ObligationQueryDto): Promise<Prisma.MonitoringObligationWhereInput> {
     const isStaff = user.roles.some((role) => ['REGIONAL_STAFF', 'MINISTRY_STAFF', 'ADMIN'].includes(role));
     const where: Prisma.MonitoringObligationWhereInput = {};
-    if (!isStaff) where.OR = [{ responsiblePartyId: user.id }, ...(user.pinfl ? [{ responsiblePartyPinfl: user.pinfl }] : []), { mediatorId: user.id }, { createdById: user.id }];
+    if (!isStaff) {
+      const organizationTins = await this.getBusinessOrganizationTins(user);
+      where.OR = [{ responsiblePartyId: user.id }, ...(user.pinfl ? [{ responsiblePartyPinfl: user.pinfl }] : []), ...(organizationTins.length ? [{ responsiblePartyOrganizationTin: { in: organizationTins } }] : []), { mediatorId: user.id }, { createdById: user.id }];
+    }
     if (query.agreementId) where.agreementId = query.agreementId;
     if (query.mediatorId) where.mediatorId = query.mediatorId;
     if (query.region) where.region = query.region;
@@ -63,7 +73,8 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
   async complete(user: AuthUser, id: string, ipAddress?: string) {
     const item = await this.prisma.monitoringObligation.findUnique({ where: { id } });
     if (!item) throw new NotFoundException('Majburiyat topilmadi');
-    const canComplete = item.responsiblePartyId === user.id || (!!user.pinfl && item.responsiblePartyPinfl === user.pinfl) || item.mediatorId === user.id || item.createdById === user.id || user.roles.includes('ADMIN');
+    const organizationTins = await this.getBusinessOrganizationTins(user);
+    const canComplete = item.responsiblePartyId === user.id || (!!user.pinfl && item.responsiblePartyPinfl === user.pinfl) || (!!item.responsiblePartyOrganizationTin && organizationTins.includes(item.responsiblePartyOrganizationTin)) || item.mediatorId === user.id || item.createdById === user.id || user.roles.includes('ADMIN');
     if (!canComplete) throw new ForbiddenException('Bu majburiyatni belgilash huquqi yo\'q');
     if (item.status === ObligationStatus.COMPLETED) return item;
     const updated = await this.prisma.monitoringObligation.update({ where: { id }, data: { status: ObligationStatus.COMPLETED, completedAt: new Date(), completedById: user.id } });
@@ -72,7 +83,7 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
   }
 
   async statistics(user: AuthUser, query: ObligationQueryDto) {
-    const items = await this.prisma.monitoringObligation.findMany({ where: this.accessWhere(user, query), select: { status: true, region: true, mediatorId: true } });
+    const items = await this.prisma.monitoringObligation.findMany({ where: await this.accessWhere(user, query), select: { status: true, region: true, mediatorId: true } });
     const byStatus: Record<string, number> = {};
     const byRegion: Record<string, number> = {};
     const byMediator: Record<string, number> = {};
@@ -96,13 +107,29 @@ export class MonService implements OnModuleInit, OnModuleDestroy {
       const nextStatus = item.dueDate < now ? ObligationStatus.OVERDUE : now >= dueSoonAt ? ObligationStatus.DUE_SOON : ObligationStatus.PENDING;
       await this.prisma.monitoringObligation.update({ where: { id: item.id }, data: { status: nextStatus } });
       if (now < dueSoonAt || (nextReminderAt && now < nextReminderAt)) continue;
-      const recipients = [...new Set([item.responsiblePartyId, item.mediatorId].filter((id): id is string => Boolean(id)))];
+      const recipients = new Set([item.responsiblePartyId, item.mediatorId].filter((id): id is string => Boolean(id)));
+      if (item.responsiblePartyOrganizationTin) {
+        const organization = await this.prisma.organization.findFirst({
+          where: { type: 'BUSINESS', status: 'ACTIVE', code: item.responsiblePartyOrganizationTin },
+          select: { businessMembers: { select: { userId: true } } },
+        });
+        organization?.businessMembers.forEach((member) => recipients.add(member.userId));
+      }
       for (const userId of recipients) {
-        await this.notifications.send({ userId, templateCode: 'OBLIGATION_EXECUTION_DEADLINE', variables: { obligationId: item.id, deadline: item.dueDate.toISOString(), status: nextStatus, content: `Majburiyat muddati: ${item.dueDate.toLocaleDateString('uz-UZ')}` }, idempotencyKey: `mon-${item.id}-${item.reminderCount + 1}`, channels: ['CABINET', 'SMS'] as any });
+        await this.notifications.send({ userId, templateCode: 'OBLIGATION_EXECUTION_DEADLINE', variables: { obligationId: item.id, deadline: item.dueDate.toISOString(), status: nextStatus, content: `Majburiyat muddati: ${item.dueDate.toLocaleDateString('uz-UZ')}` }, idempotencyKey: `mon-${item.id}-${item.reminderCount + 1}-${userId}`, channels: ['CABINET', 'SMS'] as any });
         notified += 1;
       }
       await this.prisma.monitoringObligation.update({ where: { id: item.id }, data: { lastReminderAt: now, reminderCount: { increment: 1 } } });
     }
     return { processed: active.length, notified };
+  }
+
+  private async getBusinessOrganizationTins(user: AuthUser) {
+    if (!user.roles.includes('BUSINESS')) return [];
+    const memberships = await this.prisma.businessOrganizationMember.findMany({
+      where: { userId: user.id, organization: { type: 'BUSINESS', status: 'ACTIVE', code: { not: null } } },
+      select: { organization: { select: { code: true } } },
+    });
+    return memberships.map((membership) => membership.organization.code).filter((code): code is string => Boolean(code));
   }
 }

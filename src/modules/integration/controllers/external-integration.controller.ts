@@ -165,9 +165,9 @@ export class CourtClaimsCabinetController {
   constructor(private readonly courtAdapter: CourtSystemIntegrationAdapter) {}
 
   @Get()
-  @Roles('TALABGOR')
+  @Roles('TALABGOR', 'CITIZEN', 'BUSINESS')
   @ApiOperation({ summary: 'Foydalanuvchiga tegishli sud da’volari va mediatsiya takliflari' })
   claims(@CurrentUser() user: AuthUser) {
-    return this.courtAdapter.getClaimsForParticipant(user.pinfl || '');
+    return this.courtAdapter.getClaimsForParticipant(user);
   }
 }

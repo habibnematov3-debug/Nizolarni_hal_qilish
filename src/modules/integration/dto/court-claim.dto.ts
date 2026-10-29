@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Matches } from 'class-validator';
 
 export class CourtClaimDto {
   @ApiProperty({ example: '2-1001-2601/450', description: 'Sud ishi raqami' })
@@ -28,6 +28,11 @@ export class CourtClaimDto {
   @IsString()
   claimantPinfl?: string;
 
+  @ApiPropertyOptional({ example: '309876543', description: 'Da’vogar tashkilot STIRi' })
+  @IsOptional()
+  @Matches(/^\d{9}$/)
+  claimantTin?: string;
+
   @ApiPropertyOptional({ example: '+998901234567', description: 'Da\'vogar telefoni' })
   @IsOptional()
   @IsString()
@@ -42,6 +47,11 @@ export class CourtClaimDto {
   @IsOptional()
   @IsString()
   respondentPinfl?: string;
+
+  @ApiPropertyOptional({ example: '309876543', description: 'Javobgar tashkilot STIRi' })
+  @IsOptional()
+  @Matches(/^\d{9}$/)
+  respondentTin?: string;
 
   @ApiPropertyOptional({ example: '+998907654321', description: 'Javobgar telefoni' })
   @IsOptional()

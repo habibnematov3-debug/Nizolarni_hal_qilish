@@ -5,9 +5,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { SendThreadMessageDto, StartMediatorThreadDto, UpdateApplicantProfileDto } from './dto/tal.dto';
+import { RegisterBusinessAuthorityDocumentDto, UpdateBusinessOrganizationDto } from './dto/business.dto';
 import { TalService } from './tal.service';
 
-const CABINET_ROLES = ['TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR', 'REGIONAL_STAFF'];
+const CABINET_ROLES = ['CITIZEN', 'TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR', 'REGIONAL_STAFF'];
 
 @ApiTags('TAL — Talabgor kabineti')
 @ApiBearerAuth('JWT-auth')
@@ -30,6 +31,25 @@ export class TalController {
   @Roles(...CABINET_ROLES)
   @ApiOperation({ summary: 'Joriy foydalanuvchining aloqa ma’lumotlarini tahrirlash' })
   updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateApplicantProfileDto) { return this.tal.updateProfile(user, dto); }
+
+  @Get('business/organizations')
+  @Roles('BUSINESS')
+  @ApiOperation({ summary: 'E-IMZO STIR orqali bog‘langan yuridik shaxslar profili va vakolat hujjatlari' })
+  businessOrganizations(@CurrentUser() user: AuthUser) { return this.tal.getBusinessOrganizations(user); }
+
+  @Patch('business/organizations/:organizationId')
+  @Roles('BUSINESS')
+  @ApiOperation({ summary: 'Tashkilotning manzili, aloqa va bank rekvizitlarini yangilash' })
+  updateBusinessOrganization(@CurrentUser() user: AuthUser, @Param('organizationId', ParseUUIDPipe) organizationId: string, @Body() dto: UpdateBusinessOrganizationDto) {
+    return this.tal.updateBusinessOrganization(user, organizationId, dto);
+  }
+
+  @Post('business/organizations/:organizationId/authority-documents')
+  @Roles('BUSINESS')
+  @ApiOperation({ summary: 'Ishonchnoma yoki tayinlov buyrug‘ini tashkilot profiliga biriktirish' })
+  addBusinessAuthorityDocument(@CurrentUser() user: AuthUser, @Param('organizationId', ParseUUIDPipe) organizationId: string, @Body() dto: RegisterBusinessAuthorityDocumentDto) {
+    return this.tal.addBusinessAuthorityDocument(user, organizationId, dto);
+  }
 
   @Get('training/course-info')
   @Roles(...CABINET_ROLES)

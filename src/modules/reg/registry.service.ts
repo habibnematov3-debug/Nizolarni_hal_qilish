@@ -64,6 +64,8 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       type: query.type || RegistryType.MEDIATOR,
       ...(query.region ? { region: { contains: query.region, mode: 'insensitive' } } : {}),
       ...(query.specialization ? { specialization: { has: query.specialization } } : {}),
+      ...(query.language ? { languages: { has: query.language } } : {}),
+      ...(query.minimumRating !== undefined ? { ratings: { some: { score: { gte: query.minimumRating } } } } : {}),
       ...(query.search
         ? {
             OR: [
@@ -116,6 +118,8 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         longitude: { not: null },
         ...(query.region ? { region: { contains: query.region, mode: 'insensitive' } } : {}),
         ...(query.specialization ? { specialization: { has: query.specialization } } : {}),
+        ...(query.language ? { languages: { has: query.language } } : {}),
+        ...(query.minimumRating !== undefined ? { ratings: { some: { score: { gte: query.minimumRating } } } } : {}),
         ...(query.search
           ? {
               OR: [

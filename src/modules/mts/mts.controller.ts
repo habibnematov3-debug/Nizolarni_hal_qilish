@@ -15,36 +15,36 @@ import { ConsentDto, CreateAgreementDto, CreateMediationDto, CreateMediationFeed
 export class MtsController {
   constructor(private readonly service: MtsService) {}
 
-  @Post('mediations') @Roles('TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
+  @Post('mediations') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateMediationDto) { return this.service.create(user, dto); }
 
-  @Get('mediations') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiyalar ro\'yxati' })
+  @Get('mediations') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiyalar ro\'yxati' })
   list(@CurrentUser() user: AuthUser) { return this.service.list(user); }
 
-  @Get('mediations/:id') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya tafsiloti' })
+  @Get('mediations/:id') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya tafsiloti' })
   detail(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.get(user, id); }
 
-  @Post('mediations/:id/consent') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Taraf roziligini qayd etish' })
+  @Post('mediations/:id/consent') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Taraf roziligini qayd etish' })
   consent(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ConsentDto) { return this.service.consent(user, id, dto); }
 
-  @Post('mediations/:id/mediator') @Roles('TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Mediator tanlash' })
+  @Post('mediations/:id/mediator') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Mediator tanlash' })
   selectMediator(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SelectMediatorDto) { return this.service.selectMediator(user, id, dto); }
 
   @Post('mediations/:id/agreement') @Roles('MEDIATOR') @ApiOperation({ summary: 'Mediatsiya kelishuvi loyihasini tayyorlash' })
   agreement(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CreateAgreementDto) { return this.service.createAgreement(user, id, dto); }
 
-  @Post('mediations/:id/agreement/sign') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya kelishuvini imzolash' })
+  @Post('mediations/:id/agreement/sign') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya kelishuvini imzolash' })
   sign(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: SignAgreementDto) { return this.service.signAgreement(user, id, dto); }
 
   @Post('mediations/:id/sessions') @Roles('MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya uchrashuvini belgilash' })
   session(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ScheduleSessionDto) { return this.service.scheduleSession(user, id, dto); }
 
-  @Post('mediations/:id/sessions/:sessionId/join') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Uchrashuvga shaxsiy vaqtinchalik havola olish' })
+  @Post('mediations/:id/sessions/:sessionId/join') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Uchrashuvga shaxsiy vaqtinchalik havola olish' })
   joinSession(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('sessionId') sessionId: string) { return this.service.joinSession(user, id, sessionId); }
 
   @Post('mediations/:id/result') @Roles('MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya natijasini qayd etish' })
   result(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: RecordResultDto) { return this.service.recordResult(user, id, dto); }
 
-  @Post('mediations/:id/rating') @Roles('TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Yakunlangan mediatsiya bo‘yicha mutaxassis faoliyatini baholash' })
+  @Post('mediations/:id/rating') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Yakunlangan mediatsiya bo‘yicha mutaxassis faoliyatini baholash' })
   rate(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CreateMediationFeedbackDto, @Req() req: Request) { return this.service.rate(user, id, dto, req.ip || req.socket.remoteAddress); }
 }

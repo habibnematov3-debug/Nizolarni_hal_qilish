@@ -62,12 +62,14 @@ export class DocumentExchangeService {
       if (!user.roles.some((role) => CASE_ROLES.includes(role))) {
         throw new ForbiddenException('Hujjat almashinuvi kabineti uchun ruxsat yo‘q');
       }
+      const organizationTins = await this.getBusinessOrganizationTins(user);
       const mediationWhere: Prisma.MediationCaseWhereInput = {
         OR: [
           { initiatedById: user.id },
           { mediatorId: user.id },
           { participants: { some: { userId: user.id } } },
           ...(user.pinfl ? [{ participants: { some: { pinfl: user.pinfl } } }] : []),
+          ...(organizationTins.length ? [{ participants: { some: { organizationTin: { in: organizationTins } } } }] : []),
         ],
       };
       const cases = await this.prisma.mediationCase.findMany({ where: mediationWhere, select: { id: true } });
@@ -370,10 +372,20 @@ export class DocumentExchangeService {
       include: { participants: true },
     });
     if (!mediation) throw new NotFoundException('Mediatsiya ishi topilmadi');
+    const organizationTins = await this.getBusinessOrganizationTins(user);
     const allowed = mediation.initiatedById === user.id || mediation.mediatorId === user.id ||
-      mediation.participants.some((participant) => participant.userId === user.id || (!!user.pinfl && participant.pinfl === user.pinfl));
+      mediation.participants.some((participant) => participant.userId === user.id || (!!user.pinfl && participant.pinfl === user.pinfl) || (!!participant.organizationTin && organizationTins.includes(participant.organizationTin)));
     if (!allowed) throw new ForbiddenException('Ushbu mediatsiya ishi hujjatlarini ko‘rish huquqi yo‘q');
     return mediation;
+  }
+
+  private async getBusinessOrganizationTins(user: AuthUser) {
+    if (!user.roles.includes('BUSINESS')) return [];
+    const memberships = await this.prisma.businessOrganizationMember.findMany({
+      where: { userId: user.id, organization: { type: OrganizationType.BUSINESS, status: 'ACTIVE', code: { not: null } } },
+      select: { organization: { select: { code: true } } },
+    });
+    return memberships.map((membership) => membership.organization.code).filter((code): code is string => Boolean(code));
   }
 
   private async findThread(id: string) {

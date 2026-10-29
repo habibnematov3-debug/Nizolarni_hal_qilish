@@ -11,6 +11,7 @@ type RegistryEntry = {
   address?: string | null
   region: string
   specialization?: string[]
+  languages?: string[]
   status?: string
   photoUrl?: string | null
   certificateNumber?: string | null
@@ -117,6 +118,52 @@ export function PublicRegistryDirectory({
       </>}
       {selected && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null) }}><section role="dialog" aria-modal="true" className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"><button onClick={() => setSelected(null)} aria-label="Yopish" className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18}/></button><p className="text-xs font-semibold uppercase tracking-wide text-blue-800">Ochiq reyestr profili</p><h2 className="mt-2 pr-8 text-xl font-semibold">{selected.fullName}</h2><p className="mt-1 text-sm text-slate-500">{typeLabel(selected.type)} · {selected.region}</p><div className="mt-5 space-y-3 text-sm"><p><strong>Reyestr raqami:</strong> {selected.registryNumber || '—'}</p><p><strong>Ixtisoslik:</strong> {selected.specialization?.join(', ') || 'Ko‘rsatilmagan'}</p><p><strong>Manzil:</strong> {selected.address || 'Ko‘rsatilmagan'}</p><p><strong>Guvohnoma:</strong> {selected.certificateNumber || '—'}</p>{selected.phone && <a className="inline-flex items-center gap-2 text-blue-800" href={`tel:${selected.phone}`}><Phone size={15}/>{selected.phone}</a>}</div></section></div>}
     </div>
+  </section>
+}
+
+export function BusinessSpecialistDirectory({ onSelectSpecialist, businessMode = false }: { onSelectSpecialist: (person: { id: string; fullName: string; type: string }) => void; businessMode?: boolean }) {
+  const [type, setType] = useState('MEDIATOR')
+  const [search, setSearch] = useState('')
+  const [region, setRegion] = useState('')
+  const [specialization, setSpecialization] = useState('')
+  const [language, setLanguage] = useState('')
+  const [minimumRating, setMinimumRating] = useState('')
+  const [page, setPage] = useState(1)
+  const [data, setData] = useState<RegistryPage>(emptyPage)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => { setPage(1) }, [type, search, region, specialization, language, minimumRating])
+  useEffect(() => {
+    let active = true
+    const params = new URLSearchParams({ type, page: String(page), limit: '12' })
+    if (search.trim()) params.set('search', search.trim())
+    if (region) params.set('region', region)
+    if (specialization) params.set('specialization', specialization)
+    if (language) params.set('language', language)
+    if (minimumRating) params.set('minimumRating', minimumRating)
+    setLoading(true); setError('')
+    apiGetPublic<RegistryPage>(`/public/mediators?${params.toString()}`)
+      .then((result) => { if (active) setData(result || emptyPage) })
+      .catch((cause) => { if (active) { setData(emptyPage); setError(cause instanceof Error ? cause.message : 'Reyestrni yuklab bo‘lmadi.') } })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [type, search, region, specialization, language, minimumRating, page])
+
+  return <section className="mt-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
+    <div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{businessMode ? 'Yuridik shaxs uchun ochiq reyestr' : 'Ochiq mutaxassislar reyestri'}</p><h2 className="mt-1 text-xl font-semibold text-slate-900">Mutaxassisni tanlang</h2><p className="mt-1 text-sm text-slate-500">Mediatsiya, hakamlik yoki arbitraj mutaxassislarini til, ixtisoslik, hudud va e’lon qilingan reyting bo‘yicha saralang.</p></div>
+    <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Mutaxassis turi">{[['MEDIATOR','Mediator'],['ARBITRATION_JUDGE','Hakamlik sudyasi'],['ARBITRATOR','Arbitr']].map(([value,label]) => <button key={value} role="tab" aria-selected={type === value} onClick={() => setType(value)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${type === value ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600'}`}>{label}</button>)}</div>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <label className="text-xs font-semibold text-slate-600">Ism yoki kalit so‘z<input value={search} onChange={(event) => setSearch(event.target.value)} className="form-control mt-1.5" placeholder="Masalan: tijorat arbitraji"/></label>
+      <label className="text-xs font-semibold text-slate-600">Hudud<select value={region} onChange={(event) => setRegion(event.target.value)} className="form-control mt-1.5"><option value="">Barcha hududlar</option>{regions.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label className="text-xs font-semibold text-slate-600">Ixtisoslik<select value={specialization} onChange={(event) => setSpecialization(event.target.value)} className="form-control mt-1.5"><option value="">Barcha ixtisosliklar</option>{[['ECONOMIC','Iqtisodiy / tijorat'],['INVESTMENT','Investitsiya'],['INTELLECTUAL','Intellektual mulk'],['CIVIL','Fuqarolik / shartnomaviy'],['BANKING','Bank va moliya'],['DIGITAL','Raqamli texnologiyalar']].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label className="text-xs font-semibold text-slate-600">Xizmat tili<select value={language} onChange={(event) => setLanguage(event.target.value)} className="form-control mt-1.5"><option value="">Barcha tillar</option><option value="uz">O‘zbek</option><option value="ru">Русский</option><option value="en">English</option></select></label>
+      <label className="text-xs font-semibold text-slate-600">Minimal reyting<select value={minimumRating} onChange={(event) => setMinimumRating(event.target.value)} className="form-control mt-1.5"><option value="">Barcha reytinglar</option><option value="3">3.0 va yuqori</option><option value="4">4.0 va yuqori</option><option value="4.5">4.5 va yuqori</option></select></label>
+    </div>
+    {error && <div role="alert" className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{error}</div>}
+    {loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={17}/>Reyestr yuklanmoqda…</div> : data.items.length ? <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data.items.map((person) => <article key={person.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">{person.fullName}</h3><p className="mt-1 text-xs text-slate-500">{person.region}</p></div><span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">★ {person.rating?.score != null ? Number(person.rating.score).toFixed(1) : '—'}</span></div><p className="mt-3 text-xs leading-5 text-slate-600">{person.specialization?.join(', ') || 'Ixtisoslik ko‘rsatilmagan'}</p><p className="mt-2 text-xs text-slate-500">Tillar: {person.languages?.join(', ') || 'Ko‘rsatilmagan'}</p><button disabled={person.type !== 'MEDIATOR'} onClick={() => onSelectSpecialist({ id: person.id, fullName: person.fullName, type: person.type })} className="mt-4 h-9 w-full rounded-lg bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300">{person.type === 'MEDIATOR' ? 'Tanlash va mediatsiya boshlash' : 'Hakamlik / arbitraj oqimi ulanmagan'}</button></article>)}</div> : <div className="mt-4 rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">Tanlangan mezonlarga mos faol mutaxassis topilmadi.</div>}
+    {!loading && data.items.length > 0 && <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500"><span>{data.pagination.total} ta mutaxassis</span><div className="flex items-center gap-3"><button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="disabled:opacity-40">Oldingi</button><span>{page} / {Math.max(1, data.pagination.totalPages)}</span><button disabled={page >= data.pagination.totalPages} onClick={() => setPage((value) => value + 1)} className="disabled:opacity-40">Keyingi</button></div></div>}
+    <p className="mt-3 text-[11px] text-slate-400">Reyting reyestrda mavjud bo‘lsa ko‘rsatiladi. Ish yuklamasi bo‘yicha filtr reyestr API’da hozircha mavjud emas.</p>
   </section>
 }
 

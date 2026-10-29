@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { apiGet, apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, categoryDetailsLabel, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
-import { PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
+import { BusinessSpecialistDirectory, PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
 import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
 import { ContractsWorkspace } from './ContractsWorkspace'
@@ -18,6 +18,8 @@ import { NotificationsWorkspace } from './NotificationsWorkspace'
 import { ContentWorkspace } from './ContentWorkspace'
 import { DocumentExchangeWorkspace } from './DocumentExchangeWorkspace'
 import { CitizenProfileWorkspace, ObligationMonitoringWorkspace } from './CitizenWorkspace'
+import { BusinessWorkspace } from './BusinessWorkspace'
+import { BusinessPaymentsWorkspace } from './BusinessPaymentsWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -136,8 +138,8 @@ const initialReports: PortalRecord[] = [
   { id: 'HIS-2026-Q3', title: '2026-yil III chorak hisoboti', status: 'Hududiy ko‘rib chiqishda', detail: 'Mediatsiya ishlari: 24 · Yakunlangan: 18', region: 'Toshkent shahri', createdAt: '10.10.2026' },
 ]
 const navByRole: Record<RoleKey, string[]> = {
-  CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'Mediator bo‘lish', 'Shartnomalar', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
-  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'Mediator bo‘lish', 'Shartnomalar', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
+  CITIZEN: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'To‘lovlar', 'Mediator bo‘lish', 'Shartnomalar', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
+  BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'To‘lovlar', 'Shartnomalar', 'Tashkilot profili', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
   APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'Imtihon', 'Shartnomalar', 'Onlayn uchrashuvlar', 'Xabarnomalar'],
   MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Arizalar', 'Shartnomalar', 'Xabarnomalar', 'E’lonlar'],
   REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
@@ -186,6 +188,7 @@ export default function App() {
   const [formName, setFormName] = useState('')
   const [formDetail, setFormDetail] = useState('')
   const [selectedMediator, setSelectedMediator] = useState('')
+  const [selectedMediatorRegistryId, setSelectedMediatorRegistryId] = useState('')
   const [pendingPublicMediation, setPendingPublicMediation] = useState(false)
   const [courtCaseNumber, setCourtCaseNumber] = useState('')
   const [announcementGate, setAnnouncementGate] = useState(false)
@@ -245,6 +248,7 @@ export default function App() {
   const closeLogin = () => { setShowLogin(false); setLoginMethod(''); setPendingPublicMediation(false) }
   const startPublicMediation = (mediatorName: string) => {
     setSelectedMediator(mediatorName)
+    setSelectedMediatorRegistryId('')
     if (getAccessToken()) {
       setModal('mediatsiya')
       return
@@ -301,11 +305,16 @@ export default function App() {
         const created = await apiPost<{ id: string; status: string; disputeSubject: string; region: string }>('/cabinet/mts/mediations', {
           type: draft.type,
           disputeCategory: draft.disputeCategory,
+          documentLanguage: draft.documentLanguage,
+          businessOrganizationId: draft.businessOrganizationId || undefined,
+          preferredMediatorRegistryId: draft.preferredMediatorRegistryId || undefined,
           disputeSubject: [draft.disputeSubject.trim(), categoryDetails].filter(Boolean).join('\n\n'),
           courtCaseNumber: draft.courtCaseNumber || undefined,
           respondentName: draft.respondentName,
           respondentPhone: draft.respondentPhone,
           respondentPinfl: draft.respondentPinfl || undefined,
+          respondentType: draft.respondentType,
+          respondentTin: draft.respondentTin || undefined,
           respondentEmail: draft.respondentEmail || undefined,
           region: draft.region,
           privacyAccepted: draft.privacyAccepted,
@@ -319,12 +328,12 @@ export default function App() {
         throw error
       }
     } else {
-      const category = { FAMILY: 'Oilaviy nizo', CIVIL: 'Fuqarolik va shartnomaviy nizo', LABOR: 'Mehnat nizosi', ECONOMIC: 'Iqtisodiy va tadbirkorlik nizosi', INTELLECTUAL: 'Intellektual mulk nizosi', BANKING: 'Bank va moliya nizosi' }[draft.disputeCategory] || 'Mediatsiya murojaati'
+      const category = { FAMILY: 'Oilaviy nizo', CIVIL: 'Fuqarolik va shartnomaviy nizo', LABOR: 'Mehnat nizosi', ECONOMIC: 'Iqtisodiy va tadbirkorlik nizosi', INTELLECTUAL: 'Intellektual mulk nizosi', BANKING: 'Bank va moliya nizosi', INVESTMENT: 'Investitsiya nizosi', DIGITAL: 'Raqamli texnologiyalar nizosi', CROSS_BORDER: 'Xalqaro tijorat nizosi' }[draft.disputeCategory] || 'Mediatsiya murojaati'
       const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: category, status: 'Rozilik kutilmoqda', detail: 'Demo murojaati · shaxsiy ma’lumotlar brauzer xotirasiga saqlanmadi', region: 'Demo', createdAt: new Date().toLocaleDateString('uz-UZ') }
       setCases((items) => [item, ...items])
       setToast(`Demo murojaati saqlandi. Rasmiy yuborish uchun OneID orqali kiring; demo rejimida ${draft.attachments.length ? 'hujjatlar yuklanmadi' : 'ma’lumotlar serverga yuborilmadi'}.`)
     }
-    setModal(''); setSelectedMediator('')
+    setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId('')
   }
   const createApplication = (title: string, detail = '') => {
     const item = { id: `ARZ-2026-${String(Date.now()).slice(-4)}`, title, status: applicationSteps[0], detail: detail || 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Toshkent shahri', createdAt: new Date().toLocaleDateString('uz-UZ') }
@@ -410,7 +419,7 @@ export default function App() {
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
     </div></ModalShell>}
     {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false) }} onChoose={startRoles} />}
-    {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} onClose={() => { setModal(''); setSelectedMediator('') }} onSubmit={submitMediation} />}
+    {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialMediatorRegistryId={selectedMediatorRegistryId} onClose={() => { setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId('') }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
 
@@ -426,11 +435,11 @@ export default function App() {
     <div className="md:pl-[264px]">
       <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Menyuni ochish"><Menu size={20}/></button>{role === 'ADMIN' ? <label className="relative hidden max-w-sm flex-1 sm:block"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/><input aria-label="Dashboard bo‘ylab qidirish" placeholder="Qidirish..." className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"/></label> : <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{activePage}</p><p className="hidden text-xs text-slate-400 sm:block">{currentRole?.title} · bitta kabinet</p></div>}</div><div className="flex items-center gap-3">{role !== 'ADMIN' && <button onClick={() => setActivePage(nav.includes('Xabarnomalar') ? 'Xabarnomalar' : nav[nav.length - 1])} className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Xabarnomalar"><Bell size={18}/><span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"/></button>}<span className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="flex items-center gap-2.5"><div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white ${role === 'ADMIN' ? 'bg-blue-600' : 'bg-slate-950'}`}>{role === 'ADMIN' ? 'A' : currentRole?.title.slice(0,1)}</div><div className={assignedRoles.length > 1 ? 'min-w-0' : 'hidden sm:block'}><p className="hidden text-xs font-semibold sm:block">Demo foydalanuvchi</p>{assignedRoles.length > 1 ? <select aria-label="Faol rolni almashtirish" value={role} onChange={(event) => activateRole(event.target.value as RoleKey)} className="max-w-[130px] border-0 bg-transparent p-0 pr-5 text-[11px] text-slate-500 outline-none focus:ring-0 sm:max-w-52">{assignedRoles.map((assignedRole) => <option key={assignedRole} value={assignedRole}>{roles.find((item) => item.key === assignedRole)?.title || assignedRole}</option>)}</select> : <p className="text-[11px] text-slate-400">{currentRole?.title}</p>}</div></div>{role === 'ADMIN' && <button onClick={signOut} aria-label="Chiqish" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogIn size={18}/></button>}<ChevronDown size={15} className="text-slate-400"/></div></header>
       <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
-        {restricted ? <section className="mx-auto mt-12 max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Newspaper size={25}/></div><p className="mt-5 text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Tanishish talab qilinadi</p><h1 className="mt-2 text-2xl font-semibold">{pendingAnnouncements[0]?.titleUz || demoNotice.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{pendingAnnouncements[0]?.bodyUz || pendingAnnouncements[0]?.summaryUz || demoNotice.text}</p>{pendingAnnouncements.slice(1).map((item) => <article key={item.id} className="mt-3 rounded-lg border border-slate-200 p-3 text-left"><h2 className="text-sm font-semibold">{item.titleUz}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{item.bodyUz || item.summaryUz}</p></article>)}{announcementError && <p role="alert" className="mt-3 text-xs text-red-700">{announcementError}</p>}{announcementError && getAccessToken() && <button onClick={() => setAnnouncementReload((value) => value + 1)} className="mt-4 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold">E’lonlarni qayta yuklash</button>}<button disabled={Boolean(announcementError && getAccessToken())} onClick={() => void acknowledgeAnnouncements()} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCheck size={17}/>Tanishdim</button></section> : <WorkspaceContent role={role} page={activePage} cases={cases} applications={applications} reports={reports} genericItems={genericItems} onOpenModal={(key) => { setFormName(''); setFormDetail(''); setModal(key) }} onNavigatePage={setActivePage} onAdvanceCase={advanceCase} onAdvanceApplication={advanceApplication} onAdvanceReport={advanceReport} onToast={setToast} onPublicRegistry={() => setActivePage(nav.includes('Mediatorlar reyestri') ? 'Mediatorlar reyestri' : nav[1])} onStartCourtClaimMediation={(caseNumber) => { setCourtCaseNumber(caseNumber); setModal('mediatsiya') }} />}
+        {restricted ? <section className="mx-auto mt-12 max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Newspaper size={25}/></div><p className="mt-5 text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">Tanishish talab qilinadi</p><h1 className="mt-2 text-2xl font-semibold">{pendingAnnouncements[0]?.titleUz || demoNotice.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{pendingAnnouncements[0]?.bodyUz || pendingAnnouncements[0]?.summaryUz || demoNotice.text}</p>{pendingAnnouncements.slice(1).map((item) => <article key={item.id} className="mt-3 rounded-lg border border-slate-200 p-3 text-left"><h2 className="text-sm font-semibold">{item.titleUz}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{item.bodyUz || item.summaryUz}</p></article>)}{announcementError && <p role="alert" className="mt-3 text-xs text-red-700">{announcementError}</p>}{announcementError && getAccessToken() && <button onClick={() => setAnnouncementReload((value) => value + 1)} className="mt-4 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold">E’lonlarni qayta yuklash</button>}<button disabled={Boolean(announcementError && getAccessToken())} onClick={() => void acknowledgeAnnouncements()} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCheck size={17}/>Tanishdim</button></section> : <WorkspaceContent role={role} page={activePage} cases={cases} applications={applications} reports={reports} genericItems={genericItems} onOpenModal={(key) => { setFormName(''); setFormDetail(''); setModal(key) }} onNavigatePage={setActivePage} onAdvanceCase={advanceCase} onAdvanceApplication={advanceApplication} onAdvanceReport={advanceReport} onToast={setToast} onPublicRegistry={() => setActivePage(nav.includes('Mediatorlar reyestri') ? 'Mediatorlar reyestri' : nav[1])} onSelectSpecialist={(person) => { if (person.type !== 'MEDIATOR') return; setSelectedMediator(person.fullName); setSelectedMediatorRegistryId(person.id); setModal('mediatsiya') }} onStartCourtClaimMediation={(caseNumber) => { setCourtCaseNumber(caseNumber); setModal('mediatsiya') }} />}
       </main>
     </div>
     {mobileNav && <button aria-label="Menyuni yopish" onClick={() => setMobileNav(false)} className="fixed inset-0 z-20 bg-slate-950/40 md:hidden"/>}
-    {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialCourtCaseNumber={courtCaseNumber} onClose={() => { setModal(''); setSelectedMediator(''); setCourtCaseNumber('') }} onSubmit={submitMediation} />}
+    {modal === 'mediatsiya' && <MediationRequestForm businessMode={role === 'BUSINESS'} initialMediator={selectedMediator} initialMediatorRegistryId={selectedMediatorRegistryId} initialCourtCaseNumber={courtCaseNumber} onClose={() => { setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId(''); setCourtCaseNumber('') }} onSubmit={submitMediation} />}
     {modal === 'ariza' && ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && <MediatorApplicationForm onClose={() => setModal('')} onSubmit={submitMediatorApplication} />}
     {modal && modal !== 'mediatsiya' && !(modal === 'ariza' && ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role)) && <FormModal title={modalTitle(modal)} description="Demo rejimida ma’lumot kiritish." name={formName} setName={setFormName} detail={formDetail} setDetail={setFormDetail} submitLabel={modalAction(modal)} onClose={() => setModal('')} onSubmit={(event) => { event.preventDefault(); if (modal.includes('ariza') && !modal.includes('malaka') || modal.includes('talabgor')) createApplication(formName || 'Mediator maqomini olish', formDetail); else if (modal.includes('hisobot')) createReport(formName || 'Faoliyat hisoboti', formDetail); else if (modal.includes('murojaat') || modal.includes('mediatsiya')) createCase(formName || 'Onlayn mediatsiya', formDetail); else saveGeneric(event) }} />}
     {announcementGate && <div className="sr-only" aria-live="polite">Mediator kabinetini ochish uchun e’lon bilan tanishing.</div>}
@@ -764,12 +773,14 @@ function OrganizationsAdmin({ onToast }: { onToast: (text: string) => void }) {
   </>
 }
 
-function WorkspaceContent({ role, page, cases, applications, reports, genericItems, onOpenModal, onNavigatePage, onAdvanceCase, onAdvanceApplication, onAdvanceReport, onToast, onPublicRegistry, onStartCourtClaimMediation }: { role: RoleKey; page: string; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; genericItems: PortalRecord[]; onOpenModal: (key: string) => void; onNavigatePage: (page: string) => void; onAdvanceCase: (id: string) => void; onAdvanceApplication: (id: string) => void; onAdvanceReport: (id: string) => void; onToast: (text: string) => void; onPublicRegistry: () => void; onStartCourtClaimMediation: (courtCaseNumber: string) => void }) {
+function WorkspaceContent({ role, page, cases, applications, reports, genericItems, onOpenModal, onNavigatePage, onAdvanceCase, onAdvanceApplication, onAdvanceReport, onToast, onPublicRegistry, onSelectSpecialist, onStartCourtClaimMediation }: { role: RoleKey; page: string; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; genericItems: PortalRecord[]; onOpenModal: (key: string) => void; onNavigatePage: (page: string) => void; onAdvanceCase: (id: string) => void; onAdvanceApplication: (id: string) => void; onAdvanceReport: (id: string) => void; onToast: (text: string) => void; onPublicRegistry: () => void; onSelectSpecialist: (person: { id: string; fullName: string; type: string }) => void; onStartCourtClaimMediation: (courtCaseNumber: string) => void }) {
   if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
   if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onNavigatePage={onNavigatePage} onPublicRegistry={onPublicRegistry}/>
-  if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside onToast={onToast}/></section>
+  if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside role={role} onToast={onToast} onSelectSpecialist={onSelectSpecialist}/></section>
   if (['CITIZEN', 'BUSINESS'].includes(role) && page === 'Sud da’volari') return <CourtClaimsWorkspace onStartMediation={onStartCourtClaimMediation}/>
   if (['CITIZEN', 'BUSINESS'].includes(role) && page === 'Shaxsiy ma’lumotlar') return <CitizenProfileWorkspace onToast={onToast}/>
+  if (['CITIZEN', 'BUSINESS'].includes(role) && page === 'To‘lovlar') return <BusinessPaymentsWorkspace/>
+  if (role === 'BUSINESS' && page === 'Tashkilot profili') return <BusinessWorkspace onToast={onToast}/>
   if (['CITIZEN', 'BUSINESS'].includes(role) && page === 'Kelishuvlar ijrosi') return <ObligationMonitoringWorkspace onToast={onToast}/>
   if (/bildirish|xabarnoma/i.test(page)) return <NotificationsWorkspace onToast={onToast}/>
   if (page === 'Hujjat almashinuvi') return <DocumentExchangeWorkspace role={role} onToast={onToast}/>
@@ -839,7 +850,8 @@ function GenericModule({ title, description, icon: Icon, items, onCreate, onToas
   return <><div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Platforma bo‘limi" title={title} description={description}/><button onClick={onCreate} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white"><FilePlus2 size={16}/>{title.includes('Bildirish')||title.includes('Xabarnoma')?'Barchasini o‘qish':'Yangi qo‘shish'}</button></div><div className="mb-5 grid gap-4 sm:grid-cols-3"><div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">Jami yozuvlar</p><p className="mt-2 text-2xl font-semibold">{items.length}</p></div><div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">Faol</p><p className="mt-2 text-2xl font-semibold">{items.filter(i=>!i.status.includes('o‘qilgan')).length}</p></div><div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><p className="text-xs text-slate-500">Yangilangan</p><p className="mt-2 text-2xl font-semibold">Bugun</p></div></div><section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center gap-3 border-b border-slate-100 p-5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Icon size={19}/></span><div><h2 className="text-sm font-semibold">{title} ro‘yxati</h2><p className="mt-1 text-xs text-slate-400">Yozuvlarni ko‘rish va amallarni bajarish</p></div></div>{items.length===0?<EmptyState title="Hozircha ma’lumot yo‘q" detail="Yangi yozuv qo‘shish orqali demo oqimini ko‘ring."/>:<div className="divide-y divide-slate-100">{items.map(item=><div key={item.id} className="flex items-center gap-3 p-4 sm:p-5"><span className="hidden h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-600 sm:flex"><Icon size={17}/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{item.title}</p><p className="mt-1 truncate text-xs text-slate-500">{item.id} · {item.detail}</p></div><StatusPill status={item.status}/><button onClick={()=>onToast(`${item.title}: tafsilotlar ochildi`)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50">{action}</button></div>)}</div>}</section></>
 }
 
-function RegistryInside({ onToast }: { onToast: (text: string) => void }) {
+function RegistryInside({ role, onToast, onSelectSpecialist }: { role: RoleKey; onToast: (text: string) => void; onSelectSpecialist: (person: { id: string; fullName: string; type: string }) => void }) {
+  if (role === 'CITIZEN' || role === 'BUSINESS') return <BusinessSpecialistDirectory businessMode={role === 'BUSINESS'} onSelectSpecialist={onSelectSpecialist}/>
   return <StaffRegistryWorkspace demoRows={registrySeed} onToast={onToast}/>
 }
 

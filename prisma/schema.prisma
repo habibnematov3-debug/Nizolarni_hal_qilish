@@ -14,6 +14,7 @@ enum OrganizationType {
   MINISTRY // Vazirlik
   REGIONAL_DEPARTMENT // Hududiy boshqarma
   TRAINING_CENTER // O'quv markazi
+  BUSINESS // Yuridik shaxs / tijorat tashkiloti
 }
 
 enum EntityStatus {
@@ -298,26 +299,30 @@ enum DocumentExchangeAction {
 }
 
 model Organization {
-  id        String           @id @default(uuid())
-  name      String
-  type      OrganizationType
-  parentId  String?          @map("parent_id")
-  parent    Organization?    @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Organization[]   @relation("OrganizationHierarchy")
-  region    String?
-  status    EntityStatus     @default(ACTIVE)
-  code      String?
-  address   String?
-  phone     String?
-  email     String?
-  createdAt DateTime         @default(now()) @map("created_at")
-  updatedAt DateTime         @updatedAt @map("updated_at")
+  id          String           @id @default(uuid())
+  name        String
+  type        OrganizationType
+  parentId    String?          @map("parent_id")
+  parent      Organization?    @relation("OrganizationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Organization[]   @relation("OrganizationHierarchy")
+  region      String?
+  status      EntityStatus     @default(ACTIVE)
+  code        String?
+  address     String?
+  bankAccount String?          @map("bank_account")
+  phone       String?
+  email       String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
 
-  users            User[]
-  quarterlyReports QuarterlyReport[]
-  reportSummaries  ReportSummary[]
-  documentExchangeTargets DocumentExchangeThread[] @relation("DocumentExchangeTargetOrganization")
+  users                        User[]
+  quarterlyReports             QuarterlyReport[]
+  reportSummaries              ReportSummary[]
+  documentExchangeTargets      DocumentExchangeThread[]      @relation("DocumentExchangeTargetOrganization")
   documentExchangeParticipants DocumentExchangeParticipant[]
+  businessMembers              BusinessOrganizationMember[]
+  authorityDocuments           BusinessAuthorityDocument[]
+  mediationParticipants        MediationParticipant[]
 
   @@map("organizations")
 }
@@ -383,13 +388,13 @@ model User {
   address              String?
   position             String?
 
-  registryStatus    RegistryStatus @default(NONE) @map("registry_status")
-  cabinetType       CabinetType    @default(PARTY) @map("cabinet_type")
+  registryStatus       RegistryStatus        @default(NONE) @map("registry_status")
+  cabinetType          CabinetType           @default(PARTY) @map("cabinet_type")
   notificationChannels NotificationChannel[] @default([CABINET, SMS]) @map("notification_channels")
-  authProvider      AuthProvider   @default(LOCAL) @map("auth_provider")
-  oneIdUserId       String?        @map("one_id_user_id")
-  esignSerialNumber String?        @map("esign_serial_number")
-  mobileIdPhone     String?        @map("mobile_id_phone")
+  authProvider         AuthProvider          @default(LOCAL) @map("auth_provider")
+  oneIdUserId          String?               @map("one_id_user_id")
+  esignSerialNumber    String?               @map("esign_serial_number")
+  mobileIdPhone        String?               @map("mobile_id_phone")
 
   refreshToken String?   @map("refresh_token")
   lastActiveAt DateTime? @map("last_active_at")
@@ -397,25 +402,27 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  userRoles              UserRole[]
-  auditLogs              AuditLog[]
-  notifications          Notification[]
-  trainingCertificates   TrainingCertificate[]
-  trainingApplications   TrainingApplication[]
-  registryEntries        RegistryEntry[]
-  contractsCreated       ServiceContract[] @relation("ContractCreator")
-  contractsAsProvider    ServiceContract[] @relation("ContractProvider")
-  contractParticipants   ContractParticipant[]
-  bankDetails            MediatorBankDetails?
-  invoicesIssued         ServiceInvoice[] @relation("InvoiceIssuer")
-  invoicesPayable        ServiceInvoice[] @relation("InvoicePayer")
-  quarterlyReports       QuarterlyReport[]
-  createdReportSummaries ReportSummary[]   @relation("ReportSummaryCreator")
-  documentExchangeThreads DocumentExchangeThread[] @relation("DocumentExchangeCreator")
-  documentExchangeMessages DocumentExchangeMessage[]
+  userRoles                    UserRole[]
+  auditLogs                    AuditLog[]
+  notifications                Notification[]
+  trainingCertificates         TrainingCertificate[]
+  trainingApplications         TrainingApplication[]
+  registryEntries              RegistryEntry[]
+  contractsCreated             ServiceContract[]             @relation("ContractCreator")
+  contractsAsProvider          ServiceContract[]             @relation("ContractProvider")
+  contractParticipants         ContractParticipant[]
+  bankDetails                  MediatorBankDetails?
+  invoicesIssued               ServiceInvoice[]              @relation("InvoiceIssuer")
+  invoicesPayable              ServiceInvoice[]              @relation("InvoicePayer")
+  quarterlyReports             QuarterlyReport[]
+  createdReportSummaries       ReportSummary[]               @relation("ReportSummaryCreator")
+  documentExchangeThreads      DocumentExchangeThread[]      @relation("DocumentExchangeCreator")
+  documentExchangeMessages     DocumentExchangeMessage[]
   documentExchangeParticipants DocumentExchangeParticipant[]
-  feedbacksGiven          MediationFeedback[] @relation("FeedbackAuthor")
-  feedbacksReceived       MediationFeedback[] @relation("FeedbackSpecialist")
+  businessOrganizations        BusinessOrganizationMember[]
+  businessAuthorityDocuments   BusinessAuthorityDocument[]
+  feedbacksGiven               MediationFeedback[]           @relation("FeedbackAuthor")
+  feedbacksReceived            MediationFeedback[]           @relation("FeedbackSpecialist")
 
   // INT module relations
   disciplineCasesAsMediator DisciplineCase[] @relation("MediatorDiscipline")
@@ -589,9 +596,11 @@ model CourtClaim {
   judgeName       String?          @map("judge_name")
   claimantName    String           @map("claimant_name")
   claimantPinfl   String?          @map("claimant_pinfl")
+  claimantTin     String?          @map("claimant_tin")
   claimantPhone   String?          @map("claimant_phone")
   respondentName  String           @map("respondent_name")
   respondentPinfl String?          @map("respondent_pinfl")
+  respondentTin   String?          @map("respondent_tin")
   respondentPhone String?          @map("respondent_phone")
   disputeSubject  String           @map("dispute_subject")
   claimAmount     Decimal?         @map("claim_amount") @db.Decimal(15, 2)
@@ -603,6 +612,8 @@ model CourtClaim {
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
   @@index([courtCaseNumber])
+  @@index([claimantTin])
+  @@index([respondentTin])
   @@index([status])
   @@map("court_claims")
 }
@@ -669,36 +680,36 @@ model TrainingContract {
 }
 
 model RegistryEntry {
-  id                   String              @id @default(uuid())
-  userId               String?             @map("user_id")
-  user                 User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  registryNumber       String?             @unique @map("registry_number")
+  id                   String                  @id @default(uuid())
+  userId               String?                 @map("user_id")
+  user                 User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  registryNumber       String?                 @unique @map("registry_number")
   pinfl                String?
   type                 RegistryType
-  fullName             String              @map("full_name")
+  fullName             String                  @map("full_name")
   phone                String?
   email                String?
   address              String?
   region               String
   gender               String?
-  birthDate            DateTime?           @map("birth_date") @db.Date
-  photoUrl             String?             @map("photo_url")
+  birthDate            DateTime?               @map("birth_date") @db.Date
+  photoUrl             String?                 @map("photo_url")
   education            String?
-  specialization       String[]            @default([])
-  languages            String[]            @default([])
+  specialization       String[]                @default([])
+  languages            String[]                @default([])
   latitude             Float?
   longitude            Float?
-  certificateNumber    String?             @map("certificate_number")
-  certificateIssuedAt  DateTime?           @map("certificate_issued_at")
-  certificateExpiresAt DateTime?           @map("certificate_expires_at")
-  status               RegistryEntryStatus @default(ACTIVE)
-  publicProfile        Boolean             @default(true) @map("public_profile")
-  registeredAt         DateTime            @default(now()) @map("registered_at")
-  createdById          String?             @map("created_by_id")
-  updatedById          String?             @map("updated_by_id")
-  deletedAt            DateTime?           @map("deleted_at")
-  createdAt            DateTime            @default(now()) @map("created_at")
-  updatedAt            DateTime            @updatedAt @map("updated_at")
+  certificateNumber    String?                 @map("certificate_number")
+  certificateIssuedAt  DateTime?               @map("certificate_issued_at")
+  certificateExpiresAt DateTime?               @map("certificate_expires_at")
+  status               RegistryEntryStatus     @default(ACTIVE)
+  publicProfile        Boolean                 @default(true) @map("public_profile")
+  registeredAt         DateTime                @default(now()) @map("registered_at")
+  createdById          String?                 @map("created_by_id")
+  updatedById          String?                 @map("updated_by_id")
+  deletedAt            DateTime?               @map("deleted_at")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
   statusHistory        RegistryStatusHistory[]
   myGovSyncs           RegistryMyGovSync[]
   ratings              RegistryRating[]
@@ -713,14 +724,14 @@ model RegistryEntry {
 }
 
 model RegistryStatusHistory {
-  id             String              @id @default(uuid())
-  registryEntryId String             @map("registry_entry_id")
-  registryEntry  RegistryEntry       @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
-  previousStatus RegistryEntryStatus? @map("previous_status")
-  status         RegistryEntryStatus
-  reason         String?
-  changedById    String?             @map("changed_by_id")
-  createdAt      DateTime            @default(now()) @map("created_at")
+  id              String               @id @default(uuid())
+  registryEntryId String               @map("registry_entry_id")
+  registryEntry   RegistryEntry        @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
+  previousStatus  RegistryEntryStatus? @map("previous_status")
+  status          RegistryEntryStatus
+  reason          String?
+  changedById     String?              @map("changed_by_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
 
   @@index([registryEntryId, createdAt])
   @@map("registry_status_history")
@@ -742,18 +753,18 @@ model RegistryImport {
 }
 
 model RegistryMyGovSync {
-  id             String        @id @default(uuid())
-  registryEntryId String       @map("registry_entry_id")
-  registryEntry  RegistryEntry @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
-  eventType      String        @map("event_type")
-  payload        Json
-  status         String        @default("PENDING")
-  attempts       Int           @default(0)
-  nextAttemptAt  DateTime      @default(now()) @map("next_attempt_at")
-  lastError      String?       @map("last_error")
-  syncedAt       DateTime?     @map("synced_at")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  registryEntryId String        @map("registry_entry_id")
+  registryEntry   RegistryEntry @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
+  eventType       String        @map("event_type")
+  payload         Json
+  status          String        @default("PENDING")
+  attempts        Int           @default(0)
+  nextAttemptAt   DateTime      @default(now()) @map("next_attempt_at")
+  lastError       String?       @map("last_error")
+  syncedAt        DateTime?     @map("synced_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   @@index([status, nextAttemptAt])
   @@index([registryEntryId, createdAt])
@@ -761,16 +772,16 @@ model RegistryMyGovSync {
 }
 
 model RegistryRating {
-  id             String        @id @default(uuid())
-  registryEntryId String       @map("registry_entry_id")
-  registryEntry  RegistryEntry @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
-  periodYear     Int           @map("period_year")
-  metrics        Json
-  score          Float
-  methodologyVersion String    @map("methodology_version")
-  calculatedAt   DateTime      @default(now()) @map("calculated_at")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id                 String        @id @default(uuid())
+  registryEntryId    String        @map("registry_entry_id")
+  registryEntry      RegistryEntry @relation(fields: [registryEntryId], references: [id], onDelete: Cascade)
+  periodYear         Int           @map("period_year")
+  metrics            Json
+  score              Float
+  methodologyVersion String        @map("methodology_version")
+  calculatedAt       DateTime      @default(now()) @map("calculated_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
 
   @@unique([registryEntryId, periodYear])
   @@index([periodYear, score])
@@ -778,22 +789,22 @@ model RegistryRating {
 }
 
 model BillingTransaction {
-  id              String        @id @default(uuid())
-  invoiceNumber   String        @unique @map("invoice_number")
-  transactionId   String?       @unique @map("transaction_id") // Payment gateway transaction ID
-  userId          String?       @map("user_id")
-  amount          Decimal       @db.Decimal(15, 2)
-  serviceType     String        @map("service_type") // MEDIATION_FEE, QUALIFICATION_EXAM_FEE, REGISTRY_ENTRY_FEE
-  payerPinfl      String?       @map("payer_pinfl")
-  payerName       String?       @map("payer_name")
-  payerPhone      String?       @map("payer_phone")
-  paymentProvider String?       @map("payment_provider") // MUNIS, PAYME, CLICK, TREASURY
-  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
-  paidAt          DateTime?     @map("paid_at")
+  id              String          @id @default(uuid())
+  invoiceNumber   String          @unique @map("invoice_number")
+  transactionId   String?         @unique @map("transaction_id") // Payment gateway transaction ID
+  userId          String?         @map("user_id")
+  amount          Decimal         @db.Decimal(15, 2)
+  serviceType     String          @map("service_type") // MEDIATION_FEE, QUALIFICATION_EXAM_FEE, REGISTRY_ENTRY_FEE
+  payerPinfl      String?         @map("payer_pinfl")
+  payerName       String?         @map("payer_name")
+  payerPhone      String?         @map("payer_phone")
+  paymentProvider String?         @map("payment_provider") // MUNIS, PAYME, CLICK, TREASURY
+  paymentStatus   PaymentStatus   @default(PENDING) @map("payment_status")
+  paidAt          DateTime?       @map("paid_at")
   metadata        Json?
-  idempotencyKey  String?      @unique @map("idempotency_key")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  idempotencyKey  String?         @unique @map("idempotency_key")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
   serviceInvoice  ServiceInvoice?
 
   @@index([invoiceNumber])
@@ -822,32 +833,32 @@ model ContractTemplate {
 }
 
 model ServiceContract {
-  id                       String                   @id @default(uuid())
-  contractNumber           String                   @unique @map("contract_number")
-  type                     ContractType
-  title                    String
-  caseSummary              String                   @map("case_summary") @db.Text
-  rightsAndResponsibilities String                  @map("rights_and_responsibilities") @db.Text
-  terms                    String                   @db.Text
-  validUntil               DateTime?                @map("valid_until")
-  status                   ServiceContractStatus    @default(DRAFT)
-  createdById              String                   @map("created_by_id")
-  createdBy                User                     @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  providerId               String                   @map("provider_id")
-  provider                 User                     @relation("ContractProvider", fields: [providerId], references: [id], onDelete: Restrict)
-  templateId               String?                  @map("template_id")
-  template                 ContractTemplate?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  templateVersion          Int?                     @map("template_version")
-  templateSnapshot         Json?                    @map("template_snapshot")
-  renderedContent          String?                  @map("rendered_content") @db.Text
-  sentAt                   DateTime?                @map("sent_at")
-  signedAt                 DateTime?                @map("signed_at")
-  signedPdf                Bytes?                   @map("signed_pdf") @db.ByteA
-  signedPdfSha256           String?                  @map("signed_pdf_sha256")
-  createdAt                DateTime                 @default(now()) @map("created_at")
-  updatedAt                DateTime                 @updatedAt @map("updated_at")
-  participants             ContractParticipant[]
-  invoices                 ServiceInvoice[]
+  id                        String                @id @default(uuid())
+  contractNumber            String                @unique @map("contract_number")
+  type                      ContractType
+  title                     String
+  caseSummary               String                @map("case_summary") @db.Text
+  rightsAndResponsibilities String                @map("rights_and_responsibilities") @db.Text
+  terms                     String                @db.Text
+  validUntil                DateTime?             @map("valid_until")
+  status                    ServiceContractStatus @default(DRAFT)
+  createdById               String                @map("created_by_id")
+  createdBy                 User                  @relation("ContractCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  providerId                String                @map("provider_id")
+  provider                  User                  @relation("ContractProvider", fields: [providerId], references: [id], onDelete: Restrict)
+  templateId                String?               @map("template_id")
+  template                  ContractTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateVersion           Int?                  @map("template_version")
+  templateSnapshot          Json?                 @map("template_snapshot")
+  renderedContent           String?               @map("rendered_content") @db.Text
+  sentAt                    DateTime?             @map("sent_at")
+  signedAt                  DateTime?             @map("signed_at")
+  signedPdf                 Bytes?                @map("signed_pdf") @db.ByteA
+  signedPdfSha256           String?               @map("signed_pdf_sha256")
+  createdAt                 DateTime              @default(now()) @map("created_at")
+  updatedAt                 DateTime              @updatedAt @map("updated_at")
+  participants              ContractParticipant[]
+  invoices                  ServiceInvoice[]
 
   @@index([createdById, status])
   @@index([providerId, status])
@@ -856,22 +867,22 @@ model ServiceContract {
 }
 
 model ContractParticipant {
-  id                    String              @id @default(uuid())
-  contractId            String              @map("contract_id")
-  contract              ServiceContract    @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  userId                String?             @map("user_id")
-  user                  User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  role                  ContractPartyRole
-  fullName              String              @map("full_name")
-  pinfl                 String?
-  status                ContractPartyStatus @default(PENDING)
-  pkcs7                 String?             @db.Text
-  signatureVerified     Boolean             @default(false) @map("signature_verified")
-  signerSerialNumber    String?             @map("signer_serial_number")
-  signedAt              DateTime?           @map("signed_at")
-  decisionNote          String?             @map("decision_note")
-  createdAt             DateTime            @default(now()) @map("created_at")
-  updatedAt             DateTime            @updatedAt @map("updated_at")
+  id                 String              @id @default(uuid())
+  contractId         String              @map("contract_id")
+  contract           ServiceContract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  userId             String?             @map("user_id")
+  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  role               ContractPartyRole
+  fullName           String              @map("full_name")
+  pinfl              String?
+  status             ContractPartyStatus @default(PENDING)
+  pkcs7              String?             @db.Text
+  signatureVerified  Boolean             @default(false) @map("signature_verified")
+  signerSerialNumber String?             @map("signer_serial_number")
+  signedAt           DateTime?           @map("signed_at")
+  decisionNote       String?             @map("decision_note")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
 
   @@unique([contractId, role])
   @@index([userId, status])
@@ -880,21 +891,21 @@ model ContractParticipant {
 }
 
 model ServiceInvoice {
-  id                  String            @id @default(uuid())
-  serviceContractId   String            @map("service_contract_id")
-  serviceContract     ServiceContract   @relation(fields: [serviceContractId], references: [id], onDelete: Cascade)
-  billingTransactionId String           @unique @map("billing_transaction_id")
-  billingTransaction  BillingTransaction @relation(fields: [billingTransactionId], references: [id], onDelete: Restrict)
-  invoiceNumber       String            @unique @map("invoice_number")
-  payerId             String            @map("payer_id")
-  payer               User              @relation("InvoicePayer", fields: [payerId], references: [id], onDelete: Restrict)
-  issuerId            String            @map("issuer_id")
-  issuer              User              @relation("InvoiceIssuer", fields: [issuerId], references: [id], onDelete: Restrict)
-  amount              Decimal           @db.Decimal(15, 2)
-  currency            String            @default("UZS")
-  sentAt              DateTime          @default(now()) @map("sent_at")
-  createdAt           DateTime          @default(now()) @map("created_at")
-  updatedAt           DateTime          @updatedAt @map("updated_at")
+  id                   String             @id @default(uuid())
+  serviceContractId    String             @map("service_contract_id")
+  serviceContract      ServiceContract    @relation(fields: [serviceContractId], references: [id], onDelete: Cascade)
+  billingTransactionId String             @unique @map("billing_transaction_id")
+  billingTransaction   BillingTransaction @relation(fields: [billingTransactionId], references: [id], onDelete: Restrict)
+  invoiceNumber        String             @unique @map("invoice_number")
+  payerId              String             @map("payer_id")
+  payer                User               @relation("InvoicePayer", fields: [payerId], references: [id], onDelete: Restrict)
+  issuerId             String             @map("issuer_id")
+  issuer               User               @relation("InvoiceIssuer", fields: [issuerId], references: [id], onDelete: Restrict)
+  amount               Decimal            @db.Decimal(15, 2)
+  currency             String             @default("UZS")
+  sentAt               DateTime           @default(now()) @map("sent_at")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
 
   @@index([serviceContractId, sentAt])
   @@index([payerId, sentAt])
@@ -975,6 +986,7 @@ model FileRecord {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   documentExchangeAttachments DocumentExchangeAttachment[]
+  businessAuthorityDocuments  BusinessAuthorityDocument[]
 
   @@index([uploadedById])
   @@index([accessLevel])
@@ -984,44 +996,44 @@ model FileRecord {
 // ─── INT Moduli: Intizomiy javobgarlik va mediator dosyesi ───────────────────
 
 enum DisciplineStatus {
-  UNDER_REVIEW   // Ko'rib chiqilmoqda
-  SANCTIONED     // Jazo tayinlangan
-  ACQUITTED      // Oqlangan
+  UNDER_REVIEW // Ko'rib chiqilmoqda
+  SANCTIONED // Jazo tayinlangan
+  ACQUITTED // Oqlangan
   APPEAL_PENDING // Apellatsiya kutilmoqda
-  CLOSED         // Yopilgan
+  CLOSED // Yopilgan
 }
 
 enum DisciplineSanctionType {
-  WARNING          // Ogohlantirish
-  REPRIMAND        // Hayfsan
+  WARNING // Ogohlantirish
+  REPRIMAND // Hayfsan
   STRICT_REPRIMAND // Og'ir hayfsan
-  SUSPENSION       // Faoliyatni to'xtatish
-  REVOCATION       // Guvohnomani bekor qilish (reyestrdan chiqarish)
+  SUSPENSION // Faoliyatni to'xtatish
+  REVOCATION // Guvohnomani bekor qilish (reyestrdan chiqarish)
 }
 
 enum MediatorRegistryStatus {
-  ACTIVE    // Faol
+  ACTIVE // Faol
   SUSPENDED // To'xtatilgan
-  REVOKED   // Chiqarilgan
-  PENDING   // Kutilmoqda
+  REVOKED // Chiqarilgan
+  PENDING // Kutilmoqda
 }
 
 model DisciplineCase {
-  id              String             @id @default(uuid())
-  caseNumber      String             @unique
+  id              String               @id @default(uuid())
+  caseNumber      String               @unique
   mediatorId      String
-  mediator        User               @relation("MediatorDiscipline", fields: [mediatorId], references: [id])
-  status          DisciplineStatus   @default(UNDER_REVIEW)
-  openedAt        DateTime           @default(now())
+  mediator        User                 @relation("MediatorDiscipline", fields: [mediatorId], references: [id])
+  status          DisciplineStatus     @default(UNDER_REVIEW)
+  openedAt        DateTime             @default(now())
   closedAt        DateTime?
   description     String
   commissionNotes String?
   createdById     String
-  createdBy       User               @relation("DisciplineCaseCreator", fields: [createdById], references: [id])
+  createdBy       User                 @relation("DisciplineCaseCreator", fields: [createdById], references: [id])
   documents       DisciplineDocument[]
   decision        DisciplineDecision?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@index([mediatorId])
   @@index([status])
@@ -1072,9 +1084,9 @@ model MediatorDossier {
   achievements       Json?
   trainingCourses    Json?
   qualificationLevel String?
-  isPublic            Boolean  @default(false) @map("is_public")
-  profileBio          String?  @map("profile_bio")
-  videoUrl            String?  @map("video_url")
+  isPublic           Boolean                @default(false) @map("is_public")
+  profileBio         String?                @map("profile_bio")
+  videoUrl           String?                @map("video_url")
   media              Json?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
@@ -1097,43 +1109,43 @@ model MedCalendarEvent {
 }
 
 model MedApplication {
-  id                       String                    @id @default(uuid())
-  userId                   String                    @map("user_id")
-  type                     MedApplicationType
-  status                   MedApplicationStatus      @default(SUBMITTED)
-  reason                   CertificateReplacementReason?
-  supportingDocumentId     String?                   @map("supporting_document_id")
-  photoFileId              String?                   @map("photo_file_id")
-  deliveryMethod           CertificateDeliveryMethod? @map("delivery_method")
-  deliveryAddress          String?                   @map("delivery_address")
-  decisionNote             String?                   @map("decision_note")
-  decidedAt                DateTime?                 @map("decided_at")
-  createdAt                DateTime                  @default(now()) @map("created_at")
-  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  id                   String                        @id @default(uuid())
+  userId               String                        @map("user_id")
+  type                 MedApplicationType
+  status               MedApplicationStatus          @default(SUBMITTED)
+  reason               CertificateReplacementReason?
+  supportingDocumentId String?                       @map("supporting_document_id")
+  photoFileId          String?                       @map("photo_file_id")
+  deliveryMethod       CertificateDeliveryMethod?    @map("delivery_method")
+  deliveryAddress      String?                       @map("delivery_address")
+  decisionNote         String?                       @map("decision_note")
+  decidedAt            DateTime?                     @map("decided_at")
+  createdAt            DateTime                      @default(now()) @map("created_at")
+  updatedAt            DateTime                      @updatedAt @map("updated_at")
 
   @@index([userId, type, status])
   @@map("med_applications")
 }
 
 model MedConversation {
-  id            String          @id @default(uuid())
-  participantA  String          @map("participant_a")
-  participantB  String          @map("participant_b")
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-  messages      MedMessage[]
+  id           String       @id @default(uuid())
+  participantA String       @map("participant_a")
+  participantB String       @map("participant_b")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  messages     MedMessage[]
 
   @@unique([participantA, participantB])
   @@map("med_conversations")
 }
 
 model MedMessage {
-  id             String         @id @default(uuid())
-  conversationId String         @map("conversation_id")
-  senderId       String         @map("sender_id")
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  senderId       String   @map("sender_id")
   body           String
-  attachmentIds  Json?          @map("attachment_ids")
-  createdAt      DateTime       @default(now()) @map("created_at")
+  attachmentIds  Json?    @map("attachment_ids")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   conversation MedConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
@@ -1164,29 +1176,29 @@ model ReportSummary {
 }
 
 model MkApplication {
-  id                 String             @id @default(uuid())
-  applicantId        String             @map("applicant_id")
-  status             MkApplicationStatus @default(SUBMITTED)
-  phone              String
-  email              String?
-  address            String?
-    education          String?
-  profession         String?
-  diplomaFileId      String?            @map("diploma_file_id")
-  passportFileId     String?            @map("passport_file_id")
-  courseCertificateId String?           @map("course_certificate_id")
-  professionProofFileId String?          @map("profession_proof_file_id")
-  passportData       Json?              @map("passport_data")
-  autoCheckResult    Json?              @map("auto_check_result")
-  rejectionReason    String?            @map("rejection_reason")
-  reviewDeadline     DateTime?          @map("review_deadline")
-  reviewedById       String?            @map("reviewed_by_id")
-  reviewedAt         DateTime?          @map("reviewed_at")
-  statusSeen         Boolean            @default(false) @map("status_seen")
-  submittedAt        DateTime           @default(now()) @map("submitted_at")
-  createdAt           DateTime           @default(now()) @map("created_at")
-  updatedAt           DateTime           @updatedAt @map("updated_at")
-  exams              MkExam[]
+  id                    String              @id @default(uuid())
+  applicantId           String              @map("applicant_id")
+  status                MkApplicationStatus @default(SUBMITTED)
+  phone                 String
+  email                 String?
+  address               String?
+  education             String?
+  profession            String?
+  diplomaFileId         String?             @map("diploma_file_id")
+  passportFileId        String?             @map("passport_file_id")
+  courseCertificateId   String?             @map("course_certificate_id")
+  professionProofFileId String?             @map("profession_proof_file_id")
+  passportData          Json?               @map("passport_data")
+  autoCheckResult       Json?               @map("auto_check_result")
+  rejectionReason       String?             @map("rejection_reason")
+  reviewDeadline        DateTime?           @map("review_deadline")
+  reviewedById          String?             @map("reviewed_by_id")
+  reviewedAt            DateTime?           @map("reviewed_at")
+  statusSeen            Boolean             @default(false) @map("status_seen")
+  submittedAt           DateTime            @default(now()) @map("submitted_at")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+  exams                 MkExam[]
 
   @@index([applicantId, status])
   @@index([status, reviewDeadline])
@@ -1194,35 +1206,35 @@ model MkApplication {
 }
 
 model MkExam {
-  id              String       @id @default(uuid())
-  applicationId   String       @map("application_id")
-  scheduledAt     DateTime     @map("scheduled_at")
-  venue           String
-  secretaryPhone  String        @map("secretary_phone")
-  status          MkExamStatus  @default(SCHEDULED)
-  selectedQuestions Json?       @map("selected_questions")
-  protocolFileId  String?       @map("protocol_file_id")
-  streamUrl       String?       @map("stream_url")
-  archiveUrl      String?       @map("archive_url")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  application     MkApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  assignments     MkExamAssignment[]
-  scores          MkExamScore[]
+  id                String             @id @default(uuid())
+  applicationId     String             @map("application_id")
+  scheduledAt       DateTime           @map("scheduled_at")
+  venue             String
+  secretaryPhone    String             @map("secretary_phone")
+  status            MkExamStatus       @default(SCHEDULED)
+  selectedQuestions Json?              @map("selected_questions")
+  protocolFileId    String?            @map("protocol_file_id")
+  streamUrl         String?            @map("stream_url")
+  archiveUrl        String?            @map("archive_url")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  application       MkApplication      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  assignments       MkExamAssignment[]
+  scores            MkExamScore[]
 
   @@index([applicationId, status])
   @@map("mk_exams")
 }
 
 model MkQuestion {
-  id          String   @id @default(uuid())
-  text        String
-  options     Json
-  correctOption String? @map("correct_option")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdById String?  @map("created_by_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  text          String
+  options       Json
+  correctOption String?  @map("correct_option")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdById   String?  @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([isActive])
   @@map("mk_questions")
@@ -1237,18 +1249,19 @@ model MkCommitteeMember {
   updatedAt DateTime        @updatedAt @map("updated_at")
 
   assignments MkExamAssignment[]
+
   @@unique([userId, role])
   @@map("mk_committee_members")
 }
 
 model MkExamAssignment {
-  id          String            @id @default(uuid())
-  examId      String            @map("exam_id")
-  memberId    String            @map("member_id")
-  assignedAt  DateTime          @default(now()) @map("assigned_at")
-  exam        MkExam            @relation(fields: [examId], references: [id], onDelete: Cascade)
-  member      MkCommitteeMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  score       MkExamScore?
+  id         String            @id @default(uuid())
+  examId     String            @map("exam_id")
+  memberId   String            @map("member_id")
+  assignedAt DateTime          @default(now()) @map("assigned_at")
+  exam       MkExam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  member     MkCommitteeMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  score      MkExamScore?
 
   @@unique([examId, memberId])
   @@map("mk_exam_assignments")
@@ -1260,69 +1273,73 @@ model MkExamScore {
   examId       String           @map("exam_id")
   score        Decimal          @db.Decimal(5, 2)
   comment      String?
-  submittedAt DateTime         @default(now()) @map("submitted_at")
+  submittedAt  DateTime         @default(now()) @map("submitted_at")
   assignment   MkExamAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  exam         MkExam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exam         MkExam           @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   @@index([examId])
   @@map("mk_exam_scores")
 }
 
 model MonitoringObligation {
-  id                    String           @id @default(uuid())
-  agreementId           String           @map("agreement_id")
-  description           String
-  dueDate               DateTime         @map("due_date")
-  responsiblePartyId    String?          @map("responsible_party_id")
-  responsiblePartyPinfl String?          @map("responsible_party_pinfl")
-  responsiblePartyName  String           @map("responsible_party_name")
-  mediatorId            String?          @map("mediator_id")
-  region                String?
-  status                ObligationStatus @default(PENDING)
-  reminderDaysBefore    Int              @default(3) @map("reminder_days_before")
-  reminderIntervalDays  Int              @default(1) @map("reminder_interval_days")
-  lastReminderAt        DateTime?        @map("last_reminder_at")
-  reminderCount         Int              @default(0) @map("reminder_count")
-  completedAt           DateTime?        @map("completed_at")
-  completedById         String?          @map("completed_by_id")
-  createdById           String           @map("created_by_id")
-  createdAt             DateTime         @default(now()) @map("created_at")
-  updatedAt             DateTime         @updatedAt @map("updated_at")
+  id                              String           @id @default(uuid())
+  agreementId                     String           @map("agreement_id")
+  description                     String
+  dueDate                         DateTime         @map("due_date")
+  responsiblePartyId              String?          @map("responsible_party_id")
+  responsiblePartyPinfl           String?          @map("responsible_party_pinfl")
+  responsiblePartyOrganizationTin String?          @map("responsible_party_organization_tin")
+  responsiblePartyName            String           @map("responsible_party_name")
+  mediatorId                      String?          @map("mediator_id")
+  region                          String?
+  status                          ObligationStatus @default(PENDING)
+  reminderDaysBefore              Int              @default(3) @map("reminder_days_before")
+  reminderIntervalDays            Int              @default(1) @map("reminder_interval_days")
+  lastReminderAt                  DateTime?        @map("last_reminder_at")
+  reminderCount                   Int              @default(0) @map("reminder_count")
+  completedAt                     DateTime?        @map("completed_at")
+  completedById                   String?          @map("completed_by_id")
+  createdById                     String           @map("created_by_id")
+  createdAt                       DateTime         @default(now()) @map("created_at")
+  updatedAt                       DateTime         @updatedAt @map("updated_at")
 
   @@index([agreementId, status])
   @@index([dueDate, status])
   @@index([mediatorId, status])
   @@index([responsiblePartyPinfl, status])
+  @@index([responsiblePartyOrganizationTin, status])
   @@map("monitoring_obligations")
 }
 
 model MediationCase {
-  id                 String          @id @default(uuid())
-  courtCaseNumber    String?         @map("court_case_number")
-  type               MediationType
-  status             MediationStatus  @default(AWAITING_CONSENT)
-  disputeCategory    String           @default("CIVIL") @map("dispute_category")
-  region              String           @default("")
-  disputeSubject     String           @map("dispute_subject")
-  initiatedById      String           @map("initiated_by_id")
-  mediatorId         String?          @map("mediator_id")
-  randomSeed         String?          @map("random_seed")
-  selectionLog       Json?            @map("selection_log")
-  agreementText      String?          @map("agreement_text")
-  agreementFileUrl   String?          @map("agreement_file_url")
-  mediatorSignaturePkcs7 String?      @map("mediator_signature_pkcs7")
-  mediatorSignedAt   DateTime?        @map("mediator_signed_at")
-  resultStatus       MedResultStatus?
-  resultSummary      String?          @map("result_summary")
-  courtSyncStatus    String?          @map("court_sync_status")
-  courtSyncError     String?          @map("court_sync_error")
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
-  participants       MediationParticipant[]
-  sessions           MediationSession[]
-  feedbacks          MediationFeedback[]
-  documentThread     DocumentExchangeThread? @relation("MediationDocumentThread")
-  documentExchanges  DocumentExchangeThread[] @relation("MediationOfficeExchange")
+  id                          String                   @id @default(uuid())
+  courtCaseNumber             String?                  @map("court_case_number")
+  type                        MediationType
+  status                      MediationStatus          @default(AWAITING_CONSENT)
+  disputeCategory             String                   @default("CIVIL") @map("dispute_category")
+  documentLanguage            String                   @default("UZ") @map("document_language")
+  requestedMediatorRegistryId String?                  @map("requested_mediator_registry_id")
+  region                      String                   @default("")
+  disputeSubject              String                   @map("dispute_subject")
+  initiatedById               String                   @map("initiated_by_id")
+  mediatorId                  String?                  @map("mediator_id")
+  randomSeed                  String?                  @map("random_seed")
+  selectionLog                Json?                    @map("selection_log")
+  agreementText               String?                  @map("agreement_text")
+  agreementFileUrl            String?                  @map("agreement_file_url")
+  mediatorSignaturePkcs7      String?                  @map("mediator_signature_pkcs7")
+  mediatorSignedAt            DateTime?                @map("mediator_signed_at")
+  resultStatus                MedResultStatus?
+  resultSummary               String?                  @map("result_summary")
+  courtSyncStatus             String?                  @map("court_sync_status")
+  courtSyncError              String?                  @map("court_sync_error")
+  createdAt                   DateTime                 @default(now()) @map("created_at")
+  updatedAt                   DateTime                 @updatedAt @map("updated_at")
+  participants                MediationParticipant[]
+  sessions                    MediationSession[]
+  feedbacks                   MediationFeedback[]
+  documentThread              DocumentExchangeThread?  @relation("MediationDocumentThread")
+  documentExchanges           DocumentExchangeThread[] @relation("MediationOfficeExchange")
 
   @@index([courtCaseNumber])
   @@index([status, type])
@@ -1348,64 +1365,105 @@ model MediationFeedback {
 }
 
 model MediationParticipant {
-  id             String          @id @default(uuid())
-  mediationId    String          @map("mediation_id")
-  side           ParticipantSide
-  userId         String?         @map("user_id")
-  fullName       String          @map("full_name")
-  phone          String?
-  email          String?
-  pinfl          String?
-  consentStatus  ConsentStatus   @default(PENDING) @map("consent_status")
-  consentedAt    DateTime?       @map("consented_at")
-    dataProcessingConsentAt      DateTime? @map("data_processing_consent_at")
-    dataProcessingConsentVersion String?   @map("data_processing_consent_version")
-  signaturePkcs7 String?         @map("signature_pkcs7")
-  signedAt       DateTime?       @map("signed_at")
-  mediation      MediationCase   @relation(fields: [mediationId], references: [id], onDelete: Cascade)
+  id                           String          @id @default(uuid())
+  mediationId                  String          @map("mediation_id")
+  side                         ParticipantSide
+  userId                       String?         @map("user_id")
+  organizationId               String?         @map("organization_id")
+  fullName                     String          @map("full_name")
+  phone                        String?
+  email                        String?
+  pinfl                        String?
+  organizationName             String?         @map("organization_name")
+  organizationTin              String?         @map("organization_tin")
+  representativeName           String?         @map("representative_name")
+  consentStatus                ConsentStatus   @default(PENDING) @map("consent_status")
+  consentedAt                  DateTime?       @map("consented_at")
+  dataProcessingConsentAt      DateTime?       @map("data_processing_consent_at")
+  dataProcessingConsentVersion String?         @map("data_processing_consent_version")
+  signaturePkcs7               String?         @map("signature_pkcs7")
+  signedAt                     DateTime?       @map("signed_at")
+  mediation                    MediationCase   @relation(fields: [mediationId], references: [id], onDelete: Cascade)
+  organization                 Organization?   @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   @@unique([mediationId, side])
   @@index([userId])
   @@map("mediation_participants")
 }
 
+model BusinessOrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  userId         String       @map("user_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("business_organization_members")
+}
+
+enum BusinessAuthorityDocumentType {
+  POWER_OF_ATTORNEY
+  APPOINTMENT_ORDER
+}
+
+model BusinessAuthorityDocument {
+  id             String                        @id @default(uuid())
+  organizationId String                        @map("organization_id")
+  fileId         String                        @map("file_id")
+  uploadedById   String                        @map("uploaded_by_id")
+  type           BusinessAuthorityDocumentType
+  documentNumber String?                       @map("document_number")
+  validUntil     DateTime?                     @map("valid_until")
+  createdAt      DateTime                      @default(now()) @map("created_at")
+  organization   Organization                  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  file           FileRecord                    @relation(fields: [fileId], references: [id], onDelete: Restrict)
+  uploadedBy     User                          @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, fileId])
+  @@index([organizationId, createdAt])
+  @@map("business_authority_documents")
+}
+
 model MediationSession {
-  id          String            @id @default(uuid())
-  mediationId String            @map("mediation_id")
-  scheduledAt DateTime          @map("scheduled_at")
-  durationMin Int               @default(60) @map("duration_min")
-  roomId      String?           @map("room_id")
-  roomUrl     String?           @map("room_url")
-  hostUrl     String?           @map("host_url")
-  accessPin   String?           @map("access_pin")
+  id           String           @id @default(uuid())
+  mediationId  String           @map("mediation_id")
+  scheduledAt  DateTime         @map("scheduled_at")
+  durationMin  Int              @default(60) @map("duration_min")
+  roomId       String?          @map("room_id")
+  roomUrl      String?          @map("room_url")
+  hostUrl      String?          @map("host_url")
+  accessPin    String?          @map("access_pin")
   recordingUrl String?          @map("recording_url")
-  status      MedSessionStatus  @default(SCHEDULED)
-  createdAt   DateTime          @default(now()) @map("created_at")
-  updatedAt   DateTime          @updatedAt @map("updated_at")
-  mediation   MediationCase    @relation(fields: [mediationId], references: [id], onDelete: Cascade)
+  status       MedSessionStatus @default(SCHEDULED)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  mediation    MediationCase    @relation(fields: [mediationId], references: [id], onDelete: Cascade)
 
   @@index([mediationId, scheduledAt])
   @@map("mediation_sessions")
 }
 
 model DocumentExchangeThread {
-  id                    String                 @id @default(uuid())
-  type                  DocumentExchangeType
-  status                DocumentExchangeStatus @default(SUBMITTED)
-  subject               String
-  region                String?
-  mediationId           String?                @unique @map("mediation_id")
-  mediation             MediationCase?         @relation("MediationDocumentThread", fields: [mediationId], references: [id], onDelete: Cascade)
-  relatedMediationId    String?                @map("related_mediation_id")
-  relatedMediation      MediationCase?         @relation("MediationOfficeExchange", fields: [relatedMediationId], references: [id], onDelete: SetNull)
-  targetOrganizationId  String?                @map("target_organization_id")
-  targetOrganization    Organization?          @relation("DocumentExchangeTargetOrganization", fields: [targetOrganizationId], references: [id], onDelete: SetNull)
-  createdById           String                 @map("created_by_id")
-  createdBy             User                   @relation("DocumentExchangeCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  participants          DocumentExchangeParticipant[]
-  messages              DocumentExchangeMessage[]
-  createdAt             DateTime               @default(now()) @map("created_at")
-  updatedAt             DateTime               @updatedAt @map("updated_at")
+  id                   String                        @id @default(uuid())
+  type                 DocumentExchangeType
+  status               DocumentExchangeStatus        @default(SUBMITTED)
+  subject              String
+  region               String?
+  mediationId          String?                       @unique @map("mediation_id")
+  mediation            MediationCase?                @relation("MediationDocumentThread", fields: [mediationId], references: [id], onDelete: Cascade)
+  relatedMediationId   String?                       @map("related_mediation_id")
+  relatedMediation     MediationCase?                @relation("MediationOfficeExchange", fields: [relatedMediationId], references: [id], onDelete: SetNull)
+  targetOrganizationId String?                       @map("target_organization_id")
+  targetOrganization   Organization?                 @relation("DocumentExchangeTargetOrganization", fields: [targetOrganizationId], references: [id], onDelete: SetNull)
+  createdById          String                        @map("created_by_id")
+  createdBy            User                          @relation("DocumentExchangeCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  participants         DocumentExchangeParticipant[]
+  messages             DocumentExchangeMessage[]
+  createdAt            DateTime                      @default(now()) @map("created_at")
+  updatedAt            DateTime                      @updatedAt @map("updated_at")
 
   @@index([type, status, region])
   @@index([targetOrganizationId, status, updatedAt])
@@ -1414,14 +1472,14 @@ model DocumentExchangeThread {
 }
 
 model DocumentExchangeParticipant {
-  id             String                    @id @default(uuid())
-  threadId       String                    @map("thread_id")
-  userId         String?                   @map("user_id")
-  organizationId String?                   @map("organization_id")
-  createdAt      DateTime                  @default(now()) @map("created_at")
-  thread         DocumentExchangeThread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  user           User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization?             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String                 @id @default(uuid())
+  threadId       String                 @map("thread_id")
+  userId         String?                @map("user_id")
+  organizationId String?                @map("organization_id")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  thread         DocumentExchangeThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user           User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([threadId, userId])
   @@unique([threadId, organizationId])
@@ -1431,14 +1489,14 @@ model DocumentExchangeParticipant {
 }
 
 model DocumentExchangeMessage {
-  id          String                  @id @default(uuid())
-  threadId    String                  @map("thread_id")
-  senderId    String                  @map("sender_id")
-  action      DocumentExchangeAction  @default(MESSAGE)
+  id          String                       @id @default(uuid())
+  threadId    String                       @map("thread_id")
+  senderId    String                       @map("sender_id")
+  action      DocumentExchangeAction       @default(MESSAGE)
   body        String
-  createdAt   DateTime                @default(now()) @map("created_at")
-  thread      DocumentExchangeThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  sender      User                    @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  createdAt   DateTime                     @default(now()) @map("created_at")
+  thread      DocumentExchangeThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender      User                         @relation(fields: [senderId], references: [id], onDelete: Restrict)
   attachments DocumentExchangeAttachment[]
 
   @@index([threadId, createdAt])

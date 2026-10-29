@@ -6,6 +6,7 @@ export class CreateObligationDto {
   @IsDateString() dueDate: string;
   @IsOptional() @IsUUID() responsiblePartyId?: string;
   @IsOptional() @Matches(/^\d{14}$/) responsiblePartyPinfl?: string;
+  @IsOptional() @Matches(/^\d{9}$/) responsiblePartyOrganizationTin?: string;
   @IsString() @MaxLength(300) responsiblePartyName: string;
   @IsOptional() @IsString() mediatorId?: string;
   @IsOptional() @IsString() region?: string;

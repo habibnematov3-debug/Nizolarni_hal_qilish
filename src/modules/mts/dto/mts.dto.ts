@@ -9,15 +9,23 @@ export enum DisputeCategory {
   ECONOMIC = 'ECONOMIC',
   INTELLECTUAL = 'INTELLECTUAL',
   BANKING = 'BANKING',
+  INVESTMENT = 'INVESTMENT',
+  DIGITAL = 'DIGITAL',
+  CROSS_BORDER = 'CROSS_BORDER',
 }
 
 export class CreateMediationDto {
   @IsOptional() @IsString() @MaxLength(100) courtCaseNumber?: string;
   @IsEnum(MediationType) type: MediationType;
   @IsEnum(DisputeCategory) disputeCategory: DisputeCategory;
+  @IsOptional() @IsIn(['UZ', 'RU', 'EN']) documentLanguage?: 'UZ' | 'RU' | 'EN';
+  @IsOptional() @IsUUID('4') businessOrganizationId?: string;
+  @IsOptional() @IsUUID('4') preferredMediatorRegistryId?: string;
   @IsString() @MinLength(10) @MaxLength(6000) disputeSubject: string;
   @IsString() @MinLength(2) @MaxLength(160) respondentName: string;
   @IsString() @Matches(/^\+?[0-9()\-\s]{7,30}$/) respondentPhone: string;
+  @IsOptional() @IsIn(['INDIVIDUAL', 'BUSINESS']) respondentType?: 'INDIVIDUAL' | 'BUSINESS';
+  @IsOptional() @Matches(/^\d{9}$/) respondentTin?: string;
   @IsOptional() @Matches(/^\d{14}$/) respondentPinfl?: string;
   @IsOptional() @IsEmail() @MaxLength(254) respondentEmail?: string;
   @IsString() @IsIn(['Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Jizzax viloyati', 'Qashqadaryo viloyati', 'Navoiy viloyati', 'Namangan viloyati', 'Samarqand viloyati', 'Surxondaryo viloyati', 'Sirdaryo viloyati', 'Toshkent viloyati', 'Farg‘ona viloyati', 'Xorazm viloyati', 'Toshkent shahri']) region: string;
