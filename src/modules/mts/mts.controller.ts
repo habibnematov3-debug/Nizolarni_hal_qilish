@@ -1,11 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MtsService } from './mts.service';
-import { ConsentDto, CreateAgreementDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
+import { ConsentDto, CreateAgreementDto, CreateMediationDto, CreateMediationFeedbackDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
 
 @ApiTags('Onlayn va majburiy mediatsiya (MTS)')
 @ApiBearerAuth('JWT-auth')
@@ -14,7 +15,7 @@ import { ConsentDto, CreateAgreementDto, CreateMediationDto, RecordResultDto, Sc
 export class MtsController {
   constructor(private readonly service: MtsService) {}
 
-  @Post('mediations') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
+  @Post('mediations') @Roles('TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateMediationDto) { return this.service.create(user, dto); }
 
   @Get('mediations') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiyalar ro\'yxati' })
@@ -43,4 +44,7 @@ export class MtsController {
 
   @Post('mediations/:id/result') @Roles('MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Mediatsiya natijasini qayd etish' })
   result(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: RecordResultDto) { return this.service.recordResult(user, id, dto); }
+
+  @Post('mediations/:id/rating') @Roles('TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Yakunlangan mediatsiya bo‘yicha mutaxassis faoliyatini baholash' })
+  rate(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CreateMediationFeedbackDto, @Req() req: Request) { return this.service.rate(user, id, dto, req.ip || req.socket.remoteAddress); }
 }

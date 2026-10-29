@@ -17,10 +17,10 @@ export class MonController {
   @Post('cabinet/monitoring/obligations') @Roles('MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Kelishuv majburiyatini qayd etish' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateObligationDto, @Req() req: any) { return this.service.create(user, dto, req.ip); }
 
-  @Get('cabinet/monitoring/obligations') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Majburiyatlar ro\'yxati' })
+  @Get('cabinet/monitoring/obligations') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Majburiyatlar ro\'yxati' })
   list(@CurrentUser() user: AuthUser, @Query() query: ObligationQueryDto) { return this.service.list(user, query); }
 
-  @Patch('cabinet/monitoring/obligations/:id/complete') @Roles('TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Majburiyatni bajarilgan deb belgilash' })
+  @Patch('cabinet/monitoring/obligations/:id/complete') @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR') @ApiOperation({ summary: 'Majburiyatni bajarilgan deb belgilash' })
   complete(@CurrentUser() user: AuthUser, @Param('id') id: string, @Req() req: any) { return this.service.complete(user, id, req.ip); }
 
   @Get('ministry/monitoring/statistics') @Roles('MINISTRY_STAFF', 'REGIONAL_STAFF', 'ADMIN') @ApiOperation({ summary: 'Ijro statistikasi' })

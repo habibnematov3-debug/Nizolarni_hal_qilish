@@ -1,10 +1,11 @@
-import { IsDateString, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateObligationDto {
   @IsString() @MaxLength(100) agreementId: string;
   @IsString() @MaxLength(2000) description: string;
   @IsDateString() dueDate: string;
   @IsOptional() @IsUUID() responsiblePartyId?: string;
+  @IsOptional() @Matches(/^\d{14}$/) responsiblePartyPinfl?: string;
   @IsString() @MaxLength(300) responsiblePartyName: string;
   @IsOptional() @IsString() mediatorId?: string;
   @IsOptional() @IsString() region?: string;

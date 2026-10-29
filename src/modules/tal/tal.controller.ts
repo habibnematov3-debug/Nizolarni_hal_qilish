@@ -7,7 +7,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { SendThreadMessageDto, StartMediatorThreadDto, UpdateApplicantProfileDto } from './dto/tal.dto';
 import { TalService } from './tal.service';
 
-const CABINET_ROLES = ['TALABGOR', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR', 'REGIONAL_STAFF'];
+const CABINET_ROLES = ['TALABGOR', 'BUSINESS', 'MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR', 'REGIONAL_STAFF'];
 
 @ApiTags('TAL — Talabgor kabineti')
 @ApiBearerAuth('JWT-auth')

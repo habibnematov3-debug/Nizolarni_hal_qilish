@@ -183,9 +183,10 @@ export class NotificationsService {
       smsText = dto.variables.content;
     }
 
-    const channels = dto.channels && dto.channels.length > 0
+    const requestedChannels = dto.channels && dto.channels.length > 0
       ? dto.channels
       : [NotificationChannel.CABINET, NotificationChannel.SMS];
+    const channels = requestedChannels.filter((channel) => recipient.notificationChannels.includes(channel));
 
     const results: any[] = [];
 

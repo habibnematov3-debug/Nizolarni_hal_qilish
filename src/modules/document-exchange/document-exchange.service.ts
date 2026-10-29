@@ -24,7 +24,7 @@ import {
 } from './dto/document-exchange.dto';
 
 const OFFICE_ROLES = ['REGIONAL_STAFF', 'MINISTRY_STAFF'];
-const CASE_ROLES = ['TALABGOR', 'MEDIATOR'];
+const CASE_ROLES = ['TALABGOR', 'BUSINESS', 'MEDIATOR'];
 
 @Injectable()
 export class DocumentExchangeService {

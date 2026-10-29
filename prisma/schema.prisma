@@ -385,6 +385,7 @@ model User {
 
   registryStatus    RegistryStatus @default(NONE) @map("registry_status")
   cabinetType       CabinetType    @default(PARTY) @map("cabinet_type")
+  notificationChannels NotificationChannel[] @default([CABINET, SMS]) @map("notification_channels")
   authProvider      AuthProvider   @default(LOCAL) @map("auth_provider")
   oneIdUserId       String?        @map("one_id_user_id")
   esignSerialNumber String?        @map("esign_serial_number")
@@ -413,6 +414,8 @@ model User {
   documentExchangeThreads DocumentExchangeThread[] @relation("DocumentExchangeCreator")
   documentExchangeMessages DocumentExchangeMessage[]
   documentExchangeParticipants DocumentExchangeParticipant[]
+  feedbacksGiven          MediationFeedback[] @relation("FeedbackAuthor")
+  feedbacksReceived       MediationFeedback[] @relation("FeedbackSpecialist")
 
   // INT module relations
   disciplineCasesAsMediator DisciplineCase[] @relation("MediatorDiscipline")
@@ -1271,6 +1274,7 @@ model MonitoringObligation {
   description           String
   dueDate               DateTime         @map("due_date")
   responsiblePartyId    String?          @map("responsible_party_id")
+  responsiblePartyPinfl String?          @map("responsible_party_pinfl")
   responsiblePartyName  String           @map("responsible_party_name")
   mediatorId            String?          @map("mediator_id")
   region                String?
@@ -1288,6 +1292,7 @@ model MonitoringObligation {
   @@index([agreementId, status])
   @@index([dueDate, status])
   @@index([mediatorId, status])
+  @@index([responsiblePartyPinfl, status])
   @@map("monitoring_obligations")
 }
 
@@ -1315,6 +1320,7 @@ model MediationCase {
   updatedAt          DateTime         @updatedAt @map("updated_at")
   participants       MediationParticipant[]
   sessions           MediationSession[]
+  feedbacks          MediationFeedback[]
   documentThread     DocumentExchangeThread? @relation("MediationDocumentThread")
   documentExchanges  DocumentExchangeThread[] @relation("MediationOfficeExchange")
 
@@ -1322,6 +1328,23 @@ model MediationCase {
   @@index([status, type])
   @@index([mediatorId])
   @@map("mediation_cases")
+}
+
+model MediationFeedback {
+  id           String        @id @default(uuid())
+  mediationId  String        @map("mediation_id")
+  userId       String        @map("user_id")
+  specialistId String        @map("specialist_id")
+  score        Int
+  comment      String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  mediation    MediationCase @relation(fields: [mediationId], references: [id], onDelete: Cascade)
+  author       User          @relation("FeedbackAuthor", fields: [userId], references: [id], onDelete: Restrict)
+  specialist   User          @relation("FeedbackSpecialist", fields: [specialistId], references: [id], onDelete: Restrict)
+
+  @@unique([mediationId, userId])
+  @@index([specialistId, createdAt])
+  @@map("mediation_feedback")
 }
 
 model MediationParticipant {

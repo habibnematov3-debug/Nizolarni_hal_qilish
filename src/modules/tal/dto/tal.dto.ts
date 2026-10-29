@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayMaxSize, ArrayUnique, IsArray, IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, ArrayUnique, IsArray, IsEmail, IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { NotificationChannel } from '@prisma/client';
 
 export class UpdateApplicantProfileDto {
   @ApiPropertyOptional({ example: '+998901234567' })
@@ -10,6 +11,10 @@ export class UpdateApplicantProfileDto {
 
   @ApiPropertyOptional()
   @IsOptional() @IsString() @MaxLength(1000) address?: string;
+
+  @ApiPropertyOptional({ enum: NotificationChannel, isArray: true, description: 'Foydalanuvchi tanlagan xabarnoma kanallari' })
+  @IsOptional() @IsArray() @ArrayMinSize(1) @ArrayMaxSize(3) @ArrayUnique() @IsEnum(NotificationChannel, { each: true })
+  notificationChannels?: NotificationChannel[];
 }
 
 export class StartMediatorThreadDto {

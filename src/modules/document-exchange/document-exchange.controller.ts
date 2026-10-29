@@ -21,7 +21,7 @@ export class DocumentExchangeController {
   constructor(private readonly service: DocumentExchangeService) {}
 
   @Get()
-  @Roles('TALABGOR', 'MEDIATOR', 'REGIONAL_STAFF', 'MINISTRY_STAFF')
+  @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'REGIONAL_STAFF', 'MINISTRY_STAFF')
   @ApiOperation({ summary: 'Ish hujjatlari yoki idoralararo kiruvchi/chiquvchi hujjatlar' })
   list(@CurrentUser() user: AuthUser, @Query() query: DocumentExchangeQueryDto) {
     return this.service.list(user, query);
@@ -35,14 +35,14 @@ export class DocumentExchangeController {
   }
 
   @Get('mediations/:mediationId')
-  @Roles('TALABGOR', 'MEDIATOR')
+  @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR')
   @ApiOperation({ summary: 'Mediatsiya ishidagi hujjatlar va yozishmalar' })
   mediationThread(@CurrentUser() user: AuthUser, @Param('mediationId') mediationId: string) {
     return this.service.getMediationThread(user, mediationId);
   }
 
   @Post('mediations/:mediationId/messages')
-  @Roles('TALABGOR', 'MEDIATOR')
+  @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR')
   @ApiOperation({ summary: 'Mediatsiya ishiga xabar yoki hujjat yuborish' })
   sendMediationMessage(
     @CurrentUser() user: AuthUser,
@@ -54,14 +54,14 @@ export class DocumentExchangeController {
   }
 
   @Get(':id')
-  @Roles('TALABGOR', 'MEDIATOR', 'REGIONAL_STAFF', 'MINISTRY_STAFF')
+  @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'REGIONAL_STAFF', 'MINISTRY_STAFF')
   @ApiOperation({ summary: 'Hujjat almashinuvi tafsilotlari' })
   get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.service.getThread(user, id);
   }
 
   @Post(':id/messages')
-  @Roles('TALABGOR', 'MEDIATOR', 'REGIONAL_STAFF', 'MINISTRY_STAFF')
+  @Roles('TALABGOR', 'BUSINESS', 'MEDIATOR', 'REGIONAL_STAFF', 'MINISTRY_STAFF')
   @ApiOperation({ summary: 'Hujjat oqimiga xabar yoki fayl qo‘shish' })
   sendMessage(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: CreateDocumentExchangeMessageDto, @Req() req: Request) {
     return this.service.sendMessage(user, id, dto, req.ip || req.socket.remoteAddress);

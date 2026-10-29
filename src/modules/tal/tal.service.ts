@@ -45,7 +45,7 @@ export class TalService {
         id: true, username: true, fullName: true, pinfl: true, passportSeriesNumber: true,
         passportGivenDate: true, passportExpireDate: true, birthDate: true, birthPlace: true,
         nationality: true, gender: true, address: true, phone: true, email: true,
-        registryStatus: true, cabinetType: true,
+        registryStatus: true, cabinetType: true, notificationChannels: true,
       },
     });
     if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
@@ -53,7 +53,7 @@ export class TalService {
   }
 
   async updateProfile(actor: AuthUser, dto: UpdateApplicantProfileDto) {
-    if (dto.phone === undefined && dto.email === undefined && dto.address === undefined) {
+    if (dto.phone === undefined && dto.email === undefined && dto.address === undefined && dto.notificationChannels === undefined) {
       throw new BadRequestException('Tahrirlash uchun telefon, elektron pochta yoki manzil kiriting');
     }
     try {

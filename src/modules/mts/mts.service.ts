@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { ConsentStatus, MediationStatus, MediationType, MedResultStatus, ParticipantSide, Prisma, RegistryStatus } from '@prisma/client';
+import { ConsentStatus, DocumentExchangeAction, DocumentExchangeStatus, DocumentExchangeType, MediationStatus, MediationType, MedResultStatus, ParticipantSide, Prisma, RegistryStatus } from '@prisma/client';
 import { randomBytes, randomInt } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -10,7 +10,7 @@ import { VideoConferenceIntegrationAdapter } from '../integration/adapters/video
 import { CourtSystemIntegrationAdapter } from '../integration/adapters/court-system.adapter';
 import { MonService } from '../mon/mon.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
-import { ConsentDto, CreateAgreementDto, CreateMediationDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
+import { ConsentDto, CreateAgreementDto, CreateMediationDto, CreateMediationFeedbackDto, RecordResultDto, ScheduleSessionDto, SelectMediatorDto, SignAgreementDto } from './dto/mts.dto';
 
 @Injectable()
 export class MtsService {
@@ -57,18 +57,42 @@ export class MtsService {
     }
     const respondentName = linkedRespondent?.fullName || dto.respondentName.trim();
     const respondentPhone = linkedRespondent?.phone || normalizedPhone;
-    const item = await this.prisma.mediationCase.create({ data: {
-      courtCaseNumber: dto.courtCaseNumber?.trim() || null,
-      type: dto.type,
-      disputeCategory: dto.disputeCategory,
-      region: dto.region.trim(),
-      disputeSubject: dto.disputeSubject.trim(),
-      initiatedById: user.id,
-      participants: { create: [
-        { side: ParticipantSide.CLAIMANT, userId: user.id, fullName: claimant.fullName, phone: claimant.phone, email: claimant.email, pinfl: claimant.pinfl, dataProcessingConsentAt: privacyConsentAt, dataProcessingConsentVersion: privacyConsentVersion },
-        { side: ParticipantSide.RESPONDENT, userId: linkedRespondent?.id, fullName: respondentName, phone: respondentPhone, email: linkedRespondent?.email || dto.respondentEmail || null, pinfl: linkedRespondent?.pinfl || dto.respondentPinfl || null },
-      ] },
-    }, include: { participants: true } });
+    const attachmentIds = [...new Set(dto.attachmentIds || [])];
+    if (attachmentIds.length) {
+      const ownedFiles = await this.prisma.fileRecord.findMany({ where: { id: { in: attachmentIds }, uploadedById: user.id, accessLevel: 'PRIVATE' }, select: { id: true } });
+      if (ownedFiles.length !== attachmentIds.length) throw new ForbiddenException('Arizaga faqat o‘zingiz yuklagan shaxsiy fayllarni biriktirishingiz mumkin');
+    }
+    const item = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.mediationCase.create({ data: {
+        courtCaseNumber: dto.courtCaseNumber?.trim() || null,
+        type: dto.type,
+        disputeCategory: dto.disputeCategory,
+        region: dto.region.trim(),
+        disputeSubject: dto.disputeSubject.trim(),
+        initiatedById: user.id,
+        participants: { create: [
+          { side: ParticipantSide.CLAIMANT, userId: user.id, fullName: claimant.fullName, phone: claimant.phone, email: claimant.email, pinfl: claimant.pinfl, dataProcessingConsentAt: privacyConsentAt, dataProcessingConsentVersion: privacyConsentVersion },
+          { side: ParticipantSide.RESPONDENT, userId: linkedRespondent?.id, fullName: respondentName, phone: respondentPhone, email: linkedRespondent?.email || dto.respondentEmail || null, pinfl: linkedRespondent?.pinfl || dto.respondentPinfl || null },
+        ] },
+      }, include: { participants: true } });
+      if (attachmentIds.length) {
+        await tx.documentExchangeThread.create({ data: {
+          type: DocumentExchangeType.MEDIATION,
+          status: DocumentExchangeStatus.SUBMITTED,
+          subject: `Mediatsiya hujjatlari · ${created.disputeSubject}`,
+          region: created.region,
+          mediationId: created.id,
+          createdById: user.id,
+          messages: { create: {
+            senderId: user.id,
+            action: DocumentExchangeAction.MESSAGE,
+            body: 'Mediatsiya murojaatiga tasdiqlovchi hujjatlar ilova qilindi.',
+            attachments: { create: attachmentIds.map((fileId) => ({ fileId })) },
+          } },
+        } });
+      }
+      return created;
+    });
     await this.notifyParticipants(item.id, 'Mediatsiya jarayoni boshlandi. Roziligingizni bildiring.', `mts-${item.id}-started`);
     return item;
   }
@@ -91,7 +115,23 @@ export class MtsService {
   async list(user: AuthUser) {
     const participantAccess: Prisma.MediationCaseWhereInput[] = [{ participants: { some: { userId: user.id } } }];
     if (user.pinfl) participantAccess.push({ participants: { some: { pinfl: user.pinfl } } });
-    return this.prisma.mediationCase.findMany({ where: { OR: [{ initiatedById: user.id }, { mediatorId: user.id }, ...participantAccess] }, include: { participants: true, sessions: true }, orderBy: { updatedAt: 'desc' } });
+    return this.prisma.mediationCase.findMany({ where: { OR: [{ initiatedById: user.id }, { mediatorId: user.id }, ...participantAccess] }, include: { participants: true, sessions: true, feedbacks: { where: { userId: user.id }, select: { id: true, score: true, comment: true, createdAt: true } } }, orderBy: { updatedAt: 'desc' } });
+  }
+
+  async rate(user: AuthUser, id: string, dto: CreateMediationFeedbackDto, ipAddress?: string) {
+    const item = await this.getCase(id);
+    const participant = item.participants.find((entry) => entry.userId === user.id || (!!user.pinfl && entry.pinfl === user.pinfl));
+    if (!participant) throw new ForbiddenException('Bahoni faqat ushbu mediatsiya taraflari yuborishi mumkin');
+    if (![MediationStatus.SETTLED, MediationStatus.FAILED].includes(item.status)) throw new ConflictException('Baholash faqat mediatsiya yakunlangandan keyin mumkin');
+    if (!item.mediatorId) throw new ConflictException('Baholash uchun mediator biriktirilmagan');
+    try {
+      const feedback = await this.prisma.mediationFeedback.create({ data: { mediationId: id, userId: user.id, specialistId: item.mediatorId, score: dto.score, comment: dto.comment?.trim() || null } });
+      await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'RATE_MEDIATION_SPECIALIST', entityType: 'MEDIATION_CASE', entityId: id, newValues: { score: dto.score }, ipAddress });
+      return feedback;
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') throw new ConflictException('Ushbu mediatsiya bo‘yicha baho avval yuborilgan');
+      throw error;
+    }
   }
 
   async get(user: AuthUser, id: string) {
@@ -303,6 +343,7 @@ export class MtsService {
           description: obligation.description,
           dueDate: obligation.dueDate,
           responsiblePartyId: responsibleParty.userId || undefined,
+          responsiblePartyPinfl: responsibleParty.pinfl || undefined,
           responsiblePartyName: responsibleParty.fullName,
           mediatorId: item.mediatorId || user.id,
           region: item.region,
