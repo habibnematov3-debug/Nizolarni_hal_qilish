@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -334,6 +334,16 @@ export class UsersService {
 
     const oldRoles = user.roles;
     const newRoleNames = roles.map((r) => r.name);
+    const ministryRoleAssignment = currentUser.roles.includes('MINISTRY_STAFF') && !currentUser.roles.includes('ADMIN');
+    if (ministryRoleAssignment) {
+      const protectedTarget = oldRoles.some((role) => ['ADMIN', 'MINISTRY_STAFF'].includes(role));
+      const allowedStaffRoles = new Set(['REGIONAL_STAFF', 'COMMISSION']);
+      const changesOutsideStaffScope = newRoleNames.some((role) => !allowedStaffRoles.has(role) && !oldRoles.includes(role))
+        || oldRoles.some((role) => !allowedStaffRoles.has(role) && !newRoleNames.includes(role));
+      if (protectedTarget || changesOutsideStaffScope) {
+        throw new ForbiddenException('Vazirlik xodimi faqat hududiy adliya va malaka komissiyasi xodimi rollarini biriktirishi mumkin');
+      }
+    }
     const resolved = resolveUserCabinetAndRoles(newRoleNames, user.registryStatus);
 
     await this.prisma.$transaction(async (tx) => {

@@ -30,7 +30,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Foydalanuvchilar ro\'yxatini olish',
     description: 'Barcha foydalanuvchilar ro\'yxati. Tashkilot, rol, status bo\'yicha filtrlash va qidiruv mavjud.',
@@ -58,7 +58,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Foydalanuvchi tafsilotlarini olish',
     description: 'Foydalanuvchi ma\'lumotlari, uning tashkiloti, rollari va barcha huquqlari.',
@@ -89,7 +89,7 @@ export class UsersController {
   }
 
   @Put(':id/roles')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Foydalanuvchini rollarga biriktirish',
     description: 'Foydalanuvchining rollarini yangilash. Ushbu amal audit jurnaliga to\'liq yoziladi.',

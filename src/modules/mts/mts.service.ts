@@ -24,6 +24,31 @@ export class MtsService {
     private readonly monitoring: MonService,
   ) {}
 
+  async staffMonitoring(user: AuthUser) {
+    if (!user.roles.some((role) => ['REGIONAL_STAFF', 'MINISTRY_STAFF', 'ADMIN'].includes(role))) {
+      throw new ForbiddenException('Mediatsiyalar monitoringi adliya xodimlari uchun');
+    }
+    const where: Prisma.MediationCaseWhereInput = {};
+    if (!user.roles.includes('ADMIN') && !user.roles.includes('MINISTRY_STAFF')) {
+      where.region = user.region || '__NO_REGION__';
+    }
+    const [total, statusRows, typeRows, categoryRows] = await Promise.all([
+      this.prisma.mediationCase.count({ where }),
+      this.prisma.mediationCase.groupBy({ by: ['status'], where, _count: { _all: true } }),
+      this.prisma.mediationCase.groupBy({ by: ['type'], where, _count: { _all: true } }),
+      this.prisma.mediationCase.groupBy({ by: ['disputeCategory'], where, _count: { _all: true } }),
+    ]);
+    const byStatus = Object.fromEntries(statusRows.map((row) => [row.status, row._count._all]));
+    return {
+      total,
+      active: total - (byStatus.SETTLED || 0) - (byStatus.FAILED || 0) - (byStatus.CLOSED || 0),
+      completed: (byStatus.SETTLED || 0) + (byStatus.FAILED || 0) + (byStatus.CLOSED || 0),
+      byStatus,
+      byType: Object.fromEntries(typeRows.map((row) => [row.type, row._count._all])),
+      byCategory: Object.fromEntries(categoryRows.map((row) => [row.disputeCategory, row._count._all])),
+    };
+  }
+
   async create(user: AuthUser, dto: CreateMediationDto) {
     if (!user.roles.some((role) => role === 'CITIZEN' || role === 'TALABGOR' || role === 'BUSINESS')) throw new ForbiddenException('Mediatsiya murojaatini fuqaro yoki yuridik shaxs yuborishi mumkin');
     if (dto.privacyAccepted !== true) throw new BadRequestException('Shaxsiy ma’lumotlardan foydalanishga rozilik talab qilinadi');
@@ -183,7 +208,7 @@ export class MtsService {
     const organizationTins = await this.getBusinessOrganizationTins(user);
     const participant = item.participants.find((entry) => entry.userId === user.id || (!!user.pinfl && entry.pinfl === user.pinfl) || (!!entry.organizationTin && organizationTins.includes(entry.organizationTin)));
     if (!participant) throw new ForbiddenException('Bahoni faqat ushbu mediatsiya taraflari yuborishi mumkin');
-    if (![MediationStatus.SETTLED, MediationStatus.FAILED].includes(item.status)) throw new ConflictException('Baholash faqat mediatsiya yakunlangandan keyin mumkin');
+    if (![MediationStatus.SETTLED, MediationStatus.FAILED].some((status) => status === item.status)) throw new ConflictException('Baholash faqat mediatsiya yakunlangandan keyin mumkin');
     if (!item.mediatorId) throw new ConflictException('Baholash uchun mediator biriktirilmagan');
     try {
       const feedback = await this.prisma.mediationFeedback.create({ data: { mediationId: id, userId: user.id, specialistId: item.mediatorId, score: dto.score, comment: dto.comment?.trim() || null } });

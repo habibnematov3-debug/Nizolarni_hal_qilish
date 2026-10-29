@@ -15,6 +15,9 @@ import { ConsentDto, CreateAgreementDto, CreateMediationDto, CreateMediationFeed
 export class MtsController {
   constructor(private readonly service: MtsService) {}
 
+  @Get('staff/monitoring') @Roles('REGIONAL_STAFF', 'MINISTRY_STAFF', 'ADMIN') @ApiOperation({ summary: 'Hududiy yoki respublika miqyosidagi mediatsiya monitoringi' })
+  staffMonitoring(@CurrentUser() user: AuthUser) { return this.service.staffMonitoring(user); }
+
   @Post('mediations') @Roles('CITIZEN', 'TALABGOR', 'BUSINESS') @ApiOperation({ summary: 'Mediatsiyani boshlash' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateMediationDto) { return this.service.create(user, dto); }
 

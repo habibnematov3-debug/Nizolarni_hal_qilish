@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, ReportStatus, ReportSummaryStatus } from '@prisma/client';
+import * as ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EventsHandlerService } from '../notifications/services/events-handler.service';
@@ -13,6 +15,7 @@ import { AuthUser } from '../../common/decorators/current-user.decorator';
 import { OptionalReportPeriodDto, ReportPeriodDto } from './dto/report-period.dto';
 import { ReportsQueryDto } from './dto/reports-query.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
+import { ReportExportFormat } from './dto/export-analytics.dto';
 
 const CABINET_ROLES = ['MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR'];
 
@@ -242,7 +245,7 @@ export class ReportsService {
     return { period: period || null, reportCount: reports.length, totals, byRegion: Object.values(byRegion) };
   }
 
-  async exportAnalytics(user: AuthUser, format: 'excel' | 'pdf', period?: ReportPeriodDto) {
+  async exportAnalytics(user: AuthUser, format: ReportExportFormat, period?: ReportPeriodDto) {
     const data = await this.analytics(user, period);
     const title = `HIS analytics${period ? ` ${period.year}-Q${period.quarter}` : ''}`;
     if (format === 'excel') {
@@ -251,18 +254,84 @@ export class ReportsService {
       return { buffer: Buffer.from(`<html><head><meta charset="utf-8"></head><body><h1>${escapeHtml(title)}</h1><p>Reports: ${data.reportCount}</p><h2>Totals</h2><table><tr><th>Metric</th><th>Value</th></tr>${rows}</table><h2>By region</h2><table><tr><th>Organization</th><th>Reports</th><th>Totals</th></tr>${regions}</table></body></html>`), contentType: 'application/vnd.ms-excel', filename: 'his-analytics.xls' };
     }
     const lines = [title, `Reports: ${data.reportCount}`, '', 'Totals:', ...Object.entries(data.totals).map(([key, value]) => `${key}: ${value}`), '', 'By region:', ...data.byRegion.map((item) => `${item.organizationName}: ${item.reportCount} reports`)];
+    if (format === ReportExportFormat.DOCX) return { buffer: await this.createDocx(lines), contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename: 'his-analytics.docx' };
     return { buffer: this.createPdf(lines), contentType: 'application/pdf', filename: 'his-analytics.pdf' };
   }
 
+  async exportStaffReports(user: AuthUser, format: ReportExportFormat, period?: OptionalReportPeriodDto) {
+    if (!user.roles?.some((role) => ['REGIONAL_STAFF', 'ADMIN'].includes(role))) throw new ForbiddenException('Hududiy hisobotlarni eksport qilish uchun hududiy xodim roli kerak');
+    const reports = await this.prisma.quarterlyReport.findMany({
+      where: this.staffWhere(user, { page: 1, limit: 100000, ...period }),
+      include: { mediator: true, organization: true },
+      orderBy: [{ periodYear: 'desc' }, { periodQuarter: 'desc' }, { updatedAt: 'desc' }],
+    });
+    const title = `Hududiy hisobotlar${period ? ` · ${period.year}-yil ${period.quarter}-chorak` : ''}`;
+    const rows = reports.map((report) => {
+      const data = asRecord(report.additionalData);
+      return {
+        period: `${report.periodYear}-yil ${report.periodQuarter}-chorak`,
+        mediator: report.mediator?.fullName || '',
+        region: report.organization?.region || report.organization?.name || '',
+        status: report.status,
+        sessions: Number(data.mediationSessions) || 0,
+        resolved: Number(data.resolvedCases) || 0,
+        notes: String(data.notes || report.returnReason || ''),
+      };
+    });
+    if (format === ReportExportFormat.EXCEL) {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Hududiy hisobotlar');
+      sheet.columns = [
+        { header: 'Davr', key: 'period', width: 22 },
+        { header: 'Mediator', key: 'mediator', width: 30 },
+        { header: 'Hudud', key: 'region', width: 28 },
+        { header: 'Holat', key: 'status', width: 18 },
+        { header: 'Mediatsiya sessiyalari', key: 'sessions', width: 24 },
+        { header: 'Yakunlangan nizolar', key: 'resolved', width: 22 },
+        { header: 'Izoh', key: 'notes', width: 48 },
+      ];
+      rows.forEach((row) => sheet.addRow(row));
+      sheet.getRow(1).font = { bold: true };
+      sheet.views = [{ state: 'frozen', ySplit: 1 }];
+      return { buffer: Buffer.from(await workbook.xlsx.writeBuffer()), contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename: 'hududiy-hisobotlar.xlsx' };
+    }
+    const lines = [title, `Hisobotlar soni: ${rows.length}`, '', ...rows.map((row) => `${row.period} · ${row.mediator} · ${row.region} · ${row.status} · sessiyalar: ${row.sessions} · yakunlangan nizolar: ${row.resolved}${row.notes ? ` · ${row.notes}` : ''}`)];
+    if (format === ReportExportFormat.DOCX) return { buffer: await this.createDocx(lines), contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename: 'hududiy-hisobotlar.docx' };
+    return { buffer: this.createPdf(lines), contentType: 'application/pdf', filename: 'hududiy-hisobotlar.pdf' };
+  }
+
+  private async createDocx(lines: string[]) {
+    const xml = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
+    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+    zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+    zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style></w:styles>');
+    const paragraphs = lines.map((line, index) => `<w:p><w:pPr>${index === 0 ? '<w:pStyle w:val="Title"/>' : ''}</w:pPr><w:r><w:t xml:space="preserve">${xml(line)}</w:t></w:r></w:p>`).join('');
+    zip.file('word/document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${paragraphs}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`);
+    return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  }
+
   private createPdf(lines: string[]) {
-    const content = ['BT', '/F1 11 Tf', '50 780 Td', ...lines.flatMap((line, index) => [`(${ascii(line).replace(/[()\\]/g, '\\$&')}) Tj`, ...(index < lines.length - 1 ? ['0 -16 Td'] : [])]), 'ET'].join('\n');
-    const objects = [
-      '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-      `<< /Length ${Buffer.byteLength(content, 'ascii')} >>\nstream\n${content}\nendstream`,
-    ];
+    const printable = lines.flatMap((line) => {
+      const value = ascii(line);
+      if (!value) return [''];
+      const chunks: string[] = [];
+      for (let index = 0; index < value.length; index += 92) chunks.push(value.slice(index, index + 92));
+      return chunks;
+    });
+    const pages = Array.from({ length: Math.max(1, Math.ceil(printable.length / 44)) }, (_, index) => printable.slice(index * 44, (index + 1) * 44));
+    const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+    const pageIds: number[] = [];
+    pages.forEach((pageLines) => {
+      const pageId = objects.length + 1;
+      const contentId = pageId + 1;
+      pageIds.push(pageId);
+      const content = ['BT', '/F1 11 Tf', '50 780 Td', ...pageLines.flatMap((line, index) => [`(${line.replace(/[()\\]/g, '\\$&')}) Tj`, ...(index < pageLines.length - 1 ? ['0 -16 Td'] : [])]), 'ET'].join('\n');
+      objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`);
+      objects.push(`<< /Length ${Buffer.byteLength(content, 'ascii')} >>\nstream\n${content}\nendstream`);
+    });
+    objects[1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
     let pdf = '%PDF-1.4\n';
     const offsets = [0];
     objects.forEach((object, index) => { offsets[index + 1] = Buffer.byteLength(pdf, 'ascii'); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });

@@ -16,7 +16,7 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Rollar ro\'yxatini olish',
     description: 'Tizimdagi barcha rollar va ularga biriktirilgan huquqlar (permissions) ro\'yxati.',
@@ -27,7 +27,7 @@ export class RolesController {
   }
 
   @Get('permissions')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Mavjud barcha huquqlar (permissions) spravochnigini olish',
     description: 'Rollar sozlamalarida tanlash uchun barcha tizim huquqlari ro\'yxati.',
@@ -38,7 +38,7 @@ export class RolesController {
   }
 
   @Put(':id/permissions')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'MINISTRY_STAFF')
   @ApiOperation({
     summary: 'Rol huquqlarini sozlash',
     description: 'Tanlangan rolga yangi huquqlarni biriktirish yoki eskilarni olib tashlash. Amal audit jurnaliga yoziladi.',

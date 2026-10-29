@@ -207,7 +207,7 @@ export class DocumentExchangeService {
     if (thread.targetOrganizationId !== organization.id) {
       throw new ForbiddenException('Hujjat hozir boshqa tashkilot ko‘rib chiqishida');
     }
-    if ([DocumentExchangeStatus.COMPLETED, DocumentExchangeStatus.REJECTED].includes(thread.status)) {
+    if ([DocumentExchangeStatus.COMPLETED, DocumentExchangeStatus.REJECTED].some((status) => status === thread.status)) {
       throw new ConflictException('Yakunlangan hujjat oqimida yangi amal bajarib bo‘lmaydi');
     }
 
@@ -218,7 +218,7 @@ export class DocumentExchangeService {
 
     switch (dto.action) {
       case 'RECEIVE':
-        if (![DocumentExchangeStatus.SUBMITTED, DocumentExchangeStatus.FORWARDED].includes(thread.status)) {
+        if (![DocumentExchangeStatus.SUBMITTED, DocumentExchangeStatus.FORWARDED].some((status) => status === thread.status)) {
           throw new ConflictException('Hujjat qabul qilinadigan holatda emas');
         }
         status = DocumentExchangeStatus.IN_REVIEW;
@@ -297,7 +297,7 @@ export class DocumentExchangeService {
     if (!body && !fileIds.length) throw new BadRequestException('Xabar matni yoki hujjat biriktiring');
 
     let status: DocumentExchangeStatus | undefined;
-    let action = DocumentExchangeAction.MESSAGE;
+    let action: DocumentExchangeAction = DocumentExchangeAction.MESSAGE;
     if (thread.type === DocumentExchangeType.INTERAGENCY && !user.roles.some((role) => OFFICE_ROLES.includes(role))) {
       status = DocumentExchangeStatus.SUBMITTED;
       action = DocumentExchangeAction.SUBMITTED;

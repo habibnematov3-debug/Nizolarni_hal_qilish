@@ -21,7 +21,8 @@ import { CitizenProfileWorkspace, ObligationMonitoringWorkspace } from './Citize
 import { BusinessWorkspace } from './BusinessWorkspace'
 import { BusinessPaymentsWorkspace } from './BusinessPaymentsWorkspace'
 import { SpecialistProceedingsWorkspace } from './SpecialistProceedingsWorkspace'
-import { ApplicantLearningWorkspace } from './ApplicantLearningWorkspace'
+import { ApplicantLearningWorkspace, CommissionTrainingWorkspace } from './ApplicantLearningWorkspace'
+import { JusticeOfficeDashboard, JusticeRegistryWorkspace, MinistryAssistantWorkspace, MinistryRoleMatrixWorkspace, MinistryStaffRolesWorkspace } from './JusticeOfficeWorkspace'
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -144,9 +145,9 @@ const navByRole: Record<RoleKey, string[]> = {
   BUSINESS: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Mediatsiyalarim', 'Onlayn uchrashuvlar', 'Sud da’volari', 'Kelishuvlar ijrosi', 'To‘lovlar', 'Shartnomalar', 'Tashkilot profili', 'Shaxsiy ma’lumotlar', 'Xabarnomalar'],
   APPLICANT: ['Umumiy ko‘rsatkich', 'Mediator arizam', 'O‘quv kurslari', 'Malaka imtihoni', 'Malaka guvohnomasi', 'Xabarnomalar'],
   MEDIATOR: ['Umumiy ko‘rsatkich', 'Profil va portfolio', 'Mediatsiyalar', 'Onlayn uchrashuvlar', 'Yozishmalar', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Guvohnomalar', 'Reyting va statistika', 'Arizalar', 'Shartnomalar', 'Xabarnomalar', 'E’lonlar'],
-  REGIONAL: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Talabgor arizalari', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka oshirish', 'Kontent'],
-  MINISTRY: ['Umumiy ko‘rsatkich', 'Mediatorlar reyestri', 'Hujjat almashinuvi', 'Hisobotlar tahlili', 'Statistika', 'Malaka oshirish', 'Kontent'],
-  COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'],
+  REGIONAL: ['Umumiy ko‘rsatkich', 'Hududiy monitoring', 'Mutaxassislar reyestri', 'Hujjat almashinuvi', 'Hisobotlar', 'Malaka nazorati', 'Kontent', 'Xabarnomalar'],
+  MINISTRY: ['Umumiy ko‘rsatkich', 'Respublika monitoringi', 'Mutaxassislar reyestri', 'Nomzod arizalari', 'Hisobotlar tahlili', 'Malaka nazorati', 'Xodimlar va rollar', 'Huquqlar matritsasi', 'SI yordamchisi', 'Kontent', 'Xabarnomalar'],
+  COMMISSION: ['Umumiy ko‘rsatkich', 'Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar', 'O‘quv nazorati'],
   JUDGE: ['Umumiy ko‘rsatkich', 'Reyestr va profil', 'Hakamlik da’volari', 'Hakamlik eshituvlari', 'Qarorlar va hujjatlar', 'Ijro monitoringi', 'Reyting va statistika', 'Shartnomalar', 'Xabarnomalar'],
   ARBITRATOR: ['Umumiy ko‘rsatkich', 'Reyestr va profil', 'Arbitraj da’volari', 'Arbitraj eshituvlari', 'Qarorlar va hujjatlar', 'Ijro monitoringi', 'Reyting va statistika', 'Shartnomalar', 'Xabarnomalar'],
   ADMIN: ['Umumiy ko‘rsatkich', 'Tashkilotlar', 'Foydalanuvchilar va rollar', 'Spravochniklar', 'Audit jurnali', 'Tizim sozlamalari', 'Kontent'],
@@ -777,6 +778,11 @@ function OrganizationsAdmin({ onToast }: { onToast: (text: string) => void }) {
 
 function WorkspaceContent({ role, page, cases, applications, reports, genericItems, onOpenModal, onNavigatePage, onAdvanceCase, onAdvanceApplication, onAdvanceReport, onToast, onPublicRegistry, onSelectSpecialist, onStartCourtClaimMediation }: { role: RoleKey; page: string; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; genericItems: PortalRecord[]; onOpenModal: (key: string) => void; onNavigatePage: (page: string) => void; onAdvanceCase: (id: string) => void; onAdvanceApplication: (id: string) => void; onAdvanceReport: (id: string) => void; onToast: (text: string) => void; onPublicRegistry: () => void; onSelectSpecialist: (person: { id: string; fullName: string; type: string }) => void; onStartCourtClaimMediation: (courtCaseNumber: string) => void }) {
   if (role === 'ADMIN' && page === 'Tashkilotlar') return <OrganizationsAdmin onToast={onToast}/>
+  if (['REGIONAL', 'MINISTRY', 'COMMISSION'].includes(role) && (page === 'Umumiy ko‘rsatkich' || page === 'Hududiy monitoring' || page === 'Respublika monitoringi')) return <JusticeOfficeDashboard role={role as 'REGIONAL' | 'MINISTRY' | 'COMMISSION'} page={page}/>
+  if (['REGIONAL', 'MINISTRY'].includes(role) && page === 'Mutaxassislar reyestri') return <JusticeRegistryWorkspace role={role as 'REGIONAL' | 'MINISTRY'}/>
+  if (role === 'MINISTRY' && page === 'Xodimlar va rollar') return <MinistryStaffRolesWorkspace onToast={onToast}/>
+  if (role === 'MINISTRY' && page === 'Huquqlar matritsasi') return <MinistryRoleMatrixWorkspace onToast={onToast}/>
+  if (role === 'MINISTRY' && page === 'SI yordamchisi') return <MinistryAssistantWorkspace onToast={onToast}/>
   if (page === 'Umumiy ko‘rsatkich') return <Overview role={role} cases={cases} applications={applications} reports={reports} onOpenModal={onOpenModal} onNavigatePage={onNavigatePage} onPublicRegistry={onPublicRegistry}/>
   if (page === 'Mediatorlar reyestri') return <section><PageHeading eyebrow="Ochiq va ichki reyestr" title={page} description="Reyestr ma’lumotlarini ko‘ring, qidiring va profilga o‘ting."/><RegistryInside role={role} onToast={onToast} onSelectSpecialist={onSelectSpecialist}/></section>
   if (['CITIZEN', 'BUSINESS'].includes(role) && page === 'Sud da’volari') return <CourtClaimsWorkspace onStartMediation={onStartCourtClaimMediation}/>
@@ -788,7 +794,8 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (page === 'Hujjat almashinuvi') return <DocumentExchangeWorkspace role={role} onToast={onToast}/>
   if (['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && /ariza|talabgor|mediator bo‘lish/i.test(page)) return <MkApplicationWorkspace role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
   if (role === 'APPLICANT' && ['O‘quv kurslari', 'Malaka imtihoni', 'Malaka guvohnomasi'].includes(page)) return <ApplicantLearningWorkspace page={page} onNavigate={onNavigatePage} onToast={onToast}/>
-  if (role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) return <ExamPage role={role} page={page} onToast={onToast}/>
+  if (role === 'COMMISSION' && page === 'O‘quv nazorati') return <CommissionTrainingWorkspace onToast={onToast}/>
+  if ((role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) || (role === 'MINISTRY' && page === 'Nomzod arizalari')) return <ExamPage role={role} page={page} onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Guvohnomalar') return <MediatorCertificateWorkspace onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Reyting va statistika') return <MediatorRatingWorkspace onToast={onToast}/>
@@ -799,7 +806,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/hisobot|statistika/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
   if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
   if (/portfolio|profil/i.test(page)) return <ProfileWorkspace onToast={onToast}/>
-  if (/reyestrdan chiqish|malaka oshirish/i.test(page)) return <TrainingWorkspace role={role} onToast={onToast}/>
+  if (/reyestrdan chiqish|malaka oshirish|malaka nazorati|o‘quv nazorati/i.test(page)) return <TrainingWorkspace role={role} onToast={onToast}/>
   if (/shartnoma|hujjat/i.test(page)) return <ContractsWorkspace role={role} onToast={onToast}/>
   if (/yozishma/i.test(page)) return <MessagesWorkspace onToast={onToast}/>
   if (/kalendar/i.test(page)) return <CalendarWorkspace onToast={onToast}/>

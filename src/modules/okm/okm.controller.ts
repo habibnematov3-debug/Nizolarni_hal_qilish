@@ -34,7 +34,7 @@ export class OkmController {
   constructor(private readonly okmService: OkmService) {}
 
   @Get('staff/training/certified')
-  @Roles('ADMIN', 'MINISTRY_STAFF', 'REGIONAL_STAFF')
+  @Roles('ADMIN', 'MINISTRY_STAFF', 'REGIONAL_STAFF', 'COMMISSION')
   @ApiOperation({ summary: 'Maxsus o\'quv kursini tugatganlar reyestri (OKM-01)' })
   @ApiResponse({ status: 200, description: 'Sertifikat va tinglovchi ma\'lumotlari sahifalangan ro\'yxati' })
   getCertifiedRegistry(@Query() query: TrainingRegistryQueryDto, @CurrentUser() user: AuthUser) {
@@ -42,7 +42,7 @@ export class OkmController {
   }
 
   @Get('staff/training/qualified')
-  @Roles('ADMIN', 'MINISTRY_STAFF', 'REGIONAL_STAFF')
+  @Roles('ADMIN', 'MINISTRY_STAFF', 'REGIONAL_STAFF', 'COMMISSION')
   @ApiOperation({ summary: 'Malaka oshirgan mediatorlar reyestri (OKM-02)' })
   @ApiResponse({ status: 200, description: 'Malaka sertifikatlari va keyingi muddatlar ro\'yxati' })
   getQualifiedRegistry(@Query() query: TrainingRegistryQueryDto, @CurrentUser() user: AuthUser) {
@@ -50,7 +50,7 @@ export class OkmController {
   }
 
   @Get('staff/training/overdue')
-  @Roles('ADMIN', 'MINISTRY_STAFF', 'REGIONAL_STAFF')
+  @Roles('ADMIN', 'MINISTRY_STAFF', 'REGIONAL_STAFF', 'COMMISSION')
   @ApiOperation({ summary: 'Malaka oshirish muddati o\'tgan mediatorlar (OKM-03)' })
   @ApiResponse({ status: 200, description: 'Malaka muddatidan o\'tgan yoki malaka sertifikati mavjud bo\'lmagan mediatorlar' })
   getOverdueRegistry(@Query() query: TrainingRegistryQueryDto, @CurrentUser() user: AuthUser) {

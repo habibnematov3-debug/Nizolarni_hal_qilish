@@ -45,6 +45,18 @@ export class ReportsController {
   @ApiOperation({ summary: 'Hududiy hisobotlar ro\'yxati (HIS-03)' })
   getStaffReports(@CurrentUser() user: AuthUser, @Query() query: ReportsQueryDto) { return this.reportsService.listStaff(user, query); }
 
+  @Get('staff/reports/export')
+  @Roles('REGIONAL_STAFF')
+  @ApiOperation({ summary: 'Hududiy hisobotlarni Excel, PDF yoki Word formatida eksport qilish' })
+  @ApiQuery({ name: 'format', enum: ReportExportFormat, required: false })
+  async exportStaffReports(@Query() query: ExportAnalyticsDto, @CurrentUser() user: AuthUser, @Res() response: Response) {
+    const period = query.year && query.quarter ? { year: query.year, quarter: query.quarter } : undefined;
+    const result = await this.reportsService.exportStaffReports(user, query.format || ReportExportFormat.EXCEL, period);
+    response.setHeader('Content-Type', result.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    response.send(result.buffer);
+  }
+
   @Get('staff/reports/:id')
   @Roles('REGIONAL_STAFF', 'MINISTRY_STAFF')
   @ApiOperation({ summary: 'Hisobot tafsiloti' })

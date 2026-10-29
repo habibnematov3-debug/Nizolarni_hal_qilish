@@ -5,6 +5,7 @@ import { OptionalReportPeriodDto } from './report-period.dto';
 export enum ReportExportFormat {
   EXCEL = 'excel',
   PDF = 'pdf',
+  DOCX = 'docx',
 }
 
 export class ExportAnalyticsDto extends OptionalReportPeriodDto {

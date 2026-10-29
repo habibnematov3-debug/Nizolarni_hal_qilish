@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { UpdateRolePermissionsDto } from './dto/update-permissions.dto';
@@ -60,6 +60,9 @@ export class RolesService {
     userAgent?: string,
   ) {
     const role = await this.findOne(id);
+    if (!user.roles?.includes('ADMIN') && ['ADMIN', 'MINISTRY_STAFF'].includes(role.name)) {
+      throw new ForbiddenException('Vazirlik xodimi administrator va markaziy vazirlik rollari huquqlarini o‘zgartira olmaydi');
+    }
 
     // Find permissions matching codes or IDs
     const permissions = await this.prisma.permission.findMany({
