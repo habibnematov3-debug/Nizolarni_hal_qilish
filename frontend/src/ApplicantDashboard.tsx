@@ -104,10 +104,9 @@ export function ApplicantHeader({ language, onLanguageChange, activePage, active
       <div className="hidden min-w-0 lg:block"><p className="truncate text-xs font-medium text-slate-700">{applicantPageTitle(language, activePage)}</p><p className="text-[11px] text-slate-400">{roleTitle}</p></div>
     </div>
     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-      <div role="group" aria-label={applicantText(language, 'Interfeys tili', 'Язык интерфейса')} className="flex h-9 items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-        <button type="button" aria-pressed={language === 'uz'} onClick={() => onLanguageChange('uz')} className={`min-w-8 rounded-md px-2 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${language === 'uz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>UZ</button>
-        <button type="button" aria-pressed={language === 'ru'} onClick={() => onLanguageChange('ru')} className={`min-w-8 rounded-md px-2 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${language === 'ru' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>RU</button>
-      </div>
+      <button type="button" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} className="flex h-9 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+        <LanguageFlag language={language}/>
+      </button>
       <button onClick={() => onNavigate('Xabarnomalar')} aria-label={applicantText(language, 'Xabarnomalar', 'Уведомления')} title={applicantText(language, 'Xabarnomalar', 'Уведомления')} className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"><Bell size={18}/></button>
       <span className="hidden h-8 w-px bg-slate-200 sm:block"/>
       {!getAccessToken() && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">{applicantText(language, 'Demo', 'Демо')}</span>}
@@ -139,6 +138,11 @@ export function ApplicantHeader({ language, onLanguageChange, activePage, active
       </div>
     </div>
   </header>
+}
+
+function LanguageFlag({ language }: { language: ApplicantLanguage }) {
+  if (language === 'ru') return <svg aria-hidden="true" viewBox="0 0 30 20" className="h-4 w-6 overflow-hidden rounded-[3px] shadow-sm ring-1 ring-black/10"><rect width="30" height="6.67" fill="#fff"/><rect y="6.67" width="30" height="6.66" fill="#2563eb"/><rect y="13.33" width="30" height="6.67" fill="#dc2626"/></svg>
+  return <svg aria-hidden="true" viewBox="0 0 30 20" className="h-4 w-6 overflow-hidden rounded-[3px] shadow-sm ring-1 ring-black/10"><rect width="30" height="6" fill="#1e9bd7"/><rect y="6" width="30" height="1" fill="#ce1126"/><rect y="7" width="30" height="6" fill="#fff"/><rect y="13" width="30" height="1" fill="#ce1126"/><rect y="14" width="30" height="6" fill="#1eb53a"/><circle cx="5.7" cy="3.2" r="1.65" fill="#fff"/><circle cx="6.35" cy="2.75" r="1.35" fill="#1e9bd7"/><g fill="#fff"><circle cx="10.1" cy="1.75" r=".45"/><circle cx="12.1" cy="1.75" r=".45"/><circle cx="14.1" cy="1.75" r=".45"/><circle cx="16.1" cy="1.75" r=".45"/><circle cx="18.1" cy="1.75" r=".45"/><circle cx="20.1" cy="1.75" r=".45"/><circle cx="10.1" cy="3.2" r=".45"/><circle cx="12.1" cy="3.2" r=".45"/><circle cx="14.1" cy="3.2" r=".45"/><circle cx="16.1" cy="3.2" r=".45"/><circle cx="18.1" cy="3.2" r=".45"/><circle cx="20.1" cy="3.2" r=".45"/></g></svg>
 }
 
 export function ApplicantDashboard({ language, userName, demoApplications, onNavigate, onCreateApplication }: {
