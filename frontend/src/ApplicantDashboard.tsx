@@ -140,7 +140,7 @@ export function ApplicantHeader({ language, onLanguageChange, activePage, active
   </header>
 }
 
-function LanguageFlag({ language }: { language: ApplicantLanguage }) {
+export function LanguageFlag({ language }: { language: ApplicantLanguage }) {
   if (language === 'ru') return <svg aria-hidden="true" viewBox="0 0 30 20" className="h-4 w-6 overflow-hidden rounded-[3px] shadow-sm ring-1 ring-black/10"><rect width="30" height="6.67" fill="#fff"/><rect y="6.67" width="30" height="6.66" fill="#2563eb"/><rect y="13.33" width="30" height="6.67" fill="#dc2626"/></svg>
   return <svg aria-hidden="true" viewBox="0 0 30 20" className="h-4 w-6 overflow-hidden rounded-[3px] shadow-sm ring-1 ring-black/10"><rect width="30" height="6" fill="#1e9bd7"/><rect y="6" width="30" height="1" fill="#ce1126"/><rect y="7" width="30" height="6" fill="#fff"/><rect y="13" width="30" height="1" fill="#ce1126"/><rect y="14" width="30" height="6" fill="#1eb53a"/><circle cx="5.7" cy="3.2" r="1.65" fill="#fff"/><circle cx="6.35" cy="2.75" r="1.35" fill="#1e9bd7"/><g fill="#fff"><circle cx="10.1" cy="1.75" r=".45"/><circle cx="12.1" cy="1.75" r=".45"/><circle cx="14.1" cy="1.75" r=".45"/><circle cx="16.1" cy="1.75" r=".45"/><circle cx="18.1" cy="1.75" r=".45"/><circle cx="20.1" cy="1.75" r=".45"/><circle cx="10.1" cy="3.2" r=".45"/><circle cx="12.1" cy="3.2" r=".45"/><circle cx="14.1" cy="3.2" r=".45"/><circle cx="16.1" cy="3.2" r=".45"/><circle cx="18.1" cy="3.2" r=".45"/><circle cx="20.1" cy="3.2" r=".45"/></g></svg>
 }
