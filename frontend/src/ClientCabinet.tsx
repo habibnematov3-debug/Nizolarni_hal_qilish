@@ -94,13 +94,16 @@ export function ClientCabinetHeader({
           <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 [&::-webkit-details-marker]:hidden">
             <ClipboardList size={17} className="text-emerald-700"/><span className="hidden sm:inline">Xizmatlar</span><span className="sm:hidden">Bo‘limlar</span><ChevronDown size={15} className="text-slate-400"/>
           </summary>
-          <div className="client-services-popover fixed left-3 right-3 top-[76px] z-40 grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:grid-cols-2 sm:p-5 lg:absolute lg:left-0 lg:right-auto lg:top-[calc(100%+14px)] lg:w-[min(92vw,760px)]">
-            {groups.map((group) => <section key={group.title} className="min-w-0">
-              <div className="mb-2 flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><group.icon size={16}/></span><div><h2 className="text-xs font-bold text-slate-900">{group.title}</h2><p className="mt-0.5 text-[10px] text-slate-500">{group.description}</p></div></div>
-              <div className="space-y-1">{group.items.map((item) => item.href
-                ? <a key={item.label} href={item.href} className="flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"><item.icon size={15} className="text-slate-500"/>{item.label}<ArrowUpRight size={13} className="ml-auto text-slate-400"/></a>
-                : <button key={item.label} type="button" onClick={(event) => item.action === 'mediation' ? actionFromMenu(event) : navigateFromMenu(event, item.page || 'Umumiy ko‘rsatkich')} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"><item.icon size={15} className="text-slate-500"/>{item.label}<ArrowUpRight size={13} className="ml-auto text-slate-400"/></button>)}</div>
-            </section>)}
+          <div className="client-services-popover fixed left-3 right-3 top-[76px] z-40 max-h-[calc(100vh-92px)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:p-5 lg:absolute lg:left-0 lg:right-auto lg:top-[calc(100%+14px)] lg:w-[min(92vw,720px)]">
+            <div className="mb-4 border-b border-slate-100 pb-3"><h2 className="text-sm font-bold text-slate-900">Xizmatlar</h2><p className="mt-1 text-xs text-slate-500">Kerakli bo‘limni tanlang</p></div>
+            <div className="grid gap-x-7 gap-y-5 md:grid-cols-2">
+              {[groups.slice(0, 3), groups.slice(3)].map((column, columnIndex) => <div key={columnIndex} className="space-y-5">{column.map((group) => <section key={group.title} className="min-w-0">
+                <div className="mb-2 flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><group.icon size={16}/></span><div><h3 className="text-xs font-bold text-slate-900">{group.title}</h3><p className="mt-0.5 text-[10px] text-slate-500">{group.description}</p></div></div>
+                <div className="space-y-1">{group.items.map((item) => item.href
+                  ? <a key={item.label} href={item.href} className="flex min-h-9 items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><item.icon size={15} className="shrink-0 text-slate-500"/><span>{item.label}</span><ArrowUpRight size={13} className="ml-auto shrink-0 text-slate-400"/></a>
+                  : <button key={item.label} type="button" onClick={(event) => item.action === 'mediation' ? actionFromMenu(event) : navigateFromMenu(event, item.page || 'Umumiy ko‘rsatkich')} className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><item.icon size={15} className="shrink-0 text-slate-500"/><span>{item.label}</span><ArrowUpRight size={13} className="ml-auto shrink-0 text-slate-400"/></button>)}</div>
+              </section>)}</div>)}
+            </div>
           </div>
         </details>
         <span className="hidden truncate border-l border-slate-200 pl-3 text-xs text-slate-500 lg:block">{activePage}</span>
