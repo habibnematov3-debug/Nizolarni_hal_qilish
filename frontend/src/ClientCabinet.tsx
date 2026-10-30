@@ -106,11 +106,9 @@ export function ClientCabinetHeader({
             </div>
           </div>
         </details>
-        <span className="hidden truncate border-l border-slate-200 pl-3 text-xs text-slate-500 lg:block">{activePage}</span>
       </div>
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        {assignedRoles.length > 1 && <label className="hidden items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5 md:flex"><span className="text-[10px] text-slate-500">Faol kabinet</span><select aria-label="Faol kabinetni almashtirish" value={role} onChange={(event) => onSwitchRole(event.target.value)} className="max-w-40 border-0 bg-transparent p-0 pr-5 text-xs font-semibold text-slate-700 outline-none focus:ring-0">{assignedRoles.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
         <button type="button" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} className="flex h-10 w-10 items-center justify-center rounded-lg transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><LanguageFlag language={language}/></button>
         <button type="button" onClick={() => onNavigate('Xabarnomalar')} aria-label="Xabarnomalarni ochish" className={`relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 ${activePage === 'Xabarnomalar' ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`}><Bell size={18}/></button>
         <details className="client-profile-menu relative">
@@ -120,7 +118,7 @@ export function ClientCabinetHeader({
           </summary>
           <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
             <div className="border-b border-slate-100 px-3 py-2.5"><p className="truncate text-sm font-semibold text-slate-900">{userName}</p><p className="mt-1 text-xs text-slate-500">{accountType}</p></div>
-            {assignedRoles.length > 1 && <label className="block px-3 py-2 text-[11px] font-medium text-slate-500 md:hidden">Faol kabinet<select aria-label="Faol kabinetni almashtirish" value={role} onChange={(event) => onSwitchRole(event.target.value)} className="form-control mt-1.5 h-9 text-xs">{assignedRoles.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
+            {assignedRoles.length > 1 && <label className="block px-3 py-2 text-[11px] font-medium text-slate-500">Kabinetni almashtirish<select aria-label="Kabinetni almashtirish" value={role} onChange={(event) => onSwitchRole(event.target.value)} className="form-control mt-1.5 h-9 text-xs">{assignedRoles.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
             <MenuAction icon={UserRound} label="Shaxsiy ma’lumotlar" onClick={(event) => navigateFromMenu(event, 'Shaxsiy ma’lumotlar')}/>
             {role === 'BUSINESS' && <MenuAction icon={Building2} label="Tashkilot profili" onClick={(event) => navigateFromMenu(event, 'Tashkilot profili')}/>}
             <MenuAction icon={ArrowUpRight} label="Ochiq sahifaga qaytish" onClick={(event) => { setMenuClosed(event); onOpenPublic() }}/>
