@@ -8,7 +8,7 @@ import {
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
 import { apiGet, apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
-import { ApplicationDraft, categoryDetailsLabel, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
+import { ApplicationDraft, categoryAnswerDetails, categoryDetailsLabel, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 import { BusinessSpecialistDirectory, PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
 import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
@@ -333,6 +333,7 @@ export default function App() {
         }
         const categoryDetails = [
           draft.categoryDetails.trim() ? `${categoryDetailsLabel(draft.disputeCategory)}: ${draft.categoryDetails.trim()}` : '',
+          ...categoryAnswerDetails(draft.disputeCategory, draft.categoryAnswers),
           draft.claimAmount.trim() ? `Talab summasi: ${draft.claimAmount.trim()} so‘m` : '',
         ].filter(Boolean).join('\n')
         const created = await apiPost<{ id: string; status: string; disputeSubject: string; region: string }>('/cabinet/mts/mediations', {
