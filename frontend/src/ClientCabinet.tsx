@@ -6,6 +6,8 @@ import {
   Users, WalletCards, type LucideIcon,
 } from 'lucide-react'
 import { apiGet, getAccessToken } from './api'
+import { LanguageFlag } from './ApplicantDashboard'
+import { type ApplicantLanguage, applicantText } from './applicantLocale'
 
 export type ClientRole = 'CITIZEN' | 'BUSINESS'
 
@@ -53,12 +55,14 @@ function clientServiceGroups(role: ClientRole): ServiceGroup[] {
 type ClientRoleOption = { key: string; label: string }
 
 export function ClientCabinetHeader({
-  role, activePage, userName, assignedRoles, onNavigate, onOpenPublic, onSignOut, onSwitchRole, onStartMediation,
+  role, activePage, userName, assignedRoles, language, onLanguageChange, onNavigate, onOpenPublic, onSignOut, onSwitchRole, onStartMediation,
 }: {
   role: ClientRole
   activePage: string
   userName: string
   assignedRoles: ClientRoleOption[]
+  language: ApplicantLanguage
+  onLanguageChange: (language: ApplicantLanguage) => void
   onNavigate: (page: string) => void
   onOpenPublic: () => void
   onSignOut: () => void
@@ -104,6 +108,7 @@ export function ClientCabinetHeader({
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {assignedRoles.length > 1 && <label className="hidden items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5 md:flex"><span className="text-[10px] text-slate-500">Faol kabinet</span><select aria-label="Faol kabinetni almashtirish" value={role} onChange={(event) => onSwitchRole(event.target.value)} className="max-w-40 border-0 bg-transparent p-0 pr-5 text-xs font-semibold text-slate-700 outline-none focus:ring-0">{assignedRoles.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
+        <button type="button" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} className="flex h-10 w-10 items-center justify-center rounded-lg transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><LanguageFlag language={language}/></button>
         <button type="button" onClick={() => onNavigate('Xabarnomalar')} aria-label="Xabarnomalarni ochish" className={`relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 ${activePage === 'Xabarnomalar' ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`}><Bell size={18}/></button>
         <details className="client-profile-menu relative">
           <summary className="flex max-w-[190px] cursor-pointer list-none items-center gap-2 rounded-xl p-1.5 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 [&::-webkit-details-marker]:hidden sm:gap-2.5 sm:px-2">
