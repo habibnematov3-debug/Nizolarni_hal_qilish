@@ -112,7 +112,15 @@ export function ApplicantHeader({ activePage, userName, assignedRoles, onNavigat
           <div role="menu" className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10">
             <div className="border-b border-slate-100 px-3 py-2"><p className="truncate text-sm font-semibold text-slate-900">{displayName}</p><p className="mt-0.5 text-xs text-slate-500">Mediator talabgori</p></div>
             <button role="menuitem" onClick={() => { onNavigate('Mediator arizam'); setProfileOpen(false) }} className="mt-1 flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-slate-700 hover:bg-slate-50"><FileText size={16}/>Ariza va profil ma’lumotlari</button>
-            {assignedRoles.length > 1 && <label className="block px-3 py-2 text-xs text-slate-500">Boshqa kabinet<select value="APPLICANT" onChange={(event) => { onSwitchRole(event.target.value); setProfileOpen(false) }} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">{assignedRoles.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
+            {assignedRoles.length > 1 && <div className="mt-2 border-t border-slate-100 px-2 pt-2">
+              <p className="px-2 pb-1 text-[11px] font-medium text-slate-500">Kabinetni almashtirish</p>
+              <div className="space-y-0.5">{assignedRoles.map((item) => {
+                const active = item.key === 'APPLICANT'
+                return <button key={item.key} type="button" role="menuitemradio" aria-checked={active} disabled={active} onClick={() => { onSwitchRole(item.key); setProfileOpen(false) }} className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-lg px-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${active ? 'bg-emerald-50 font-semibold text-emerald-900' : 'text-slate-700 hover:bg-slate-50'}`}>
+                  <span>{item.label}</span>{active && <Check size={16} className="shrink-0 text-emerald-700"/>}
+                </button>
+              })}</div>
+            </div>}
             <button role="menuitem" onClick={() => { setProfileOpen(false); onSignOut() }} className="mt-1 flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-slate-700 hover:bg-slate-50"><LogIn size={16}/>Kabinetdan chiqish</button>
           </div>
         </>}
