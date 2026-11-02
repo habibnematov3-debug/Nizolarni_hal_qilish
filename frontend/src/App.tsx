@@ -209,6 +209,7 @@ export default function App() {
   const [selectedMediatorRegistryId, setSelectedMediatorRegistryId] = useState('')
   const [selectedMediatorIsSample, setSelectedMediatorIsSample] = useState(false)
   const [pendingPublicMediation, setPendingPublicMediation] = useState(false)
+  const [pendingMediatorApplication, setPendingMediatorApplication] = useState(false)
   const [courtCaseNumber, setCourtCaseNumber] = useState('')
   const [announcementGate, setAnnouncementGate] = useState(false)
 
@@ -269,7 +270,7 @@ export default function App() {
       .catch((cause) => { if (active) setAnnouncementError(cause instanceof Error ? cause.message : 'E’lonlarni yuklab bo‘lmadi.') })
     return () => { active = false }
   }, [role, announcementReload])
-  useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false); setPendingPublicMediation(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
+  useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
 
   const currentRole = roles.find((item) => item.key === role)
   const registryRows = useMemo(() => registrySeed.filter((item) => {
@@ -277,10 +278,11 @@ export default function App() {
     return (!q || [item.name, item.specialty, item.region].join(' ').toLocaleLowerCase('uz').includes(q)) && (region === 'Barcha hududlar' || item.region === region)
   }), [query, region])
 
-  const goHome = () => { setRole(null); setAssignedRoles([]); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false); setPendingPublicMediation(false) }
+  const goHome = () => { setRole(null); setAssignedRoles([]); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }
   const openLogin = () => { setLoginMethod(''); setShowLogin(true) }
-  const closeLogin = () => { setShowLogin(false); setLoginMethod(''); setPendingPublicMediation(false) }
+  const closeLogin = () => { setShowLogin(false); setLoginMethod(''); setPendingPublicMediation(false); setPendingMediatorApplication(false) }
   const startPublicMediation = (mediatorName: string, registryId?: string, isSample = false) => {
+    setPendingMediatorApplication(false)
     setSelectedMediator(mediatorName)
     setSelectedMediatorRegistryId(registryId || '')
     setSelectedMediatorIsSample(isSample)
@@ -290,6 +292,12 @@ export default function App() {
     }
     setPendingPublicMediation(true)
     openLogin()
+  }
+  const startPublicMediatorApplication = () => {
+    setPendingPublicMediation(false)
+    setPendingMediatorApplication(true)
+    if (getAccessToken()) setChooseRole(true)
+    else openLogin()
   }
   const activateRole = (key: RoleKey) => {
     setRole(key); setActivePage(navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
@@ -302,6 +310,12 @@ export default function App() {
     setAssignedRoles(unique)
     const defaultRole = unique.includes('CITIZEN') ? 'CITIZEN' : unique.includes('BUSINESS') ? 'BUSINESS' : unique[0]
     activateRole(defaultRole)
+    if (pendingMediatorApplication) {
+      setPendingMediatorApplication(false)
+      if (unique.some((key) => ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(key))) setModal('ariza')
+      else setToast('Mediator maqomiga ariza berish uchun fuqaro, yuridik shaxs yoki mediator talabgori kabinetini tanlang.')
+      return
+    }
     if (pendingPublicMediation) {
       setPendingPublicMediation(false)
       if (unique.includes('CITIZEN') || unique.includes('BUSINESS')) setModal('mediatsiya')
@@ -453,13 +467,13 @@ export default function App() {
   }))
 
   if (!role) return <>
-    <PublicSite language={applicantLanguage} onLanguageChange={setApplicantLanguage} page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={startPublicMediation} onToast={setToast} />
+    <PublicSite language={applicantLanguage} onLanguageChange={setApplicantLanguage} page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} onApplyMediator={startPublicMediatorApplication} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={startPublicMediation} onToast={setToast} />
     {showLogin && <ModalShell onClose={closeLogin}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={closeLogin} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
       {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
       {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
     </div></ModalShell>}
-    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false) }} onChoose={startRoles} />}
+    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }} onChoose={startRoles} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialMediatorRegistryId={selectedMediatorRegistryId} initialMediatorIsSample={selectedMediatorIsSample} onClose={() => { setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId(''); setSelectedMediatorIsSample(false) }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
@@ -494,7 +508,7 @@ export default function App() {
   </div>
 }
 
-function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegistry, registryRows, query, setQuery, region, setRegion, registryKind, setRegistryKind, onContact, onToast }: { language: ApplicantLanguage; onLanguageChange: (language: ApplicantLanguage) => void; page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; registryRows: typeof registrySeed; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onToast: (text: string) => void }) {
+function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegistry, onApplyMediator, registryRows, query, setQuery, region, setRegion, registryKind, setRegistryKind, onContact, onToast }: { language: ApplicantLanguage; onLanguageChange: (language: ApplicantLanguage) => void; page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; onApplyMediator: () => void; registryRows: typeof registrySeed; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onToast: (text: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const links = ['Bosh sahifa', 'Mediatorlar reyestri', 'Hakamlik va arbitraj', 'Reyting', 'Statistika', 'Hududlar', 'Qonunchilik', 'Yo‘riqnomalar']
   const linkLabels: Record<string, string> = { 'Bosh sahifa': 'Главная', 'Mediatorlar reyestri': 'Реестр медиаторов', 'Hakamlik va arbitraj': 'Третейский суд и арбитраж', 'Reyting': 'Рейтинг', 'Statistika': 'Статистика', 'Hududlar': 'Регионы', 'Qonunchilik': 'Законодательство', 'Yo‘riqnomalar': 'Руководства' }
@@ -510,7 +524,7 @@ function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegi
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-200/20 bg-white/10 px-4 py-2 text-xs font-semibold text-sky-100"><Sparkles size={15} className="text-amber-400"/>{t('O‘zbekiston Respublikasi Adliya vazirligi platformasi', 'Платформа Министерства юстиции Республики Узбекистан')}</div>
             <h1 className="max-w-3xl text-[2.65rem] font-bold leading-[1.04] tracking-tight sm:text-5xl lg:text-[3.65rem]">{t('Nizolarni', 'Разрешайте споры')} <span className="text-sky-300">{t('tinch', 'мирно')}</span> {t('va o‘zaro manfaatli hal eting', 'и на взаимовыгодных условиях')}</h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-blue-100 sm:text-lg">{t('Mediatsiya, hakamlik va arbitraj mutaxassislarini toping. Nizoni sudgacha kelishuv bilan hal etish yo‘lini tanlang.', 'Найдите специалистов по медиации, третейскому разбирательству и арбитражу. Выберите способ урегулировать спор до суда.')}</p>
-            <div className="mt-8 flex flex-wrap gap-3"><button onClick={() => onContact('')} className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-amber-400 px-5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-950/20 transition hover:bg-amber-300"><Handshake size={18}/>{t('Mediatsiyaga murojaat qilish', 'Подать заявление на медиацию')}<ArrowRight size={16}/></button><button onClick={onRegistry} className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15"><Search size={17}/>{t('Reyestrni ko‘rish', 'Открыть реестр')}</button></div>
+            <div className="mt-8 flex flex-wrap gap-3"><button onClick={() => onContact('')} className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-amber-400 px-5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-950/20 transition hover:bg-amber-300"><Handshake size={18}/>{t('Mediatsiyaga murojaat qilish', 'Подать заявление на медиацию')}<ArrowRight size={16}/></button><button onClick={onRegistry} className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15"><Search size={17}/>{t('Reyestrni ko‘rish', 'Открыть реестр')}</button><button onClick={onApplyMediator} className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-emerald-200/35 bg-emerald-300/10 px-4 text-sm font-semibold text-white transition hover:bg-emerald-300/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#082f5f]"><FilePlus2 size={17} className="text-emerald-200"/>{t('Mediator bo‘lish uchun ariza', 'Подать заявление на статус медиатора')}<ArrowRight size={15} className="text-emerald-200"/></button></div>
           </div>
           <RegistrySearchBox language={language} query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} onSearch={onRegistry}/>
         </div>
