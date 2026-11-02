@@ -297,18 +297,19 @@ function DetailField({ label, value }: { label: string; value: string }) { retur
 function StatusBadge({ status, language }: { status: string; language: ApplicantLanguage }) {
   const normalized = normalizeStatus(status)
   const tone = normalized === 'REJECTED' || normalized === 'FAILED' || /rad etildi|o‘tmadi/i.test(status) ? 'bg-red-50 text-red-700 ring-red-100'
-    : ['PASSED', 'REGISTERED'].includes(normalized) || /bajarildi|ro‘yxatga kiritildi|o‘tdi/i.test(status) ? 'bg-emerald-50 text-emerald-800 ring-emerald-100'
-      : ['ACCEPTED', 'INVITED', 'CHECKING', 'EXAM_REVIEW'].includes(normalized) || /jarayon|ko‘rib chiqil/i.test(status) ? 'bg-amber-50 text-amber-800 ring-amber-100'
+    : normalized === 'REGISTERED' || /reyestrga kiritildi/i.test(status) ? 'bg-emerald-50 text-emerald-800 ring-emerald-100'
+      : ['ACCEPTED', 'INVITED', 'CHECKING', 'EXAM_REVIEW', 'CORRECTION_REQUESTED', 'FORWARDED', 'PASSED', 'EXEMPT_PENDING_REGISTRATION'].includes(normalized) || /jarayon|ko‘rib chiqil/i.test(status) ? 'bg-amber-50 text-amber-800 ring-amber-100'
         : 'bg-slate-100 text-slate-700 ring-slate-200'
   return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-semibold ring-1 ring-inset ${tone}`}>{statusLabel(normalized, language)}</span>
 }
 
 function getStageIndex(status: string, learning: LearningState | null, authenticated: boolean) {
   if (status === 'REGISTERED') return 4
-  if (status === 'PASSED') return 3
+  if (status === 'PASSED' || status === 'EXEMPT_PENDING_REGISTRATION') return 3
   if (status === 'INVITED' || status === 'FAILED' || status === 'EXAM_REVIEW') return 2
   if (status === 'ACCEPTED') return !authenticated && (learning?.attended?.length || 0) > 0 ? 2 : 1
-  if (status === 'SUBMITTED' || status === 'CHECKING' || status === 'REJECTED') return 0
+  if (status === 'SUBMITTED' || status === 'CHECKING' || status === 'CORRECTION_REQUESTED' || status === 'REJECTED') return 0
+  if (status === 'FORWARDED') return 1
   if (!authenticated && learning?.examSubmitted) return 3
   if (!authenticated && (learning?.attended?.length || 0) > 0) return 2
   if (!authenticated && (learning?.enrolled?.length || 0) > 0) return 1
@@ -321,11 +322,13 @@ function currentStageStatus(status: string, learning: LearningState | null, auth
   if (!authenticated && learning?.attended?.length && !status) return applicantText(language, 'Kurs ishtiroki qayd etilgan', 'Участие в курсе отмечено')
   if (status === 'SUBMITTED') return applicantText(language, 'Ko‘rib chiqish kutilmoqda', 'Ожидает рассмотрения')
   if (status === 'CHECKING') return applicantText(language, 'Ko‘rib chiqilmoqda', 'На рассмотрении')
+  if (status === 'CORRECTION_REQUESTED') return applicantText(language, 'Tuzatish talablarini bajaring', 'Внесите запрошенные исправления')
+  if (status === 'FORWARDED') return applicantText(language, 'Malaka komissiyasi imtihon tayinlaydi', 'Квалификационная комиссия назначит экзамен')
   if (status === 'ACCEPTED') return applicantText(language, 'O‘qishni davom ettiring', 'Продолжите обучение')
   if (status === 'INVITED') return applicantText(language, 'Imtihonga taklif yuborilgan', 'Приглашение на экзамен отправлено')
   if (status === 'FAILED') return applicantText(language, 'Imtihon natijasini ko‘rib chiqing', 'Ознакомьтесь с результатом экзамена')
   if (status === 'EXAM_REVIEW') return applicantText(language, 'Komissiya bahosi kutilmoqda', 'Ожидается оценка комиссии')
-  if (status === 'PASSED') return applicantText(language, 'Komissiya qarori kutilmoqda', 'Ожидается решение комиссии')
+  if (status === 'PASSED' || status === 'EXEMPT_PENDING_REGISTRATION') return applicantText(language, 'Hududiy organ reyestrga kiritmoqda', 'Региональный орган вносит сведения в реестр')
   if (status === 'REGISTERED') return applicantText(language, 'Bajarildi', 'Выполнено')
   return applicantText(language, 'Boshlash uchun tanlang', 'Выберите, чтобы начать')
 }
@@ -333,36 +336,38 @@ function currentStageStatus(status: string, learning: LearningState | null, auth
 function getNextAction(status: string, hasApplication: boolean, learning: LearningState | null, authenticated: boolean, language: ApplicantLanguage) {
   if (!hasApplication && (authenticated || !learning?.examSubmitted)) return { title: applicantText(language, 'Mediator bo‘lish uchun ariza yuboring', 'Подайте заявление на получение статуса медиатора'), description: applicantText(language, 'Ariza va talab qilinadigan hujjatlarni yuborib, malaka yo‘lini boshlang.', 'Подайте заявление и необходимые документы, чтобы начать путь к квалификации.'), icon: FileText, page: 'Mediator arizam', action: 'create' as const }
   if (status === 'REJECTED') return { title: applicantText(language, 'Ariza bo‘yicha qaror bilan tanishing', 'Ознакомьтесь с решением по заявлению'), description: applicantText(language, 'Ariza tafsilotlarini ochib, rad etish sababi va keyingi yo‘l-yo‘riqni ko‘ring.', 'Откройте сведения о заявлении, чтобы узнать причину отказа и дальнейшие рекомендации.'), icon: FileClock, page: 'Mediator arizam', action: 'navigate' as const }
-  if (status === 'SUBMITTED' || status === 'CHECKING') return { title: applicantText(language, 'Ariza holatini kuzating', 'Проверьте статус заявления'), description: applicantText(language, 'Ariza ko‘rib chiqilmoqda. Tafsilotlar sahifasida yuborilgan ma’lumotlar holatini tekshiring.', 'Заявление рассматривается. Проверьте его статус и сведения в разделе подробностей.'), icon: FileClock, page: 'Mediator arizam', action: 'navigate' as const }
+  if (status === 'SUBMITTED' || status === 'CHECKING' || status === 'FORWARDED') return { title: applicantText(language, 'Ariza holatini kuzating', 'Проверьте статус заявления'), description: applicantText(language, 'Ariza hududiy organ yoki malaka komissiyasi tomonidan ko‘rib chiqilmoqda.', 'Заявление рассматривается региональным органом или квалификационной комиссией.'), icon: FileClock, page: 'Mediator arizam', action: 'navigate' as const }
+  if (status === 'CORRECTION_REQUESTED') return { title: applicantText(language, 'Arizadagi kamchiliklarni tuzating', 'Исправьте заявление'), description: applicantText(language, 'Hududiy adliya organi so‘ragan tuzatishlarni muddat ichida yuboring.', 'Внесите исправления, запрошенные региональным органом, в установленный срок.'), icon: FileClock, page: 'Mediator arizam', action: 'navigate' as const }
   if (status === 'ACCEPTED' || (!authenticated && (learning?.enrolled?.length || 0) > 0 && !(learning?.attended?.length || 0))) return { title: applicantText(language, 'O‘quv kurslarida ishtirok eting', 'Пройдите учебные курсы'), description: applicantText(language, 'Kurs va vebinarlarni ko‘rib, mavjud malaka oshirish bosqichini davom ettiring.', 'Откройте курсы и вебинары, чтобы продолжить повышение квалификации.'), icon: BookOpen, page: 'O‘quv kurslari', action: 'navigate' as const }
   if (status === 'FAILED') return { title: applicantText(language, 'Imtihon natijasini ko‘rib chiqing', 'Ознакомьтесь с результатом экзамена'), description: applicantText(language, 'Imtihon bo‘limida natija va mavjud ko‘rsatmalar bilan tanishing.', 'Проверьте результат экзамена и доступные рекомендации.'), icon: GraduationCap, page: 'Malaka imtihoni', action: 'navigate' as const }
   if (status === 'EXAM_REVIEW') return { title: applicantText(language, 'Imtihon natijalarini tekshiring', 'Проверьте результаты экзамена'), description: applicantText(language, 'Imtihon topshirilgach, yakuniy baho va komissiya qarori mavjud bo‘lganda shu bo‘limda ko‘rinadi.', 'Итоговая оценка и решение комиссии появятся в этом разделе после проверки экзамена.'), icon: GraduationCap, page: 'Malaka imtihoni', action: 'navigate' as const }
   if (status === 'INVITED' || (!authenticated && (learning?.attended?.length || 0) > 0 && !learning?.examSubmitted)) return { title: applicantText(language, 'Malaka imtihoni ma’lumotlarini tekshiring', 'Проверьте сведения о квалификационном экзамене'), description: applicantText(language, 'Imtihon topshirish bo‘limida mavjud savollar yoki tayinlangan imtihon ma’lumotlarini ko‘ring.', 'Откройте раздел экзамена, чтобы посмотреть вопросы или сведения о назначенном экзамене.'), icon: GraduationCap, page: 'Malaka imtihoni', action: 'navigate' as const }
-  if (status === 'PASSED' || status === 'REGISTERED' || (!authenticated && learning?.examSubmitted)) return { title: applicantText(language, 'Malaka guvohnomasi holatini ko‘ring', 'Проверьте статус квалификационного свидетельства'), description: applicantText(language, 'Komissiya qarori va QR-kodli guvohnoma mavjud bo‘lsa, u shu bo‘limda ko‘rinadi.', 'Решение комиссии и QR-свидетельство будут доступны в этом разделе.'), icon: QrCode, page: 'Malaka guvohnomasi', action: 'navigate' as const }
+  if (status === 'PASSED' || status === 'EXEMPT_PENDING_REGISTRATION') return { title: applicantText(language, 'Reyestrga kiritilishni kuting', 'Дождитесь внесения в реестр'), description: applicantText(language, 'Ijobiy natija hududiy adliya organiga yuborildi. Reyestrlash yakunlangach guvohnoma kabinetda ochiladi.', 'Положительный результат направлен в региональный орган. Свидетельство появится после внесения в реестр.'), icon: FileClock, page: 'Mediator arizam', action: 'navigate' as const }
+  if (status === 'REGISTERED' || (!authenticated && learning?.examSubmitted)) return { title: applicantText(language, 'Malaka guvohnomasi holatini ko‘ring', 'Проверьте статус квалификационного свидетельства'), description: applicantText(language, 'Komissiya qarori va QR-kodli guvohnoma mavjud bo‘lsa, u shu bo‘limda ko‘rinadi.', 'Решение комиссии и QR-свидетельство будут доступны в этом разделе.'), icon: QrCode, page: 'Malaka guvohnomasi', action: 'navigate' as const }
   return { title: applicantText(language, 'Arizangiz holatini ko‘ring', 'Проверьте статус заявления'), description: applicantText(language, 'Ariza va malaka bosqichlari bo‘yicha mavjud ma’lumotlarni oching.', 'Откройте сведения о заявлении и этапах квалификации.'), icon: FileCheck2, page: 'Mediator arizam', action: 'navigate' as const }
 }
 
 function statusStage(status: string, language: ApplicantLanguage) {
   const value = normalizeStatus(status)
   if (value === 'REGISTERED') return applicantText(language, 'Mediatorlar reyestri', 'Реестр медиаторов')
-  if (value === 'PASSED') return applicantText(language, 'Malaka guvohnomasi', 'Квалификационное свидетельство')
+  if (value === 'PASSED' || value === 'EXEMPT_PENDING_REGISTRATION') return applicantText(language, 'Reyestrga kiritish', 'Внесение в реестр')
   if (value === 'INVITED' || value === 'EXAM_REVIEW' || value === 'FAILED') return applicantText(language, 'Malaka imtihoni', 'Квалификационный экзамен')
   if (value === 'ACCEPTED') return applicantText(language, 'O‘quv kurslari', 'Учебные курсы')
-  if (value === 'REJECTED' || value === 'SUBMITTED' || value === 'CHECKING') return applicantText(language, 'Arizani ko‘rib chiqish', 'Рассмотрение заявления')
+  if (value === 'REJECTED' || value === 'SUBMITTED' || value === 'CHECKING' || value === 'CORRECTION_REQUESTED' || value === 'FORWARDED') return applicantText(language, 'Arizani ko‘rib chiqish', 'Рассмотрение заявления')
   return applicantText(language, 'Mediator maqomiga ariza', 'Заявление на статус медиатора')
 }
 
 function statusLabel(status: string, language: ApplicantLanguage) {
   if (language === 'ru') {
     const labels: Record<string, string> = {
-      SUBMITTED: 'Ожидает рассмотрения', CHECKING: 'На рассмотрении', ACCEPTED: 'Принято', REJECTED: 'Отклонено',
-      INVITED: 'Приглашение на экзамен', EXAM_REVIEW: 'Ожидается результат', PASSED: 'Экзамен сдан', FAILED: 'Экзамен не сдан', REGISTERED: 'Внесён в реестр',
+      SUBMITTED: 'Ожидает рассмотрения', CHECKING: 'На рассмотрении', CORRECTION_REQUESTED: 'Ожидает исправлений', FORWARDED: 'Передано комиссии', EXEMPT_PENDING_REGISTRATION: 'Ожидает внесения в реестр', ACCEPTED: 'Принято', REJECTED: 'Отклонено',
+      INVITED: 'Приглашение на экзамен', EXAM_REVIEW: 'Ожидается результат', PASSED: 'Экзамен сдан · ожидает внесения в реестр', FAILED: 'Экзамен не сдан', REGISTERED: 'Внесён в реестр',
     }
     return labels[status.toUpperCase()] || status || 'Статус не указан'
   }
   const labels: Record<string, string> = {
-    SUBMITTED: 'Kutilmoqda', CHECKING: 'Jarayonda', ACCEPTED: 'Qabul qilindi', REJECTED: 'Rad etildi',
-    INVITED: 'Imtihonga taklif', EXAM_REVIEW: 'Natija kutilmoqda', PASSED: 'Imtihondan o‘tdi', FAILED: 'Imtihondan o‘tmadi', REGISTERED: 'Reyestrga kiritildi',
+    SUBMITTED: 'Kutilmoqda', CHECKING: 'Jarayonda', CORRECTION_REQUESTED: 'Tuzatish kutilmoqda', FORWARDED: 'Malaka komissiyasiga yuborildi', EXEMPT_PENDING_REGISTRATION: 'Reyestrga kiritish kutilmoqda', ACCEPTED: 'Qabul qilindi', REJECTED: 'Rad etildi',
+    INVITED: 'Imtihonga taklif', EXAM_REVIEW: 'Natija kutilmoqda', PASSED: 'Imtihondan o‘tdi · reyestrga kiritish kutilmoqda', FAILED: 'Imtihondan o‘tmadi', REGISTERED: 'Reyestrga kiritildi',
   }
   return labels[status.toUpperCase()] || status || 'Holat mavjud emas'
 }

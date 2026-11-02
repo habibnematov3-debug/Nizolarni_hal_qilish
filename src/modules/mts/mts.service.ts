@@ -62,7 +62,7 @@ export class MtsService {
     }
     if (dto.preferredMediatorRegistryId) {
       const preferred = await this.prisma.registryEntry.findFirst({
-        where: { id: dto.preferredMediatorRegistryId, type: 'MEDIATOR', status: 'ACTIVE', publicProfile: true, deletedAt: null, userId: { not: null } },
+        where: { id: dto.preferredMediatorRegistryId, type: 'MEDIATOR', status: 'ACTIVE', publicProfile: true, deletedAt: null },
         select: { id: true },
       });
       if (!preferred) throw new NotFoundException('Tanlangan mediator faol ochiq reyestrda topilmadi');

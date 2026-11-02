@@ -135,6 +135,11 @@ export class CreateRegistryEntryDto {
   @IsOptional()
   @IsBoolean()
   publicProfile?: boolean;
+
+  @ApiPropertyOptional({ description: 'Namuna/demo yozuv ekanini belgilaydi' })
+  @IsOptional()
+  @IsBoolean()
+  isSample?: boolean;
 }
 
 export class UpdateRegistryEntryDto extends PartialType(CreateRegistryEntryDto) {}

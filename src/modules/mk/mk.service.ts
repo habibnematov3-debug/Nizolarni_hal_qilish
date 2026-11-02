@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { MkApplicationStatus, MkCommitteeRole, MkExamStatus, Prisma, RegistryStatus, CabinetType } from '@prisma/client';
+import { MkApplicationStatus, MkCommitteeRole, MkExamStatus, Prisma, RegistryStatus, CabinetType, RegistryEntryStatus, RegistryType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/services/notifications.service';
@@ -9,7 +9,7 @@ import PDFDocument from 'pdfkit';
 import { FileAccessLevel } from '../platform/files/dto/file-upload.dto';
 import { FileStorageService } from '../platform/files/file-storage.service';
 import { randomInt } from 'crypto';
-import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
+import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @Injectable()
 export class MkService {
@@ -23,8 +23,19 @@ export class MkService {
 
   async createApplication(user: AuthUser, dto: CreateMkApplicationDto) {
     if (dto.education.trim().length < 2) throw new BadRequestException('Ma’lumoti va diplom yo‘nalishini kiriting');
+    if (!dto.ethicsAccepted) throw new BadRequestException('Mediatsiya qonunchiligi va kasb etikasi bilan tanishganingizni tasdiqlang');
+    if (!dto.region.trim()) throw new BadRequestException('Faoliyat hududini tanlang');
     const active = await this.prisma.mkApplication.findFirst({ where: { applicantId: user.id, status: { notIn: [MkApplicationStatus.REJECTED, MkApplicationStatus.FAILED] } } });
     if (active) throw new ConflictException('Sizda faol MK arizasi mavjud');
+    const profession = dto.profession.toUpperCase();
+    const specialProfession = ['NOTARY', 'ADVOCATE'].includes(profession);
+    if (!specialProfession) {
+      const lastFailed = await this.prisma.mkApplication.findFirst({ where: { applicantId: user.id, status: MkApplicationStatus.FAILED, examFailedAt: { not: null } }, orderBy: { examFailedAt: 'desc' }, select: { examFailedAt: true } });
+      if (lastFailed?.examFailedAt) {
+        const retryAt = this.addCalendarMonths(lastFailed.examFailedAt, 3);
+        if (retryAt > new Date()) throw new ConflictException(`Malaka imtihonidan keyin qayta murojaat ${retryAt.toLocaleDateString('uz-UZ')} sanasidan boshlab mumkin`);
+      }
+    }
     const profile = await this.prisma.user.findUnique({
       where: { id: user.id },
       select: { id: true, fullName: true, pinfl: true, phone: true, email: true, address: true, passportSeriesNumber: true, passportGivenDate: true, passportExpireDate: true, birthDate: true, birthPlace: true, nationality: true, gender: true },
@@ -39,8 +50,6 @@ export class MkService {
       throw new BadRequestException('Elektron pochtani avval shaxsiy profilda yangilang va tasdiqlang');
     }
     const requiredFileIds = [dto.diplomaFileId, dto.passportFileId, dto.courseCertificateId, dto.professionProofFileId].filter((id): id is string => Boolean(id));
-    const profession = dto.profession.toUpperCase();
-    const specialProfession = ['NOTARY', 'ADVOCATE'].includes(profession);
     if (!specialProfession && !dto.courseCertificateId) throw new BadRequestException('Mediatorlar maxsus o‘quv kursi sertifikati majburiy');
     if (specialProfession && !dto.professionProofFileId) throw new BadRequestException('Notarius yoki advokat maqomini tasdiqlovchi hujjatni biriktiring');
     const ownedFiles = await this.prisma.fileRecord.findMany({
@@ -65,12 +74,14 @@ export class MkService {
     };
     const application = await this.prisma.mkApplication.create({
       data: {
-        applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, education: dto.education.trim(), profession,
+        applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, region: dto.region.trim(), education: dto.education.trim(), profession,
+        specialization: dto.specialization.map((item) => item.trim()).filter(Boolean), languages: dto.languages.map((item) => item.trim()).filter(Boolean),
+        workExperience: (dto.workExperience || []) as Prisma.InputJsonValue, ethicsAcceptedAt: new Date(),
         diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId, professionProofFileId: dto.professionProofFileId,
         passportData: passportData as unknown as Prisma.InputJsonValue,
         status: check?.status === 'IN_PROGRESS' ? MkApplicationStatus.SUBMITTED : MkApplicationStatus.CHECKING,
+        regionalReviewDeadline: this.addBusinessDays(new Date(), 1),
         autoCheckResult: check as unknown as Prisma.InputJsonValue,
-        reviewDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
     });
 
@@ -107,10 +118,15 @@ export class MkService {
     return item;
   }
 
-  async listApplications(query: QueryMkApplicationsDto) {
+  async listApplications(query: QueryMkApplicationsDto, actor: AuthUser) {
     const where: Prisma.MkApplicationWhereInput = {};
     if (query.status && Object.values(MkApplicationStatus).includes(query.status as MkApplicationStatus)) where.status = query.status as MkApplicationStatus;
     if (query.search) where.OR = [{ phone: { contains: query.search } }, { email: { contains: query.search, mode: 'insensitive' } }, { applicantId: query.search }];
+    const regionalScope = this.staffRegion(actor);
+    if (actor.roles.includes('REGIONAL_STAFF') || (actor.roles.includes('COMMISSION') && regionalScope)) {
+      if (!regionalScope) return [];
+      where.region = regionalScope;
+    }
     return this.prisma.mkApplication.findMany({ where, include: { exams: true }, orderBy: { submittedAt: 'desc' } });
   }
 
@@ -120,38 +136,79 @@ export class MkService {
     return item;
   }
 
-  async acceptApplication(user: AuthUser, id: string, ipAddress?: string) {
+  async requestCorrection(user: AuthUser, id: string, dto: RequestMkCorrectionDto, ipAddress?: string) {
     const item = await this.getApplication(id);
-    const reviewableStatuses: MkApplicationStatus[] = [MkApplicationStatus.SUBMITTED, MkApplicationStatus.CHECKING];
-    if (!reviewableStatuses.includes(item.status)) throw new ConflictException('Ariza qabul qilish holatida emas');
-    const updated = await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.ACCEPTED, reviewedById: user.id, reviewedAt: new Date(), rejectionReason: null } });
-    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'ACCEPT_MK_APPLICATION', entityType: 'MK_APPLICATION', entityId: id, ipAddress });
-    await this.notify(item.applicantId, 'Arizangiz malaka komissiyasi tomonidan qabul qilindi.', `mk-${id}-accepted`);
+    this.assertRegionalScope(user, item.region);
+    if (item.status !== MkApplicationStatus.SUBMITTED && item.status !== MkApplicationStatus.CHECKING) throw new ConflictException('Faqat hududiy tekshiruvdagi arizaga tuzatish so‘rash mumkin');
+    const deadline = this.addBusinessDays(new Date(), 5);
+    const updated = await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.CORRECTION_REQUESTED, correctionNote: dto.note.trim(), correctionDeadline: deadline, regionalReviewDeadline: null } });
+    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'REQUEST_MK_CORRECTION', entityType: 'MK_APPLICATION', entityId: id, newValues: { note: dto.note.trim(), deadline }, ipAddress });
+    await this.notify(item.applicantId, `Arizadagi kamchiliklarni ${deadline.toLocaleDateString('uz-UZ')} gacha tuzating: ${dto.note.trim()}`, `mk-${id}-correction-${deadline.toISOString().slice(0, 10)}`);
+    return updated;
+  }
+
+  async resubmitApplication(user: AuthUser, id: string, dto: ResubmitMkApplicationDto) {
+    const item = await this.getApplication(id);
+    if (item.applicantId !== user.id) throw new ForbiddenException('Bu arizani tahrirlash huquqi yo‘q');
+    if (item.status !== MkApplicationStatus.CORRECTION_REQUESTED || !item.correctionDeadline) throw new ConflictException('Ariza tuzatish uchun qaytarilmagan');
+    if (new Date() > item.correctionDeadline) {
+      await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.REJECTED, rejectionCode: 'CORRECTIONS_NOT_FIXED', rejectionReason: 'Kamchiliklar belgilangan 5 ish kuni ichida bartaraf etilmadi.' } });
+      throw new ConflictException('Kamchiliklarni tuzatish muddati tugagan');
+    }
+    if (dto.region !== undefined && dto.region.trim().toLocaleLowerCase() !== item.region.toLocaleLowerCase()) {
+      throw new BadRequestException('Faoliyat hududini o‘zgartirish uchun hududiy adliya organiga murojaat qiling');
+    }
+    const patch: Prisma.MkApplicationUpdateInput = {
+      correctionNote: null, correctionDeadline: null, rejectionCode: null, rejectionReason: null,
+      status: MkApplicationStatus.SUBMITTED, regionalReviewDeadline: this.addBusinessDays(new Date(), 1),
+    };
+    if (dto.region !== undefined) patch.region = dto.region.trim();
+    if (dto.address !== undefined) patch.address = dto.address;
+    if (dto.education !== undefined) patch.education = dto.education.trim();
+    if (dto.specialization !== undefined) patch.specialization = dto.specialization.map((value) => value.trim()).filter(Boolean);
+    if (dto.languages !== undefined) patch.languages = dto.languages.map((value) => value.trim()).filter(Boolean);
+    if (dto.workExperience !== undefined) patch.workExperience = dto.workExperience as Prisma.InputJsonValue;
+    const updated = await this.prisma.mkApplication.update({ where: { id }, data: patch });
+    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'RESUBMIT_MK_APPLICATION', entityType: 'MK_APPLICATION', entityId: id, newValues: { response: dto.correctionResponse } });
+    await this.notify(user.id, 'Tuzatilgan arizangiz hududiy adliya organiga qayta yuborildi.', `mk-${id}-resubmitted-${updated.updatedAt.toISOString()}`);
+    return updated;
+  }
+
+  async forwardApplication(user: AuthUser, id: string, ipAddress?: string) {
+    const item = await this.getApplication(id);
+    this.assertRegionalScope(user, item.region);
+    if (item.status !== MkApplicationStatus.SUBMITTED && item.status !== MkApplicationStatus.CHECKING) throw new ConflictException('Ariza hududiy adliya organi tekshiruvida emas');
+    const now = new Date();
+    const isExamExempt = ['NOTARY', 'ADVOCATE'].includes((item.profession || '').toUpperCase());
+    if (isExamExempt && !item.professionProofFileId) throw new BadRequestException('Advokat yoki notarius maqomi tasdiqlovchi hujjat topilmadi');
+    const status = isExamExempt ? MkApplicationStatus.EXEMPT_PENDING_REGISTRATION : MkApplicationStatus.FORWARDED;
+    const updated = await this.prisma.mkApplication.update({ where: { id }, data: { status, forwardedAt: now, regionalReviewDeadline: null, reviewDeadline: isExamExempt ? null : this.addBusinessDays(now, 10) } });
+    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'FORWARD_MK_APPLICATION', entityType: 'MK_APPLICATION', entityId: id, newValues: { status, forwardedAt: now }, ipAddress });
+    await this.notify(item.applicantId, isExamExempt ? 'Arizangiz imtihondan ozod etish asosida hududiy adliya organida reyestrga kiritish uchun ko‘rib chiqiladi.' : 'Arizangiz malaka imtihonini tayinlash uchun hududiy malaka komissiyasiga yuborildi.', `mk-${id}-forwarded`);
     return updated;
   }
 
   async rejectApplication(user: AuthUser, id: string, dto: ReviewMkApplicationDto, ipAddress?: string) {
-    if (!dto.rejectionReason) throw new BadRequestException('Rad etish sababi majburiy');
     const item = await this.getApplication(id);
-    const updated = await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.REJECTED, rejectionReason: dto.rejectionReason, reviewedById: user.id, reviewedAt: new Date() } });
-    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'REJECT_MK_APPLICATION', entityType: 'MK_APPLICATION', entityId: id, newValues: { reason: dto.rejectionReason }, ipAddress });
-    await this.notify(item.applicantId, `Arizangiz rad etildi: ${dto.rejectionReason}`, `mk-${id}-rejected`);
+    this.assertRegionalScope(user, item.region);
+    const allowedStatuses: MkApplicationStatus[] = [MkApplicationStatus.SUBMITTED, MkApplicationStatus.CHECKING, MkApplicationStatus.FORWARDED];
+    if (!allowedStatuses.includes(item.status)) throw new ConflictException('Arizani ushbu bosqichda rad etib bo‘lmaydi');
+    const reasonText = dto.rejectionReason?.trim() || this.rejectionLabel(dto.rejectionCode);
+    const updated = await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.REJECTED, rejectionCode: dto.rejectionCode, rejectionReason: reasonText, regionalReviewDeadline: null, reviewedById: user.id, reviewedAt: new Date() } });
+    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'REJECT_MK_APPLICATION', entityType: 'MK_APPLICATION', entityId: id, newValues: { rejectionCode: dto.rejectionCode, reason: reasonText }, ipAddress });
+    await this.notify(item.applicantId, `Arizangiz rad etildi: ${reasonText}`, `mk-${id}-rejected`);
     return updated;
   }
 
   async inviteToExam(user: AuthUser, id: string, dto: InviteToExamDto) {
     const item = await this.getApplication(id);
-    if (item.status !== MkApplicationStatus.ACCEPTED) throw new ConflictException('Faqat qabul qilingan ariza imtihonga chaqiriladi');
-    const examPayment = await this.prisma.billingTransaction.findFirst({
-      where: {
-        userId: item.applicantId,
-        serviceType: 'QUALIFICATION_EXAM_FEE',
-        paymentStatus: 'PAID',
-        metadata: { path: ['applicationId'], equals: id },
-      },
-      select: { id: true },
-    });
-    if (!examPayment) throw new ConflictException('Imtihonga taklif yuborishdan oldin ariza bo‘yicha to‘lov tasdiqlanishi kerak');
+    this.assertRegionalScope(user, item.region);
+    if (item.status !== MkApplicationStatus.FORWARDED && item.status !== MkApplicationStatus.ACCEPTED) throw new ConflictException('Imtihon faqat komissiyaga yuborilgan ariza bo‘yicha tayinlanadi');
+    if (['NOTARY', 'ADVOCATE'].includes((item.profession || '').toUpperCase())) throw new ConflictException('Notarius va advokatlar malaka imtihonidan ozod');
+    const forwardedAt = item.forwardedAt || item.reviewedAt || item.submittedAt;
+    const scheduledAt = new Date(dto.scheduledAt);
+    if (scheduledAt <= new Date()) throw new BadRequestException('Imtihon sanasi kelajakdagi vaqt bo‘lishi kerak');
+    if (scheduledAt > this.addCalendarMonths(forwardedAt, 1)) throw new BadRequestException('Malaka imtihoni ariza komissiyaga yuborilganidan keyin bir oy ichida belgilanishi kerak');
     const questionPool = await this.prisma.mkQuestion.findMany({ where: { isActive: true }, select: { id: true } });
     const shuffled = [...questionPool];
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -159,7 +216,7 @@ export class MkService {
       [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
     }
     const selected = shuffled.slice(0, dto.questionCount || 20).map((question) => question.id);
-    const exam = await this.prisma.mkExam.create({ data: { applicationId: id, scheduledAt: new Date(dto.scheduledAt), venue: dto.venue, secretaryPhone: dto.secretaryPhone, selectedQuestions: selected as unknown as Prisma.InputJsonValue, streamUrl: dto.streamUrl } });
+    const exam = await this.prisma.mkExam.create({ data: { applicationId: id, scheduledAt, venue: dto.venue, secretaryPhone: dto.secretaryPhone, selectedQuestions: selected as unknown as Prisma.InputJsonValue, streamUrl: dto.streamUrl } });
     await this.prisma.mkApplication.update({ where: { id }, data: { status: MkApplicationStatus.INVITED } });
     await this.notify(item.applicantId, `Imtihon sanasi: ${new Date(dto.scheduledAt).toLocaleString('uz-UZ')}. Joy: ${dto.venue}`, `mk-${id}-exam`);
     return exam;
@@ -207,8 +264,12 @@ export class MkService {
       destination: '', filename: '', path: '', stream: undefined as any,
     } as Express.Multer.File, exam.application.applicantId, FileAccessLevel.INTERNAL, 'Malaka imtihoni elektron bayonnomasi');
     await this.prisma.mkExam.update({ where: { id: examId }, data: { status: MkExamStatus.COMPLETED, protocolFileId: protocolFile.id } });
-    await this.prisma.mkApplication.update({ where: { id: exam.applicationId }, data: { status: passed ? MkApplicationStatus.PASSED : MkApplicationStatus.FAILED } });
-    if (passed) await this.registerApplicant({ id: exam.application.applicantId } as AuthUser, exam.applicationId, 'Imtihon natijasi asosida');
+    const now = new Date();
+    await this.prisma.mkApplication.update({ where: { id: exam.applicationId }, data: {
+      status: passed ? MkApplicationStatus.PASSED : MkApplicationStatus.FAILED,
+      examFailedAt: passed ? null : now,
+      registryDeadline: passed ? this.addBusinessDays(now, 3) : null,
+    } });
     await this.notify(exam.application.applicantId, passed ? 'Imtihon natijasi: o\'tdingiz.' : 'Imtihon natijasi: o\'ta olmadingiz.', `mk-${exam.applicationId}-result`);
   }
 
@@ -248,14 +309,83 @@ export class MkService {
     });
   }
 
-  private async registerApplicant(user: AuthUser, applicationId: string, reason: string) {
-    await this.prisma.user.update({ where: { id: user.id }, data: { registryStatus: RegistryStatus.MEDIATOR, cabinetType: CabinetType.SPECIALIST } });
-    const applicantRole = await this.prisma.role.findUnique({ where: { name: 'MEDIATOR_APPLICANT' }, select: { id: true } });
-    if (applicantRole) await this.prisma.userRole.deleteMany({ where: { userId: user.id, roleId: applicantRole.id } });
-    await this.prisma.mediatorDossier.upsert({ where: { mediatorId: user.id }, create: { mediatorId: user.id, registeredYear: new Date().getFullYear(), region: user.region || '', specialization: [] }, update: { registryStatus: 'ACTIVE' } });
-    await this.prisma.mkApplication.update({ where: { id: applicationId }, data: { status: MkApplicationStatus.REGISTERED } });
-    await this.notify(user.id, 'Siz mediatorlar reyestriga kiritildingiz. Mediator kabineti ochildi.', `mk-${applicationId}-registered`);
-    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'REGISTER_MK_APPLICANT', entityType: 'MEDIATOR_REGISTRY', entityId: user.id, newValues: { reason } });
+  async registerApplicant(actor: AuthUser, applicationId: string, dto: RegisterMkApplicantDto, ipAddress?: string) {
+    const application = await this.getApplication(applicationId);
+    this.assertRegionalScope(actor, application.region);
+    const isExamExempt = ['NOTARY', 'ADVOCATE'].includes((application.profession || '').toUpperCase());
+    if (application.status !== MkApplicationStatus.PASSED && application.status !== MkApplicationStatus.EXEMPT_PENDING_REGISTRATION) {
+      throw new ConflictException('Reyestrga faqat imtihondan o‘tgan yoki imtihondan ozod qilingan ariza kiritiladi');
+    }
+    if (isExamExempt && !application.professionProofFileId) throw new BadRequestException('Advokat yoki notarius maqomini tasdiqlovchi hujjat topilmadi');
+    const person = await this.prisma.user.findUnique({ where: { id: application.applicantId } });
+    if (!person) throw new NotFoundException('Talabgor profili topilmadi');
+    if (!dto.registryNumber.trim()) throw new BadRequestException('Mediator reyestridagi rasmiy tartib raqamini kiriting');
+    const registryData = {
+      registryNumber: dto.registryNumber.trim(), pinfl: person.pinfl, type: RegistryType.MEDIATOR,
+      fullName: person.fullName, phone: application.phone, email: application.email, address: application.address,
+      region: application.region, gender: person.gender, birthDate: person.birthDate ? new Date(person.birthDate) : null,
+      education: application.education, specialization: application.specialization, languages: application.languages,
+      status: RegistryEntryStatus.ACTIVE, publicProfile: true, registeredAt: new Date(), createdById: actor.id,
+    };
+    let entry: Awaited<ReturnType<typeof this.prisma.registryEntry.upsert>>;
+    try {
+      entry = await this.prisma.$transaction(async (tx) => {
+        const registryEntry = await tx.registryEntry.upsert({
+          where: { userId_type: { userId: person.id, type: RegistryType.MEDIATOR } },
+          create: { ...registryData, userId: person.id },
+          update: registryData,
+        });
+        await tx.user.update({ where: { id: person.id }, data: { registryStatus: RegistryStatus.MEDIATOR, cabinetType: CabinetType.SPECIALIST } });
+        const applicantRole = await tx.role.findUnique({ where: { name: 'MEDIATOR_APPLICANT' }, select: { id: true } });
+        if (applicantRole) await tx.userRole.deleteMany({ where: { userId: person.id, roleId: applicantRole.id } });
+        await tx.mediatorDossier.upsert({ where: { mediatorId: person.id }, create: { mediatorId: person.id, registeredYear: new Date().getFullYear(), region: application.region, specialization: application.specialization }, update: { registryStatus: 'ACTIVE', region: application.region, specialization: application.specialization } });
+        await tx.mkApplication.update({ where: { id: applicationId }, data: { status: MkApplicationStatus.REGISTERED, registryDeadline: null } });
+        await tx.registryStatusHistory.create({ data: { registryEntryId: registryEntry.id, status: RegistryEntryStatus.ACTIVE, reason: `Malaka imtihoni va hududiy organ qarori asosida${isExamExempt ? ' (imtihondan ozod qilingan)' : ''}`, changedById: actor.id } });
+        return registryEntry;
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new ConflictException('Ushbu PINFL yoki reyestr raqami bilan yozuv avvaldan mavjud');
+      throw error;
+    }
+    await this.notify(person.id, `Siz mediatorlar reyestriga ${dto.registryNumber.trim()} raqami bilan kiritildingiz. Mediator kabineti faollashtirildi.`, `mk-${applicationId}-registered`);
+    await this.audit.log({ userId: actor.id, username: actor.username, userFullName: actor.fullName, action: 'REGISTER_MK_APPLICANT', entityType: 'MEDIATOR_REGISTRY', entityId: entry.id, newValues: { registryNumber: dto.registryNumber.trim(), reason: isExamExempt ? 'EXAM_EXEMPT' : 'EXAM_PASSED' }, ipAddress });
+    return { applicationId, registryEntryId: entry.id, status: MkApplicationStatus.REGISTERED, registryNumber: entry.registryNumber };
+  }
+
+  private staffRegion(user: AuthUser) { return user.region || user.organization?.region || null; }
+
+  private assertRegionalScope(user: AuthUser, applicationRegion: string) {
+    const regional = user.roles.includes('REGIONAL_STAFF');
+    if (!regional) return;
+    const region = this.staffRegion(user);
+    if (!region || region.toLocaleLowerCase() !== applicationRegion.toLocaleLowerCase()) throw new ForbiddenException('Faqat o‘z hududingizdagi arizalarni ko‘rishingiz mumkin');
+  }
+
+  private rejectionLabel(code: string) {
+    return ({
+      LEGAL_INELIGIBILITY: 'Talabgor qonunchilikda belgilangan mediator maqomi talablariga mos emas.',
+      CORRECTIONS_NOT_FIXED: 'Arizadagi kamchiliklar belgilangan muddatda bartaraf etilmadi.',
+      FAILED_EXAM_WAITING_PERIOD: 'Malaka imtihonidan muvaffaqiyatsiz o‘tganidan keyin uch oy to‘lmagan.',
+      QUALIFICATION_EXAM_FAILED: 'Talabgor malaka imtihonidan muvaffaqiyatli o‘tmadi.',
+    } as Record<string, string>)[code] || 'Ariza rad etildi.';
+  }
+
+  private addBusinessDays(date: Date, days: number) {
+    const result = new Date(date);
+    let added = 0;
+    while (added < days) {
+      result.setDate(result.getDate() + 1);
+      if (result.getDay() !== 0 && result.getDay() !== 6) added++;
+    }
+    return result;
+  }
+
+  private addCalendarMonths(date: Date, months: number) {
+    const result = new Date(date);
+    const day = result.getDate();
+    result.setMonth(result.getMonth() + months);
+    if (result.getDate() < day) result.setDate(0);
+    return result;
   }
 
   async createQuestion(user: AuthUser, dto: CreateQuestionDto) { return this.prisma.mkQuestion.create({ data: { text: dto.text, options: dto.options as unknown as Prisma.InputJsonValue, correctOption: dto.correctOption, createdById: user.id } }); }

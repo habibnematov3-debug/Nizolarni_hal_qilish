@@ -27,7 +27,7 @@ const IMPORT_HEADERS = [
   'registryNumber', 'pinfl', 'type', 'fullName', 'phone', 'email', 'region', 'address',
   'gender', 'birthDate', 'education', 'specialization', 'languages', 'photoUrl',
   'latitude', 'longitude', 'certificateNumber', 'certificateIssuedAt',
-  'certificateExpiresAt', 'registeredAt',
+  'certificateExpiresAt', 'registeredAt', 'isSample',
 ];
 
 @Injectable()
@@ -217,6 +217,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
           certificateNumber: this.clean(dto.certificateNumber),
           certificateIssuedAt: dto.certificateIssuedAt ? new Date(dto.certificateIssuedAt) : null,
           certificateExpiresAt: dto.certificateExpiresAt ? new Date(dto.certificateExpiresAt) : null,
+          isSample: dto.isSample ?? false,
           publicProfile: dto.publicProfile ?? true,
           createdById: actor.id,
           status: RegistryEntryStatus.ACTIVE,
@@ -245,7 +246,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       newValues: this.auditSnapshot(created),
       ipAddress,
     });
-    await this.enqueueMyGovSync(created.id, 'UPSERT');
+    if (!created.isSample) await this.enqueueMyGovSync(created.id, 'UPSERT');
     return created;
   }
 
@@ -284,6 +285,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         ...(dto.certificateNumber !== undefined ? { certificateNumber: this.clean(dto.certificateNumber) } : {}),
         ...(dto.certificateIssuedAt !== undefined ? { certificateIssuedAt: dto.certificateIssuedAt ? new Date(dto.certificateIssuedAt) : null } : {}),
         ...(dto.certificateExpiresAt !== undefined ? { certificateExpiresAt: dto.certificateExpiresAt ? new Date(dto.certificateExpiresAt) : null } : {}),
+        ...(dto.isSample !== undefined ? { isSample: dto.isSample } : {}),
         ...(dto.publicProfile !== undefined ? { publicProfile: dto.publicProfile } : {}),
         updatedById: actor.id,
       },
@@ -302,7 +304,9 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       newValues: this.auditSnapshot(updated),
       ipAddress,
     });
-    await this.enqueueMyGovSync(updated.id, 'UPSERT');
+    if (old.isSample && !updated.isSample) await this.enqueueMyGovSync(updated.id, 'UPSERT');
+    else if (!old.isSample && updated.isSample) await this.enqueueMyGovSync(updated.id, 'DELETE');
+    else if (!updated.isSample) await this.enqueueMyGovSync(updated.id, 'UPSERT');
     return updated;
   }
 
@@ -386,7 +390,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       newValues: { deletedAt: deleted.deletedAt, status: deleted.status },
       ipAddress,
     });
-    await this.enqueueMyGovSync(id, 'DELETE');
+    if (!old.isSample) await this.enqueueMyGovSync(id, 'DELETE');
     return { success: true, id, deletedAt: deleted.deletedAt };
   }
 
@@ -476,25 +480,41 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         const region = rowData.region.trim();
         const registryNumber = this.clean(rowData.registrynumber);
         const pinfl = this.clean(rowData.pinfl);
+        const isSample = /^(true|1|yes|ha|demo)$/i.test(rowData.issample?.trim() || '');
         if (!fullName || !region) throw new Error('fullName va region ustunlari majburiy');
-        if (!registryNumber && !pinfl) throw new Error('registryNumber yoki pinfl majburiy');
+        if (!registryNumber && !pinfl && !isSample) throw new Error('registryNumber yoki pinfl majburiy');
+        if (isSample && type !== RegistryType.MEDIATOR) throw new Error('Namuna rejimida faqat mediator yozuvlarini import qilish mumkin');
         if (pinfl && !/^\d{14}$/.test(pinfl)) throw new Error('pinfl 14 ta raqamdan iborat bo\'lishi kerak');
 
         const duplicate = await this.prisma.registryEntry.findFirst({
-          where: {
-            type,
-            deletedAt: null,
-            OR: [
-              ...(registryNumber ? [{ registryNumber }] : []),
-              ...(pinfl ? [{ pinfl }] : []),
-            ],
-          },
+          where: isSample && !registryNumber && !pinfl
+            ? { type, fullName, region, deletedAt: null, isSample: true }
+            : {
+                type,
+                deletedAt: null,
+                OR: [
+                  ...(registryNumber ? [{ registryNumber }] : []),
+                  ...(pinfl ? [{ pinfl }] : []),
+                ],
+              },
           select: { id: true },
         });
         if (duplicate) {
           duplicates++;
-          errors.push({ row: rowNumber, reason: 'Takroriy reyestr yozuvi', data: rowData });
+          errors.push({ row: rowNumber, reason: 'Takroriy reyestr yozuvi', ...(isSample ? {} : { data: rowData }) });
           continue;
+        }
+
+        if (isSample && !registryNumber && !pinfl) {
+          const officialEntry = await this.prisma.registryEntry.findFirst({
+            where: { type, fullName, region, deletedAt: null, isSample: false },
+            select: { id: true },
+          });
+          if (officialEntry) {
+            duplicates++;
+            errors.push({ row: rowNumber, reason: 'Shu ism va hudud bo‘yicha rasmiy yozuv mavjud; namuna yozuvi qo‘shilmadi' });
+            continue;
+          }
         }
 
         this.assertRegionAccess(region, actor);
@@ -535,6 +555,8 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
             certificateIssuedAt: this.parseSpreadsheetDate(rowData.certificateissuedat, cellValue('certificateissuedat')),
             certificateExpiresAt: this.parseSpreadsheetDate(rowData.certificateexpiresat, cellValue('certificateexpiresat')),
             registeredAt,
+            isSample,
+            publicProfile: isSample ? true : undefined,
             createdById: actor.id,
             status: RegistryEntryStatus.ACTIVE,
           },
@@ -560,10 +582,11 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
           newValues: this.auditSnapshot(entry),
           ipAddress,
         });
-        await this.enqueueMyGovSync(entry.id, 'UPSERT');
+        if (!isSample) await this.enqueueMyGovSync(entry.id, 'UPSERT');
         imported++;
       } catch (error) {
-        errors.push({ row: rowNumber, reason: error.message || 'Qatorni import qilishda xatolik', data: rowData });
+        const isSample = /^(true|1|yes|ha|demo)$/i.test(rowData.issample?.trim() || '');
+        errors.push({ row: rowNumber, reason: error.message || 'Qatorni import qilishda xatolik', ...(isSample ? {} : { data: rowData }) });
       }
     }
 
@@ -617,6 +640,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       education: 'Yurisprudensiya',
       specialization: 'FAMILY; CIVIL',
       languages: 'uz; ru',
+      isSample: false,
       latitude: 41.3111,
       longitude: 69.2797,
     });
@@ -858,6 +882,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       latitude: entry.latitude,
       longitude: entry.longitude,
       status: entry.status,
+      isSample: entry.isSample,
       certificateNumber: entry.certificateNumber,
       certificateIssuedAt: entry.certificateIssuedAt,
       certificateExpiresAt: entry.certificateExpiresAt,
@@ -884,6 +909,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       region: entry.region,
       address: entry.address,
       status: entry.status,
+      isSample: entry.isSample,
       specialization: entry.specialization,
       languages: entry.languages,
     };
@@ -911,6 +937,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       certificateIssuedAt: entry.certificateIssuedAt,
       certificateExpiresAt: entry.certificateExpiresAt,
       registeredAt: entry.registeredAt,
+      isSample: entry.isSample,
     };
   }
 

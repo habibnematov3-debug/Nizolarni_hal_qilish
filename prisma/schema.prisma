@@ -206,12 +206,15 @@ enum ContractTemplateStatus {
 enum MkApplicationStatus {
   SUBMITTED
   CHECKING
+  CORRECTION_REQUESTED
+  FORWARDED
   ACCEPTED
   REJECTED
   INVITED
   EXAM_IN_PROGRESS
   PASSED
   FAILED
+  EXEMPT_PENDING_REGISTRATION
   REGISTERED
 }
 
@@ -703,6 +706,7 @@ model RegistryEntry {
   certificateIssuedAt  DateTime?               @map("certificate_issued_at")
   certificateExpiresAt DateTime?               @map("certificate_expires_at")
   status               RegistryEntryStatus     @default(ACTIVE)
+  isSample             Boolean                 @default(false) @map("is_sample")
   publicProfile        Boolean                 @default(true) @map("public_profile")
   registeredAt         DateTime                @default(now()) @map("registered_at")
   createdById          String?                 @map("created_by_id")
@@ -1182,7 +1186,12 @@ model MkApplication {
   phone                 String
   email                 String?
   address               String?
+  region                String                @default("")
   education             String?
+  specialization        String[]              @default([])
+  languages             String[]              @default([])
+  workExperience        Json?                 @map("work_experience")
+  ethicsAcceptedAt      DateTime?             @map("ethics_accepted_at")
   profession            String?
   diplomaFileId         String?             @map("diploma_file_id")
   passportFileId        String?             @map("passport_file_id")
@@ -1191,6 +1200,13 @@ model MkApplication {
   passportData          Json?               @map("passport_data")
   autoCheckResult       Json?               @map("auto_check_result")
   rejectionReason       String?             @map("rejection_reason")
+  rejectionCode         String?             @map("rejection_code")
+  correctionNote        String?             @map("correction_note")
+  correctionDeadline    DateTime?           @map("correction_deadline")
+  regionalReviewDeadline DateTime?           @map("regional_review_deadline")
+  forwardedAt           DateTime?           @map("forwarded_at")
+  examFailedAt          DateTime?           @map("exam_failed_at")
+  registryDeadline      DateTime?           @map("registry_deadline")
   reviewDeadline        DateTime?           @map("review_deadline")
   reviewedById          String?             @map("reviewed_by_id")
   reviewedAt            DateTime?           @map("reviewed_at")

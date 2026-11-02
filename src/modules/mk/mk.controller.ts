@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -6,7 +6,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MkService } from './mk.service';
-import { AssignCommitteeMemberDto, CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
+import { AssignCommitteeMemberDto, CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @ApiTags('Malaka komissiyasi va imtihon (MK)')
 @ApiBearerAuth('JWT-auth')
@@ -24,16 +24,25 @@ export class MkController {
   @Get('cabinet/mk/applications/:id') @Roles('TALABGOR') @ApiOperation({ summary: 'Ariza tafsiloti' })
   application(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.getOwnApplication(user, id); }
 
-  @Get('committee/mk/applications') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Komissiya arizalar jurnali' })
-  committeeApplications(@Query() query: QueryMkApplicationsDto) { return this.service.listApplications(query); }
+  @Patch('cabinet/mk/applications/:id/corrections') @Roles('TALABGOR') @ApiOperation({ summary: 'Kamchiliklari tuzatilgan arizani qayta yuborish' })
+  resubmit(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ResubmitMkApplicationDto) { return this.service.resubmitApplication(user, id, dto); }
 
-  @Post('committee/mk/applications/:id/accept') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Arizani qabul qilish' })
-  accept(@CurrentUser() user: AuthUser, @Param('id') id: string, @Req() req: any) { return this.service.acceptApplication(user, id, req.ip); }
+  @Get('committee/mk/applications') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Komissiya arizalar jurnali' })
+  committeeApplications(@CurrentUser() user: AuthUser, @Query() query: QueryMkApplicationsDto) { return this.service.listApplications(query, user); }
+
+  @Post('regional/mk/applications/:id/corrections') @Roles('REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Arizachiga kamchiliklarni tuzatish uchun 5 ish kuni berish' })
+  requestCorrection(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: RequestMkCorrectionDto, @Req() req: any) { return this.service.requestCorrection(user, id, dto, req.ip); }
+
+  @Post('regional/mk/applications/:id/forward') @Roles('REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Arizani hududiy malaka komissiyasiga yuborish' })
+  forward(@CurrentUser() user: AuthUser, @Param('id') id: string, @Req() req: any) { return this.service.forwardApplication(user, id, req.ip); }
 
   @Post('committee/mk/applications/:id/reject') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Arizani rad etish' })
   reject(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ReviewMkApplicationDto, @Req() req: any) { return this.service.rejectApplication(user, id, dto, req.ip); }
 
-  @Post('committee/mk/applications/:id/invite') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Imtihonga chaqirish' })
+  @Post('regional/mk/applications/:id/register') @Roles('REGIONAL_STAFF', 'MINISTRY_STAFF', 'ADMIN') @ApiOperation({ summary: 'Talabgorni Mediatorlar reyestriga kiritish' })
+  register(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: RegisterMkApplicantDto, @Req() req: any) { return this.service.registerApplicant(user, id, dto, req.ip); }
+
+  @Post('committee/mk/applications/:id/invite') @Roles('COMMISSION') @ApiOperation({ summary: 'Malaka imtihonini tayinlash (davlat xizmati bepul)' })
   invite(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: InviteToExamDto) { return this.service.inviteToExam(user, id, dto); }
 
   @Get('cabinet/mk/exams/:id') @Roles('TALABGOR') @ApiOperation({ summary: 'Talabgor imtihoni' })
