@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CalendarDays, Check, FileText, RefreshCw, ShieldCheck, Star, Upload, Video, X } from 'lucide-react'
+import { Alert, Button, Checkbox, FileInput, Group, Modal, Paper, Select, Stack, Text, TextInput, ThemeIcon } from '@mantine/core'
 import { apiGet, apiGetPublic, apiPatch, apiPost, getAccessToken } from './api'
 import { DocumentExchangeWorkspace } from './DocumentExchangeWorkspace'
 import { applicantText, type ApplicantLanguage } from './applicantLocale'
@@ -230,13 +231,16 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
   const [busy, setBusy] = useState(false)
   const courseRequired = draft.profession === 'MEDIATOR'
   const professionProofRequired = draft.profession !== 'MEDIATOR'
+  const authenticated = Boolean(getAccessToken())
   const update = <K extends keyof ApplicationDraft>(key: K, value: ApplicationDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
+
   useEffect(() => {
-    if (!getAccessToken()) return
+    if (!authenticated) return
     apiGet<{ fullName: string; pinfl?: string | null; passportSeriesNumber?: string | null; passportGivenDate?: string | null; passportExpireDate?: string | null; phone?: string | null; email?: string | null; address?: string | null }>('/cabinet/profile')
       .then((profile) => setDraft((current) => ({ ...current, fullName: profile.fullName || '', pinfl: profile.pinfl || '', passportNumber: profile.passportSeriesNumber || '', passportGivenDate: profile.passportGivenDate || '', passportExpireDate: profile.passportExpireDate || '', phone: profile.phone || '', email: profile.email || '', address: profile.address || '' })))
       .catch((cause) => setError(cause instanceof Error ? cause.message : t('Shaxsiy profilni yuklab bo‘lmadi.', 'Не удалось загрузить личный профиль.')))
-  }, [])
+  }, [authenticated])
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!/^\d{14}$/.test(draft.pinfl)) { setError(t('PINFL 14 ta raqam bo‘lishi kerak.', 'ПИНФЛ должен состоять из 14 цифр.')); return }
@@ -246,24 +250,147 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
     if (draft.workExperience.some((item) => Object.values(item).some(Boolean) && Object.values(item).some((value) => !value.trim()))) { setError(t('Ish tajribasi qatoridagi barcha maydonlarni to‘ldiring yoki qatorni olib tashlang.', 'Заполните все поля строки опыта работы или удалите её.')); return }
     if (courseRequired && !draft.courseCertificate) { setError(t('Maxsus o‘quv kursi sertifikatini biriktiring.', 'Приложите сертификат специального учебного курса.')); return }
     if (professionProofRequired && !draft.professionProof) { setError(t('Notarius yoki advokat maqomini tasdiqlovchi hujjatni biriktiring.', 'Приложите документ, подтверждающий статус нотариуса или адвоката.')); return }
-    setError(''); setBusy(true)
+    setError('')
+    setBusy(true)
     try { await onSubmit(draft) } catch (cause) { setError(cause instanceof Error ? cause.message : t('Arizani yuborib bo‘lmadi.', 'Не удалось отправить заявление.')) }
     finally { setBusy(false) }
   }
-  return <Dialog language={language} onClose={onClose} title={t('Mediatorlar reyestriga kirish uchun ariza', 'Заявление о включении в реестр медиаторов')} description={t('Ariza hududiy adliya organiga yuboriladi. Davlat xizmati bepul; kerakli shaxsiy ma’lumotlar imkon qadar davlat manbalaridan olinadi.', 'Заявление направляется в территориальный орган юстиции. Государственная услуга бесплатна; необходимые личные данные по возможности запрашиваются из государственных источников.')}>
-    <form onSubmit={submit} className="space-y-5 p-5 sm:p-7">
-      <section className="space-y-4 rounded-xl border border-slate-200 p-4"><div className="flex gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-800"><ShieldCheck size={18}/></span><div><h3 className="text-sm font-semibold">{t('Pasport va shaxsiy ma’lumot', 'Паспорт и личные данные')}</h3><p className="mt-1 text-xs leading-5 text-slate-500">{t('Production tizimida F.I.Sh., PINFL va pasport rekvizitlari OneID profilidan olinib tekshiriladi. Demo sinovi uchun quyidagi maydonlarni qo‘lda kiriting.', 'В рабочей системе Ф.И.О., ПИНФЛ и паспортные данные проверяются по профилю OneID. Для демонстрации заполните поля вручную.')}</p></div></div><div className="grid gap-3 sm:grid-cols-2"><Field label="F.I.Sh. *"><input required maxLength={160} value={draft.fullName} onChange={(event) => update('fullName', event.target.value)} readOnly={Boolean(getAccessToken())} className="form-control read-only:bg-slate-50" autoComplete="name"/></Field><Field label="PINFL *"><input required inputMode="numeric" pattern="\d{14}" maxLength={14} value={draft.pinfl} onChange={(event) => update('pinfl', event.target.value.replace(/\D/g, ''))} readOnly={Boolean(getAccessToken())} className="form-control read-only:bg-slate-50"/></Field><Field label={t('Pasport seriyasi va raqami *', 'Серия и номер паспорта *')}><input required maxLength={20} value={draft.passportNumber} onChange={(event) => update('passportNumber', event.target.value.toUpperCase())} readOnly={Boolean(getAccessToken())} className="form-control read-only:bg-slate-50" placeholder="AA1234567"/></Field><Field label={t('Pasport berilgan sana *', 'Дата выдачи паспорта *')}><input required type="date" value={draft.passportGivenDate} onChange={(event) => update('passportGivenDate', event.target.value)} readOnly={Boolean(getAccessToken())} className="form-control read-only:bg-slate-50"/></Field><Field label={t('Pasport amal qilish muddati *', 'Срок действия паспорта *')}><input required type="date" value={draft.passportExpireDate} onChange={(event) => update('passportExpireDate', event.target.value)} readOnly={Boolean(getAccessToken())} className="form-control read-only:bg-slate-50"/></Field><Field label={t('Yashash manzili *', 'Адрес проживания *')}><input required maxLength={1000} value={draft.address} onChange={(event) => update('address', event.target.value)} className="form-control"/></Field></div></section>
-      <section className="space-y-4 rounded-xl border border-slate-200 p-4"><h3 className="text-sm font-semibold">{t('Aloqa va kasbiy ma’lumot', 'Контактные и профессиональные данные')}</h3><div className="grid gap-3 sm:grid-cols-2"><Field label={t('Telefon *', 'Телефон *')}><input required type="tel" value={draft.phone} onChange={(event) => update('phone', event.target.value)} className="form-control" placeholder="+998 90 123 45 67" autoComplete="tel"/></Field><Field label={t('Elektron pochta', 'Электронная почта')}><input type="email" maxLength={254} value={draft.email} onChange={(event) => update('email', event.target.value)} className="form-control" placeholder="name@example.uz" autoComplete="email"/></Field><Field label={t('Faoliyat hududi *', 'Регион деятельности *')}><select required value={draft.region} onChange={(event) => update('region', event.target.value)} className="form-control"><option value="">{t('Hududni tanlang', 'Выберите регион')}</option>{regions.map((region) => <option key={region} value={region}>{region}</option>)}</select></Field><Field label={t('Kasbiy maqom *', 'Профессиональный статус *')}><select value={draft.profession} onChange={(event) => update('profession', event.target.value as ApplicationDraft['profession'])} className="form-control"><option value="MEDIATOR">{t('Mediator talabgori', 'Кандидат в медиаторы')}</option><option value="NOTARY">{t('Amaldagi notarius', 'Действующий нотариус')}</option><option value="ADVOCATE">{t('Amaldagi advokat', 'Действующий адвокат')}</option></select></Field><Field label={t('Ma’lumoti / diplom yo‘nalishi *', 'Образование / специальность по диплому *')}><input required maxLength={250} value={draft.education} onChange={(event) => update('education', event.target.value)} className="form-control" placeholder={t('Ma’lumotingizni kiriting', 'Укажите образование')}/></Field></div><div><p className="mb-2 text-xs font-semibold text-slate-700">{t('Ixtisoslashgan mediatsiya sohalari *', 'Специализации по медиации *')}</p><div className="grid gap-2 sm:grid-cols-2">{[['CIVIL','Fuqarolik nizolari'],['FAMILY','Oilaviy nizolar'],['LABOR','Yakka mehnat nizolari'],['BUSINESS','Tadbirkorlik nizolari']].map(([value,label])=><label key={value} className="flex items-center gap-2 text-xs text-slate-600"><input type="checkbox" checked={draft.specialization.includes(value)} onChange={(event) => update('specialization', event.target.checked ? [...draft.specialization,value] : draft.specialization.filter((item) => item !== value))} className="rounded border-slate-300"/>{label}</label>)}</div></div><div><p className="mb-2 text-xs font-semibold text-slate-700">{t('Mediatsiya olib boriladigan tillar *', 'Языки проведения медиации *')}</p><div className="flex flex-wrap gap-3">{[['uz','O‘zbek'],['ru','Rus'],['en','Ingliz'],['kaa','Qoraqalpoq'],['tg','Tojik']].map(([value,label])=><label key={value} className="flex items-center gap-2 text-xs text-slate-600"><input type="checkbox" checked={draft.languages.includes(value)} onChange={(event) => update('languages', event.target.checked ? [...draft.languages,value] : draft.languages.filter((item) => item !== value))} className="rounded border-slate-300"/>{label}</label>)}</div></div></section>
-      <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">{t('Ish staji', 'Трудовой стаж')}</h3><p className="mt-1 text-xs text-slate-500">{t('Ish joyi va lavozimni ko‘rsating; ma’lumot mavjud bo‘lmasa bo‘sh qoldiring.', 'Укажите место работы и должность; при отсутствии данных оставьте поля пустыми.')}</p></div><button type="button" onClick={() => update('workExperience', [...draft.workExperience,{startedAt:'',endedAt:'',workplace:'',position:''}])} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">+ {t('Ish joyi', 'Место работы')}</button></div>{draft.workExperience.map((item,index)=><div key={index} className="grid gap-2 rounded-lg bg-slate-50 p-3 sm:grid-cols-2"><Field label={t('Ishga kirgan sana','Дата начала')}><input type="date" value={item.startedAt} onChange={(event)=>update('workExperience',draft.workExperience.map((row,i)=>i===index?{...row,startedAt:event.target.value}:row))} className="form-control"/></Field><Field label={t('Ishdan ketgan sana','Дата окончания')}><input type="date" value={item.endedAt} onChange={(event)=>update('workExperience',draft.workExperience.map((row,i)=>i===index?{...row,endedAt:event.target.value}:row))} className="form-control"/></Field><Field label={t('Ish joyi','Место работы')}><input maxLength={250} value={item.workplace} onChange={(event)=>update('workExperience',draft.workExperience.map((row,i)=>i===index?{...row,workplace:event.target.value}:row))} className="form-control"/></Field><Field label={t('Lavozim','Должность')}><input maxLength={250} value={item.position} onChange={(event)=>update('workExperience',draft.workExperience.map((row,i)=>i===index?{...row,position:event.target.value}:row))} className="form-control"/></Field><button type="button" onClick={()=>update('workExperience',draft.workExperience.filter((_,i)=>i!==index))} className="text-left text-xs font-semibold text-red-700">{t('Qatorni olib tashlash','Удалить строку')}</button></div>)}</section>
-      <section className="space-y-3 rounded-xl border border-slate-200 p-4"><div><h3 className="text-sm font-semibold">{t('Tasdiqlovchi hujjatlar', 'Подтверждающие документы')}</h3><p className="mt-1 text-xs text-slate-500">PDF, DOCX, JPG/PNG · {t('har biri 10 MB gacha.', 'до 10 МБ каждый.)')}</p></div><FileField language={language} label={t('Diplom nusxasi (ixtiyoriy)', 'Копия диплома (необязательно)')} file={draft.diplomaFile} onChange={(file) => update('diplomaFile', file)}/><FileField language={language} label={t('Pasport nusxasi (ixtiyoriy)', 'Копия паспорта (необязательно)')} file={draft.passportFile} onChange={(file) => update('passportFile', file)}/>{courseRequired ? <FileField language={language} label={t('Mediatorlar maxsus kursi sertifikati *', 'Сертификат специального курса медиаторов *')} required file={draft.courseCertificate} onChange={(file) => update('courseCertificate', file)}/> : <FileField language={language} label={t('Notarius/advokat maqomini tasdiqlovchi hujjat *', 'Документ, подтверждающий статус нотариуса/адвоката *')} required file={draft.professionProof} onChange={(file) => update('professionProof', file)}/>}</section>
-      <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700"><input type="checkbox" checked={draft.ethicsAccepted} onChange={(event)=>update('ethicsAccepted',event.target.checked)} className="mt-1 rounded border-slate-300"/><span>{t('Mediatsiya to‘g‘risidagi qonunchilik hujjatlari talablari va mediatorning kasb etikasi qoidalari bilan tanishdim.', 'Я ознакомлен(а) с требованиями законодательства о медиации и правилами профессиональной этики медиатора.')}</span></label>
-      <div className="flex gap-2 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900"><AlertCircle size={16} className="mt-0.5 shrink-0"/><span>{t('Sudlanganlik va muomala layoqati arizachining javobiga qarab emas, vakolatli davlat manbasi orqali tekshirilishi kerak. Hozir tashqi reyestr ulanmagan bo‘lsa ariza “tekshiruvda” qoladi.', 'Сведения о судимости и дееспособности должны проверяться по уполномоченным государственным источникам. Пока внешний реестр не подключён, заявление остаётся на проверке.')}</span></div>
-      {error && <ErrorNotice message={error}/>}
-      <div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm">{t('Bekor qilish', 'Отмена')}</button><button disabled={busy} type="submit" className="rounded-lg bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{busy ? t('Yuborilmoqda…', 'Отправка…') : t('Arizani yuborish', 'Отправить заявление')}</button></div>
-    </form>
-  </Dialog>
-}
 
+  const specializations = [['CIVIL', t('Fuqarolik nizolari', 'Гражданские споры')], ['FAMILY', t('Oilaviy nizolar', 'Семейные споры')], ['LABOR', t('Yakka mehnat nizolari', 'Индивидуальные трудовые споры')], ['BUSINESS', t('Tadbirkorlik nizolari', 'Предпринимательские споры')]]
+  const workLanguages = [['uz', t('O‘zbek', 'Узбекский')], ['ru', t('Rus', 'Русский')], ['en', t('Ingliz', 'Английский')], ['kaa', t('Qoraqalpoq', 'Каракалпакский')], ['tg', t('Tojik', 'Таджикский')]]
+  const sectionTitle = (title: string, description?: string) => <div><Text fw={600} c="dark.8">{title}</Text>{description && <Text size="sm" c="dimmed" mt={4}>{description}</Text>}</div>
+
+  return <Modal
+    opened
+    onClose={onClose}
+    title={t('Mediatorlar reyestriga kirish uchun ariza', 'Заявление о включении в реестр медиаторов')}
+    centered
+    size="xl"
+    radius="lg"
+    padding={0}
+    overlayProps={{ backgroundOpacity: 0.56, blur: 3 }}
+    closeButtonProps={{ 'aria-label': t('Yopish', 'Закрыть') }}
+    styles={{
+      content: { maxWidth: 960, maxHeight: 'calc(100dvh - 32px)' },
+      header: { alignItems: 'flex-start', padding: '16px clamp(16px, 4vw, 24px) 12px' },
+      title: { fontWeight: 700, fontSize: 18, lineHeight: 1.35 },
+      body: { padding: 0, overflowY: 'auto', maxHeight: 'calc(100dvh - 100px)' },
+    }}
+  >
+    <form onSubmit={submit} className="space-y-5 p-4 sm:p-6">
+      <Text size="sm" c="dimmed" maw={780}>
+        {t('Ariza hududiy adliya organiga yuboriladi. Davlat xizmati bepul; kerakli shaxsiy ma’lumotlar imkon qadar davlat manbalaridan olinadi.', 'Заявление направляется в территориальный орган юстиции. Государственная услуга бесплатна; необходимые личные данные по возможности запрашиваются из государственных источников.')}
+      </Text>
+
+      <Paper withBorder radius="lg" p="md" shadow="xs">
+        <Stack gap="md">
+          <Group align="flex-start" gap="sm">
+            <ThemeIcon color="teal" variant="light" size={40} radius="md"><ShieldCheck size={19}/></ThemeIcon>
+            {sectionTitle(t('Pasport va shaxsiy ma’lumot', 'Паспорт и личные данные'), t(
+              authenticated
+                ? 'Ma’lumotlar tasdiqlangan shaxsiy profilingizdan olindi.'
+                : 'Production tizimida ma’lumotlar OneID profili orqali tekshiriladi. Demo sinovida ularni qo‘lda kiriting.',
+              authenticated
+                ? 'Данные получены из подтвержденного личного профиля.'
+                : 'В рабочей системе данные проверяются по профилю OneID. Для демонстрации заполните их вручную.',
+            ))}
+          </Group>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextInput label="F.I.Sh." withAsterisk required maxLength={160} value={draft.fullName} onChange={(event) => update('fullName', event.currentTarget.value)} readOnly={authenticated} autoComplete="name"/>
+            <TextInput label="PINFL" withAsterisk required inputMode="numeric" pattern="\d{14}" maxLength={14} value={draft.pinfl} onChange={(event) => update('pinfl', event.currentTarget.value.replace(/\D/g, ''))} readOnly={authenticated}/>
+            <TextInput label={t('Pasport seriyasi va raqami', 'Серия и номер паспорта')} withAsterisk required maxLength={20} value={draft.passportNumber} onChange={(event) => update('passportNumber', event.currentTarget.value.toUpperCase())} readOnly={authenticated} placeholder="AA1234567"/>
+            <TextInput label={t('Pasport berilgan sana', 'Дата выдачи паспорта')} withAsterisk required type="date" value={draft.passportGivenDate} onChange={(event) => update('passportGivenDate', event.currentTarget.value)} readOnly={authenticated}/>
+            <TextInput label={t('Pasport amal qilish muddati', 'Срок действия паспорта')} withAsterisk required type="date" value={draft.passportExpireDate} onChange={(event) => update('passportExpireDate', event.currentTarget.value)} readOnly={authenticated}/>
+            <TextInput label={t('Yashash manzili', 'Адрес проживания')} withAsterisk required maxLength={1000} value={draft.address} onChange={(event) => update('address', event.currentTarget.value)}/>
+          </div>
+        </Stack>
+      </Paper>
+
+      <Paper withBorder radius="lg" p="md" shadow="xs">
+        <Stack gap="md">
+          {sectionTitle(t('Aloqa va kasbiy ma’lumot', 'Контактные и профессиональные данные'))}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextInput label={t('Telefon', 'Телефон')} withAsterisk required type="tel" value={draft.phone} onChange={(event) => update('phone', event.currentTarget.value)} placeholder="+998 90 123 45 67" autoComplete="tel"/>
+            <TextInput label={t('Elektron pochta', 'Электронная почта')} type="email" maxLength={254} value={draft.email} onChange={(event) => update('email', event.currentTarget.value)} placeholder="name@example.uz" autoComplete="email"/>
+            <Select label={t('Faoliyat hududi', 'Регион деятельности')} withAsterisk required placeholder={t('Hududni tanlang', 'Выберите регион')} data={regions.map((region) => ({ value: region, label: region }))} value={draft.region || null} onChange={(value) => update('region', value || '')}/>
+            <Select label={t('Kasbiy maqom', 'Профессиональный статус')} withAsterisk data={[
+              { value: 'MEDIATOR', label: t('Mediator talabgori', 'Кандидат в медиаторы') },
+              { value: 'NOTARY', label: t('Amaldagi notarius', 'Действующий нотариус') },
+              { value: 'ADVOCATE', label: t('Amaldagi advokat', 'Действующий адвокат') },
+            ]} value={draft.profession} onChange={(value) => { if (value) update('profession', value as ApplicationDraft['profession']) }}/>
+            <TextInput label={t('Ma’lumoti / diplom yo‘nalishi', 'Образование / специальность по диплому')} withAsterisk required maxLength={250} value={draft.education} onChange={(event) => update('education', event.currentTarget.value)} placeholder={t('Ma’lumotingizni kiriting', 'Укажите образование')}/>
+          </div>
+
+          <Checkbox.Group label={t('Ixtisoslashgan mediatsiya sohalari', 'Специализации по медиации')} withAsterisk value={draft.specialization} onChange={(value) => update('specialization', value)}>
+            <div className="grid gap-x-5 gap-y-3 pt-2 sm:grid-cols-2">
+              {specializations.map(([value, label]) => <Checkbox key={value} value={value} label={label}/>)}
+            </div>
+          </Checkbox.Group>
+
+          <Checkbox.Group label={t('Mediatsiya olib boriladigan tillar', 'Языки проведения медиации')} withAsterisk value={draft.languages} onChange={(value) => update('languages', value)}>
+            <Group gap="md" mt="sm">
+              {workLanguages.map(([value, label]) => <Checkbox key={value} value={value} label={label}/>)}
+            </Group>
+          </Checkbox.Group>
+        </Stack>
+      </Paper>
+
+      <Paper withBorder radius="lg" p="md" shadow="xs">
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-start" wrap="wrap">
+            {sectionTitle(t('Ish staji', 'Трудовой стаж'), t('Ish joyi va lavozimni ko‘rsating; ma’lumot bo‘lmasa bo‘sh qoldiring.', 'Укажите место работы и должность; при отсутствии данных оставьте поля пустыми.'))}
+            <Button type="button" variant="light" color="teal" size="sm" onClick={() => update('workExperience', [...draft.workExperience, { startedAt: '', endedAt: '', workplace: '', position: '' }])}>
+              + {t('Ish joyi', 'Место работы')}
+            </Button>
+          </Group>
+          {draft.workExperience.length === 0 && <Text size="sm" c="dimmed">{t('Ish tajribasi qatorlari qo‘shilmagan.', 'Строки опыта работы не добавлены.')}</Text>}
+          {draft.workExperience.map((item, index) => <Paper key={index} withBorder radius="md" p="sm" bg="gray.0">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextInput type="date" label={t('Ishga kirgan sana', 'Дата начала')} value={item.startedAt} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, startedAt: event.currentTarget.value } : row))}/>
+              <TextInput type="date" label={t('Ishdan ketgan sana', 'Дата окончания')} value={item.endedAt} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, endedAt: event.currentTarget.value } : row))}/>
+              <TextInput maxLength={250} label={t('Ish joyi', 'Место работы')} value={item.workplace} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, workplace: event.currentTarget.value } : row))}/>
+              <TextInput maxLength={250} label={t('Lavozim', 'Должность')} value={item.position} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, position: event.currentTarget.value } : row))}/>
+            </div>
+            <Button type="button" variant="subtle" color="red" size="xs" mt="xs" onClick={() => update('workExperience', draft.workExperience.filter((_, rowIndex) => rowIndex !== index))}>
+              {t('Qatorni olib tashlash', 'Удалить строку')}
+            </Button>
+          </Paper>)}
+        </Stack>
+      </Paper>
+
+      <Paper withBorder radius="lg" p="md" shadow="xs">
+        <Stack gap="md">
+          {sectionTitle(t('Tasdiqlovchi hujjatlar', 'Подтверждающие документы'), t('PDF, DOCX, JPG yoki PNG · har bir fayl 10 MB gacha.', 'PDF, DOCX, JPG или PNG · каждый файл до 10 МБ.'))}
+          <FileField language={language} label={t('Diplom nusxasi (ixtiyoriy)', 'Копия диплома (необязательно)')} file={draft.diplomaFile} onChange={(file) => update('diplomaFile', file)}/>
+          <FileField language={language} label={t('Pasport nusxasi (ixtiyoriy)', 'Копия паспорта (необязательно)')} file={draft.passportFile} onChange={(file) => update('passportFile', file)}/>
+          {courseRequired
+            ? <FileField language={language} label={t('Mediatorlar maxsus kursi sertifikati', 'Сертификат специального курса медиаторов')} required file={draft.courseCertificate} onChange={(file) => update('courseCertificate', file)}/>
+            : <FileField language={language} label={t('Notarius/advokat maqomini tasdiqlovchi hujjat', 'Документ, подтверждающий статус нотариуса/адвоката')} required file={draft.professionProof} onChange={(file) => update('professionProof', file)}/>}
+        </Stack>
+      </Paper>
+
+      <Paper withBorder radius="md" p="sm" bg="gray.0">
+        <Checkbox checked={draft.ethicsAccepted} onChange={(event) => update('ethicsAccepted', event.currentTarget.checked)} label={t(
+          'Mediatsiya to‘g‘risidagi qonunchilik hujjatlari talablari va mediatorning kasb etikasi qoidalari bilan tanishdim.',
+          'Я ознакомлен(а) с требованиями законодательства о медиации и правилами профессиональной этики медиатора.',
+        )}/>
+      </Paper>
+
+      <Alert variant="light" color="yellow" radius="md" icon={<AlertCircle size={18}/>}>
+        {t(
+          'Sudlanganlik va muomala layoqati arizachining javobiga qarab emas, vakolatli davlat manbasi orqali tekshirilishi kerak. Hozir tashqi reyestr ulanmagan bo‘lsa ariza “tekshiruvda” qoladi.',
+          'Сведения о судимости и дееспособности должны проверяться по уполномоченным государственным источникам. Пока внешний реестр не подключён, заявление остаётся на проверке.',
+        )}
+      </Alert>
+
+      {error && <ErrorNotice message={error}/>}
+      <Group justify="flex-end" gap="sm" className="border-t border-slate-100 pt-4">
+        <Button type="button" variant="default" onClick={onClose}>{t('Bekor qilish', 'Отмена')}</Button>
+        <Button type="submit" color="dark" loading={busy}>{busy ? t('Yuborilmoqda…', 'Отправка…') : t('Arizani yuborish', 'Отправить заявление')}</Button>
+      </Group>
+    </form>
+  </Modal>
+}
 type MtsSession = { id: string; scheduledAt: string; durationMin: number; status: string }
 type MtsParticipant = { side: 'CLAIMANT' | 'RESPONDENT'; userId: string | null; pinfl: string | null; fullName: string; organizationTin?: string | null; representativeName?: string | null; consentStatus: string; signaturePkcs7: string | null }
 type MtsCase = { id: string; type: 'ONLINE' | 'MANDATORY'; disputeCategory: string; disputeSubject: string; requestedMediatorRegistryId?: string | null; courtCaseNumber: string | null; region: string; status: string; mediatorId: string | null; agreementText: string | null; mediatorSignaturePkcs7: string | null; participants: MtsParticipant[]; sessions: MtsSession[]; feedbacks?: { id: string; score: number; comment?: string | null }[] }
@@ -487,9 +614,30 @@ function FileListField({ label, files, onChange }: { label: string; files: File[
 function FileField({ language = 'uz', label, required, file, onChange }: { language?: ApplicantLanguage; label: string; required?: boolean; file: File | null; onChange: (file: File | null) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const [message, setMessage] = useState('')
-  return <label className="block cursor-pointer rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 hover:border-blue-400 hover:bg-blue-50/40"><input className="sr-only" type="file" accept=".pdf,.docx,.jpg,.jpeg,.png" required={required && !file} onChange={(event) => { const chosen = event.target.files?.[0] || null; if (chosen && chosen.size > 10 * 1024 * 1024) { setMessage(t('Fayl hajmi 10 MB dan oshmasligi kerak.', 'Размер файла не должен превышать 10 МБ.')); event.target.value = ''; onChange(null); return } setMessage(''); onChange(chosen) }}/><span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600"><Upload size={17}/></span><span className="min-w-0 flex-1"><strong className="block text-xs font-semibold text-slate-800">{label}</strong><span className="mt-1 block truncate text-xs text-slate-500">{file ? `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB` : t('Tanlash uchun bosing', 'Нажмите, чтобы выбрать')}</span></span>{file && <Check size={16} className="text-emerald-700"/>}</span>{message && <span className="mt-2 block text-xs text-red-600">{message}</span>}</label>
+  const selectFile = (chosen: File | null) => {
+    if (chosen && chosen.size > 10 * 1024 * 1024) {
+      setMessage(t('Fayl hajmi 10 MB dan oshmasligi kerak.', 'Размер файла не должен превышать 10 МБ.'))
+      onChange(null)
+      return
+    }
+    setMessage('')
+    onChange(chosen)
+  }
+  return <FileInput
+    label={label}
+    withAsterisk={required}
+    required={required && !file}
+    description={t('PDF, DOCX, JPG yoki PNG · 10 MB gacha', 'PDF, DOCX, JPG или PNG · до 10 МБ')}
+    placeholder={t('Faylni tanlang', 'Выберите файл')}
+    accept=".pdf,.docx,.jpg,.jpeg,.png"
+    leftSection={<Upload size={16}/>}
+    leftSectionPointerEvents="none"
+    value={file}
+    onChange={selectFile}
+    clearable
+    error={message || undefined}
+  />
 }
-
 function Dialog({ language = 'uz', children, title, description, onClose }: { language?: ApplicantLanguage; children: React.ReactNode; title: string; description: string; onClose: () => void }) {
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section role="dialog" aria-modal="true" aria-labelledby="workflow-title" className="relative max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl"><header className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-7"><button type="button" onClick={onClose} aria-label={applicantText(language, 'Yopish', 'Закрыть')} className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18}/></button><h2 id="workflow-title" className="pr-10 text-lg font-semibold text-slate-950">{title}</h2><p className="mt-1 pr-7 text-xs leading-5 text-slate-500">{description}</p></header>{children}</section></div>
 }
