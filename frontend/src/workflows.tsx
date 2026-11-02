@@ -108,7 +108,7 @@ export function MediationRequestForm({ initialMediator, initialMediatorRegistryI
   onSubmit: (draft: MediationDraft) => Promise<void>
 }) {
   const [draft, setDraft] = useState<MediationDraft>({
-    type: initialCourtCaseNumber ? 'MANDATORY' : 'ONLINE', disputeCategory: 'CIVIL', documentLanguage: 'UZ', businessOrganizationId: '', preferredMediatorRegistryId: initialMediatorRegistryId || '', disputeSubject: '', categoryDetails: '', claimAmount: '', categoryAnswers: {}, attachments: [], courtCaseNumber: initialCourtCaseNumber || '',
+    type: initialCourtCaseNumber ? 'MANDATORY' : 'ONLINE', disputeCategory: 'CIVIL', documentLanguage: 'UZ', businessOrganizationId: '', preferredMediatorRegistryId: initialMediatorIsSample ? '' : initialMediatorRegistryId || '', disputeSubject: '', categoryDetails: '', claimAmount: '', categoryAnswers: {}, attachments: [], courtCaseNumber: initialCourtCaseNumber || '',
     claimantName: '', claimantPinfl: '', claimantPhone: '', respondentName: '',
     respondentPinfl: '', respondentType: 'INDIVIDUAL', respondentTin: '', respondentPhone: '', respondentEmail: '', region: '', privacyAccepted: false,
   })
