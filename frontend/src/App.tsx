@@ -528,18 +528,18 @@ function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegi
               </Box>
             </Group>
           </UnstyledButton>
-          <Group gap={4} wrap="nowrap" className="hidden xl:flex">
+          <Group gap={4} wrap="nowrap" visibleFrom="xl">
             {links.map((link) => <Button key={link} type="button" variant={page === link ? 'light' : 'subtle'} color="blue" radius="md" size="compact-sm" onClick={() => navigate(link)}>{displayLink(link)}</Button>)}
           </Group>
           <Group gap="xs" wrap="nowrap" ml="auto">
-            <Button component="a" href="tel:1008" variant="subtle" color="dark" size="sm" leftSection={<Phone size={15}/>} className="hidden 2xl:inline-flex">{t('Ishonch telefoni', 'Телефон доверия')} · 1008</Button>
+            <Button component="a" href="tel:1008" variant="subtle" color="dark" size="sm" px="xs" leftSection={<Phone size={15}/>} aria-label={t('Ishonch telefoni: 1008', 'Телефон доверия: 1008')} title={t('Ishonch telefoni: 1008', 'Телефон доверия: 1008')}>1008</Button>
             <ActionIcon type="button" variant="subtle" color="blue" size="lg" radius="md" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={t('Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={t('Rus tiliga o‘tish', 'Переключить на узбекский язык')}>
               <LanguageFlag language={language}/>
             </ActionIcon>
             <Button type="button" onClick={onLogin} color="blue" radius="md" size="sm" leftSection={<LogIn size={17}/>} className="shrink-0"><span className="hidden sm:inline">{t('Tizimga kirish', 'Войти в систему')}</span></Button>
           </Group>
         </Group>
-        <Group gap={4} wrap="nowrap" className="overflow-x-auto pb-2 xl:hidden">
+        <Group gap={4} wrap="nowrap" hiddenFrom="xl" className="overflow-x-auto pb-2">
           {links.map((link) => <Button key={link} type="button" variant={page === link ? 'light' : 'subtle'} color="blue" radius="md" size="compact-xs" onClick={() => navigate(link)} className="shrink-0">{displayLink(link)}</Button>)}
         </Group>
       </Container>

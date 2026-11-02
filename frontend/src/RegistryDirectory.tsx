@@ -141,7 +141,7 @@ export function PublicRegistryDirectory({
     apiGetPublic<RegistryPage>(`/public/mediators?${params.toString()}`)
       .then((result) => {
         if (!active) return
-        const useSample = type === 'MEDIATOR' && !(result?.pagination?.total)
+        const useSample = type === 'MEDIATOR' && (!(result?.pagination?.total) || !result?.items?.length)
         setData(useSample ? sampleRegistryPage({ type, search: query, region: region === 'Barcha hududlar' ? '' : region, page, limit: 12 }) : result || emptyPage)
         setSampleFallback(useSample)
         setError('')
@@ -226,7 +226,7 @@ export function BusinessSpecialistDirectory({ onSelectSpecialist, businessMode =
     apiGetPublic<RegistryPage>(`/public/mediators?${params.toString()}`)
       .then((result) => {
         if (!active) return
-        const useSample = type === 'MEDIATOR' && !(result?.pagination?.total)
+        const useSample = type === 'MEDIATOR' && (!(result?.pagination?.total) || !result?.items?.length)
         setData(useSample ? sampleRegistryPage({ type, search, region, specialization, language, minimumRating, page, limit: 12 }) : result || emptyPage)
         setSampleFallback(useSample)
         setError('')
