@@ -5,6 +5,7 @@ import {
   FileClock, FileText, Handshake, Landmark, LogIn, Phone, UserRound,
   Users, WalletCards, type LucideIcon,
 } from 'lucide-react'
+import { ActionIcon, Alert, Badge, Box, Button, Card, Center, Container, Grid, Group, Loader, Menu, Paper, SimpleGrid, Stack, Text, ThemeIcon, Title, UnstyledButton } from '@mantine/core'
 import { apiGet, getAccessToken } from './api'
 import { LanguageFlag } from './ApplicantDashboard'
 import { type ApplicantLanguage, applicantText } from './applicantLocale'
@@ -73,71 +74,108 @@ export function ClientCabinetHeader({
   const accountType = role === 'BUSINESS' ? 'Yuridik shaxs' : 'Jismoniy shaxs'
   const initials = userName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('uz') || 'F'
 
-  const navigateFromMenu = (event: React.MouseEvent<HTMLButtonElement>, page: string) => {
-    setMenuClosed(event)
-    onNavigate(page)
-  }
-  const actionFromMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setMenuClosed(event)
-    onStartMediation()
-  }
-
   return <header className="client-header sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-    <div className="mx-auto flex min-h-[76px] max-w-[1600px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-      <div className="flex min-w-0 items-center gap-3">
-        <button type="button" onClick={() => onNavigate('Umumiy ko‘rsatkich')} className="flex min-w-0 items-center gap-3 rounded-xl text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600" aria-label="Kabinet bosh sahifasi">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-300 text-slate-950"><Handshake size={23}/></span>
-          <span className="hidden min-w-0 sm:block"><strong className="block truncate text-sm font-bold text-slate-950">Nizolarni hal etish</strong><span className="mt-0.5 block text-[10px] uppercase tracking-[.16em] text-slate-500">Elektron platforma</span></span>
-        </button>
-        <span className="hidden h-9 w-px bg-slate-200 md:block"/>
-        <details className="client-service-menu relative">
-          <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 [&::-webkit-details-marker]:hidden">
-            <ClipboardList size={17} className="text-emerald-700"/><span className="hidden sm:inline">Xizmatlar</span><span className="sm:hidden">Bo‘limlar</span><ChevronDown size={15} className="text-slate-400"/>
-          </summary>
-          <div className="client-services-popover fixed left-3 right-3 top-[76px] z-40 max-h-[calc(100vh-92px)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:p-5 lg:absolute lg:left-0 lg:right-auto lg:top-[calc(100%+14px)] lg:w-[min(92vw,720px)]">
-            <div className="mb-4 border-b border-slate-100 pb-3"><h2 className="text-sm font-bold text-slate-900">Xizmatlar</h2><p className="mt-1 text-xs text-slate-500">Kerakli bo‘limni tanlang</p></div>
-            <div className="grid gap-x-7 gap-y-5 md:grid-cols-2">
-              {[groups.slice(0, 3), groups.slice(3)].map((column, columnIndex) => <div key={columnIndex} className="space-y-5">{column.map((group) => <section key={group.title} className="min-w-0">
-                <div className="mb-2 flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><group.icon size={16}/></span><div><h3 className="text-xs font-bold text-slate-900">{group.title}</h3><p className="mt-0.5 text-[10px] text-slate-500">{group.description}</p></div></div>
-                <div className="space-y-1">{group.items.map((item) => item.href
-                  ? <a key={item.label} href={item.href} className="flex min-h-9 items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><item.icon size={15} className="shrink-0 text-slate-500"/><span>{item.label}</span><ArrowUpRight size={13} className="ml-auto shrink-0 text-slate-400"/></a>
-                  : <button key={item.label} type="button" onClick={(event) => item.action === 'mediation' ? actionFromMenu(event) : navigateFromMenu(event, item.page || 'Umumiy ko‘rsatkich')} className="flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><item.icon size={15} className="shrink-0 text-slate-500"/><span>{item.label}</span><ArrowUpRight size={13} className="ml-auto shrink-0 text-slate-400"/></button>)}</div>
-              </section>)}</div>)}
-            </div>
-          </div>
-        </details>
-      </div>
+    <Container size="xl" style={{ maxWidth: 1600 }}>
+      <Group justify="space-between" wrap="nowrap" gap="sm" mih={76}>
+        <Group wrap="nowrap" gap="sm" style={{ minWidth: 0 }}>
+          <UnstyledButton onClick={() => onNavigate('Umumiy ko‘rsatkich')} aria-label="Kabinet bosh sahifasi">
+            <Group wrap="nowrap" gap="sm">
+              <ThemeIcon size={46} radius="lg" color="teal" variant="light"><Handshake size={23}/></ThemeIcon>
+              <Box visibleFrom="sm" style={{ minWidth: 0 }}>
+                <Text fw={750} size="sm" c="dark.9" truncate>Nizolarni hal etish</Text>
+                <Text size="10px" c="dimmed" tt="uppercase" style={{ letterSpacing: '.16em' }}>Elektron platforma</Text>
+              </Box>
+            </Group>
+          </UnstyledButton>
+          <Box visibleFrom="md" style={{ height: 36, width: 1, background: 'var(--mantine-color-gray-3)' }}/>
+          <Menu position="bottom-start" withinPortal={false} shadow="md" width="min(700px, calc(100vw - 24px))" trigger="click">
+            <Menu.Target>
+              <Button variant="subtle" color="dark" leftSection={<ClipboardList size={17}/>} rightSection={<ChevronDown size={15}/>} size="sm">
+                <span className="hidden sm:inline">Xizmatlar</span><span className="sm:hidden">Bo‘limlar</span>
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown p="md" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+              <Stack gap="md">
+                <Box>
+                  <Text fw={700} size="sm">Xizmatlar</Text>
+                  <Text size="xs" c="dimmed">Kerakli bo‘limni tanlang</Text>
+                </Box>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                  {[groups.slice(0, 3), groups.slice(3)].map((column, columnIndex) => <Stack key={columnIndex} gap="lg">
+                    {column.map((group) => <Box key={group.title}>
+                      <Group wrap="nowrap" gap="xs" mb={6}>
+                        <ThemeIcon size={32} radius="md" color="teal" variant="light"><group.icon size={16}/></ThemeIcon>
+                        <Box>
+                          <Text fw={700} size="xs">{group.title}</Text>
+                          <Text size="10px" c="dimmed">{group.description}</Text>
+                        </Box>
+                      </Group>
+                      <Stack gap={2}>
+                        {group.items.map((item) => item.href
+                          ? <Menu.Item key={item.label} component="a" href={item.href} leftSection={<item.icon size={15}/>} rightSection={<ArrowUpRight size={13}/>}>{item.label}</Menu.Item>
+                          : <Menu.Item key={item.label} leftSection={<item.icon size={15}/>} rightSection={<ArrowUpRight size={13}/>} onClick={() => item.action === 'mediation' ? onStartMediation() : onNavigate(item.page || 'Umumiy ko‘rsatkich')}>{item.label}</Menu.Item>)}
+                      </Stack>
+                    </Box>)}
+                  </Stack>)}
+                </SimpleGrid>
+              </Stack>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
 
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        <button type="button" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')} className="flex h-10 w-10 items-center justify-center rounded-lg transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"><LanguageFlag language={language}/></button>
-        <button type="button" onClick={() => onNavigate('Xabarnomalar')} aria-label="Xabarnomalarni ochish" className={`relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 ${activePage === 'Xabarnomalar' ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`}><Bell size={18}/></button>
-        <details className="client-profile-menu relative">
-          <summary className="flex max-w-[190px] cursor-pointer list-none items-center gap-2 rounded-xl p-1.5 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 [&::-webkit-details-marker]:hidden sm:gap-2.5 sm:px-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">{initials}</span>
-            <span className="hidden min-w-0 sm:block"><strong className="block max-w-28 truncate text-xs font-semibold text-slate-900">{userName}</strong><span className="mt-0.5 block text-[10px] text-slate-500">{accountType}</span></span><ChevronDown size={14} className="hidden text-slate-400 sm:block"/>
-          </summary>
-          <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-            <div className="border-b border-slate-100 px-3 py-2.5"><p className="truncate text-sm font-semibold text-slate-900">{userName}</p><p className="mt-1 text-xs text-slate-500">{accountType}</p></div>
-            {assignedRoles.length > 1 && <label className="block px-3 py-2 text-[11px] font-medium text-slate-500">Kabinetni almashtirish<select aria-label="Kabinetni almashtirish" value={role} onChange={(event) => onSwitchRole(event.target.value)} className="form-control mt-1.5 h-9 text-xs">{assignedRoles.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>}
-            <MenuAction icon={UserRound} label="Shaxsiy ma’lumotlar" onClick={(event) => navigateFromMenu(event, 'Shaxsiy ma’lumotlar')}/>
-            {role === 'BUSINESS' && <MenuAction icon={Building2} label="Tashkilot profili" onClick={(event) => navigateFromMenu(event, 'Tashkilot profili')}/>}
-            <MenuAction icon={ArrowUpRight} label="Ochiq sahifaga qaytish" onClick={(event) => { setMenuClosed(event); onOpenPublic() }}/>
-            <MenuAction icon={LogIn} label="Kabinetdan chiqish" onClick={(event) => { setMenuClosed(event); onSignOut() }} danger/>
-          </div>
-        </details>
-      </div>
-    </div>
+        <Group wrap="nowrap" gap="xs">
+          <ActionIcon
+            variant="subtle"
+            color="dark"
+            size="lg"
+            onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')}
+            aria-label={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')}
+            title={applicantText(language, 'Rus tiliga o‘tish', 'Переключить на узбекский язык')}
+          ><LanguageFlag language={language}/></ActionIcon>
+          <ActionIcon
+            variant={activePage === 'Xabarnomalar' ? 'light' : 'subtle'}
+            color={activePage === 'Xabarnomalar' ? 'teal' : 'dark'}
+            size="lg"
+            onClick={() => onNavigate('Xabarnomalar')}
+            aria-label="Xabarnomalarni ochish"
+            style={{ position: 'relative' }}
+          ><Bell size={18}/></ActionIcon>
+          <Menu position="bottom-end" withinPortal={false} shadow="md" width={260} trigger="click">
+            <Menu.Target>
+              <UnstyledButton aria-label="Profil menyusini ochish" className="rounded-xl p-1.5 hover:bg-slate-50 sm:px-2">
+                <Group wrap="nowrap" gap="xs">
+                  <ThemeIcon size={36} radius="xl" color="dark">{initials}</ThemeIcon>
+                  <Box visibleFrom="sm" maw={145}>
+                    <Text size="xs" fw={650} truncate>{userName}</Text>
+                    <Text size="10px" c="dimmed">{accountType}</Text>
+                  </Box>
+                  <ChevronDown size={14} color="var(--mantine-color-gray-6)"/>
+                </Group>
+              </UnstyledButton>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Box px="sm" py="xs">
+                <Text size="sm" fw={650} truncate>{userName}</Text>
+                <Text size="xs" c="dimmed">{accountType}</Text>
+              </Box>
+              <Menu.Divider/>
+              {assignedRoles.length > 1 && <>
+                <Text px="sm" pt={4} size="xs" c="dimmed">Kabinetni almashtirish</Text>
+                {assignedRoles.map((item) => <Menu.Item key={item.key} onClick={() => onSwitchRole(item.key)} rightSection={item.key === role ? <CheckCheck size={14} color="var(--mantine-color-teal-7)"/> : null}>{item.label}</Menu.Item>)}
+                <Menu.Divider/>
+              </>}
+              <Menu.Item leftSection={<UserRound size={15}/>} onClick={() => onNavigate('Shaxsiy ma’lumotlar')}>Shaxsiy ma’lumotlar</Menu.Item>
+              {role === 'BUSINESS' && <Menu.Item leftSection={<Building2 size={15}/>} onClick={() => onNavigate('Tashkilot profili')}>Tashkilot profili</Menu.Item>}
+              <Menu.Item leftSection={<ArrowUpRight size={15}/>} onClick={onOpenPublic}>Ochiq sahifaga qaytish</Menu.Item>
+              <Menu.Divider/>
+              <Menu.Item color="red" leftSection={<LogIn size={15}/>} onClick={onSignOut}>Kabinetdan chiqish</Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
+      </Group>
+    </Container>
   </header>
 }
-
-function MenuAction({ icon: Icon, label, onClick, danger = false }: { icon: LucideIcon; label: string; onClick: (event: React.MouseEvent<HTMLButtonElement>) => void; danger?: boolean }) {
-  return <button type="button" onClick={onClick} className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 ${danger ? 'text-rose-700' : 'text-slate-700'}`}><Icon size={15}/>{label}</button>
-}
-
-function setMenuClosed(event: React.MouseEvent<HTMLElement>) {
-  event.currentTarget.closest('details')?.removeAttribute('open')
-}
-
 type DashboardCase = {
   id: string
   title: string
@@ -196,9 +234,9 @@ export function ClientBusinessDashboard({ role, userName, demoCases, onNavigate,
   const pendingCount = items.filter((item) => isPendingStatus(item.status)).length
   const completedCount = items.filter((item) => isAgreementCompleted(item.status)).length
   const stats = [
-    { label: 'Faol murojaatlar', value: activeCount, detail: 'Jarayonda bo‘lgan mediatsiyalar', icon: ClipboardList, tone: 'emerald' },
-    { label: 'Javob kutilmoqda', value: pendingCount, detail: 'Taraf roziligi yoki mediator javobi', icon: Clock3, tone: 'amber' },
-    { label: 'Yakunlangan kelishuvlar', value: completedCount, detail: 'Muvaffaqiyatli yakunlangan ishlar', icon: CheckCheck, tone: 'blue' },
+    { label: 'Faol murojaatlar', value: activeCount, detail: 'Jarayonda bo‘lgan mediatsiyalar', icon: ClipboardList, color: 'teal' },
+    { label: 'Javob kutilmoqda', value: pendingCount, detail: 'Taraf roziligi yoki mediator javobi', icon: Clock3, color: 'orange' },
+    { label: 'Yakunlangan kelishuvlar', value: completedCount, detail: 'Muvaffaqiyatli yakunlangan ishlar', icon: CheckCheck, color: 'blue' },
   ] as const
 
   const shortcuts: ServiceItem[] = [
@@ -210,53 +248,120 @@ export function ClientBusinessDashboard({ role, userName, demoCases, onNavigate,
 
   const activate = (item: ServiceItem) => item.action === 'mediation' ? onStartMediation() : onNavigate(item.page || 'Umumiy ko‘rsatkich')
 
-  return <div className="client-dashboard space-y-8 sm:space-y-10">
-    <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-5 py-7 text-white shadow-lg shadow-slate-900/10 sm:px-8 sm:py-9 lg:px-10">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-emerald-300/10 blur-3xl"/>
-      <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-        <div className="max-w-2xl"><p className="text-[11px] font-semibold uppercase tracking-[.18em] text-emerald-300">{role === 'BUSINESS' ? 'Yuridik shaxs kabineti' : 'Shaxsiy kabinet'}</p><h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Xush kelibsiz, {greetingName(userName)}</h1><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">Nizongizni kelishuv orqali hal qilish uchun kerakli xizmatlar va murojaatlaringiz bir joyda.</p></div>
-        <div className="flex flex-wrap gap-3"><button type="button" onClick={onStartMediation} className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-emerald-300 px-5 text-sm font-bold text-slate-950 transition hover:bg-emerald-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><Handshake size={18}/>Yangi mediatsiya<ArrowRight size={16}/></button><button type="button" onClick={() => onNavigate('Mediatorlar reyestri')} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[.06] px-5 text-sm font-semibold text-white transition hover:bg-white/[.12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"><Users size={17}/>Mediator tanlash</button></div>
-      </div>
-    </section>
+  return <Stack className="client-dashboard" gap="xl">
+    <Paper radius="xl" p={{ base: 'lg', sm: 'xl' }} shadow="sm" style={{ overflow: 'hidden', position: 'relative', background: 'linear-gradient(120deg, #07101f 0%, #101a2b 68%, #0c2527 100%)' }}>
+      <Box aria-hidden="true" style={{ position: 'absolute', right: -70, top: -120, width: 330, height: 330, borderRadius: '50%', background: 'rgba(96, 232, 190, .09)', filter: 'blur(42px)' }}/>
+      <Group className="relative" justify="space-between" align="center" gap="xl" wrap="wrap">
+        <Box maw={680}>
+          <Text size="xs" fw={700} tt="uppercase" c="teal.3" style={{ letterSpacing: '.18em' }}>{role === 'BUSINESS' ? 'Yuridik shaxs kabineti' : 'Shaxsiy kabinet'}</Text>
+          <Title order={1} mt="sm" c="white" size="clamp(1.7rem, 3vw, 2.5rem)" fw={650}>Xush kelibsiz, {greetingName(userName)}</Title>
+          <Text mt="sm" c="gray.3" size="sm" maw={600} lh={1.7}>Nizongizni kelishuv orqali hal qilish uchun kerakli xizmatlar va murojaatlaringiz bir joyda.</Text>
+        </Box>
+        <Group gap="sm" wrap="wrap">
+          <Button size="md" radius="md" color="teal" c="dark.9" fw={700} leftSection={<Handshake size={18}/>} rightSection={<ArrowRight size={16}/>} onClick={onStartMediation}>Yangi mediatsiya</Button>
+          <Button size="md" radius="md" variant="default" color="gray" leftSection={<Users size={17}/>} onClick={() => onNavigate('Mediatorlar reyestri')} styles={{ root: { background: 'rgba(255,255,255,.07)', borderColor: 'rgba(255,255,255,.22)', color: 'white' } }}>Mediator tanlash</Button>
+        </Group>
+      </Group>
+    </Paper>
 
-    <section aria-label="Mediatsiya ko‘rsatkichlari" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {stats.map(({ label, value, detail, icon: Icon, tone }) => <article key={label} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/80 transition hover:shadow-md sm:p-6">
-        <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium text-slate-600">{label}</p><p className="mt-3 text-3xl font-bold tracking-tight text-slate-950">{loading || error ? '—' : value}</p></div><span className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone === 'emerald' ? 'bg-emerald-50 text-emerald-800' : tone === 'amber' ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-800'}`}><Icon size={20}/></span></div><p className="mt-3 text-xs leading-5 text-slate-500">{detail}</p>
-      </article>)}
-    </section>
+    <SimpleGrid cols={{ base: 1, sm: 2, xl: 3 }} spacing="md" aria-label="Mediatsiya ko‘rsatkichlari">
+      {stats.map(({ label, value, detail, icon: Icon, color }) => <Paper key={label} withBorder radius="lg" p="lg" shadow="xs">
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Box>
+            <Text size="sm" c="dimmed" fw={550}>{label}</Text>
+            <Text mt="xs" size="32px" lh={1.2} fw={750} c="dark.9">{loading || error ? '—' : value}</Text>
+          </Box>
+          <ThemeIcon size={46} radius="lg" color={color} variant="light"><Icon size={21}/></ThemeIcon>
+        </Group>
+        <Text mt="sm" size="xs" c="dimmed">{detail}</Text>
+      </Paper>)}
+    </SimpleGrid>
 
-    <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,.8fr)]">
-      <article className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80">
-        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><h2 className="text-lg font-semibold text-slate-950">Mediatsiya murojaatlarim</h2><p className="mt-1 text-sm text-slate-500">Yuborgan murojaatlaringiz va ularning holati</p></div><button type="button" onClick={() => onNavigate('Mediatsiyalarim')} className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-lg px-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 sm:self-auto">Barchasini ko‘rish<ArrowRight size={15}/></button></div>
-        {error && <div role="alert" className="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:mx-6">{error}</div>}
-        {loading ? <div className="p-8 text-center text-sm text-slate-500">Murojaatlar yuklanmoqda…</div> : items.length ? <div className="divide-y divide-slate-100">{items.slice(0, 4).map((item) => <button type="button" key={item.id} onClick={() => onNavigate('Mediatsiyalarim')} className="flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-emerald-600 sm:px-6">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><FileClock size={18}/></span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><strong className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{item.title || item.disputeSubject || 'Mediatsiya murojaati'}</strong><StatusBadge status={formatStatus(item.status)}/></span><span className="mt-1.5 block text-xs text-slate-500">№ {item.id}{item.region ? ` · ${item.region}` : ''}</span><span className="mt-1.5 block text-[11px] text-slate-400">Yuborilgan: {formatDate(item.createdAt)}</span></span><ChevronRight size={17} className="mt-2 shrink-0 text-slate-400"/>
-        </button>)}</div> : <div className="px-6 py-10 text-center"><span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><Handshake size={21}/></span><h3 className="mt-4 text-sm font-semibold text-slate-900">Hozircha murojaatlar yo‘q</h3><p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-500">Birinchi mediatsiya murojaatingizni yuboring. Jarayon holati shu yerda ko‘rinadi.</p><button type="button" onClick={onStartMediation} className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800"><Handshake size={15}/>Yangi mediatsiya</button></div>}
-        {demoMode && <p className="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-500 sm:px-6">Demo ma’lumotlar ushbu brauzerda saqlanadi.</p>}
-      </article>
+    <Grid gap="md" align="stretch">
+      <Grid.Col span={{ base: 12, xl: 8 }}>
+        <Card withBorder radius="lg" p={0} shadow="xs" h="100%">
+          <Group justify="space-between" align="center" p="lg" wrap="wrap">
+            <Box>
+              <Title order={2} size="lg">Mediatsiya murojaatlarim</Title>
+              <Text mt={4} size="sm" c="dimmed">Yuborgan murojaatlaringiz va ularning holati</Text>
+            </Box>
+            <Button variant="subtle" color="teal" rightSection={<ArrowRight size={15}/>} onClick={() => onNavigate('Mediatsiyalarim')}>Barchasini ko‘rish</Button>
+          </Group>
+          <Box style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
+            {error && <Alert color="orange" variant="light" mx="lg" mt="md" radius="md" title="Murojaatlar yuklanmadi">{error}</Alert>}
+            {loading ? <Center p="xl"><Group gap="sm"><Loader size="sm" color="teal"/><Text size="sm" c="dimmed">Murojaatlar yuklanmoqda…</Text></Group></Center> : items.length ? <Stack gap={0}>
+              {items.slice(0, 4).map((item) => <UnstyledButton key={item.id} onClick={() => onNavigate('Mediatsiyalarim')} className="client-application-row w-full border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50 sm:px-6">
+                <Group wrap="nowrap" align="flex-start" gap="sm">
+                  <ThemeIcon mt={2} size={40} radius="md" color="gray" variant="light"><FileClock size={18}/></ThemeIcon>
+                  <Box style={{ flex: 1, minWidth: 0 }}>
+                    <Group justify="space-between" align="flex-start" gap="xs" wrap="wrap">
+                      <Text size="sm" fw={650} c="dark.9" style={{ minWidth: 0, flex: 1 }} lineClamp={1}>{item.title || item.disputeSubject || 'Mediatsiya murojaati'}</Text>
+                      <StatusBadge status={formatStatus(item.status)}/>
+                    </Group>
+                    <Text mt={5} size="xs" c="dimmed">№ {item.id}{item.region ? ' · ' + item.region : ''}</Text>
+                    <Text mt={4} size="xs" c="gray.6">Yuborilgan: {formatDate(item.createdAt)}</Text>
+                  </Box>
+                  <ChevronRight size={17} color="var(--mantine-color-gray-5)" style={{ marginTop: 8, flexShrink: 0 }}/>
+                </Group>
+              </UnstyledButton>)}
+            </Stack> : <Stack align="center" ta="center" p="xl" gap="xs">
+              <ThemeIcon size={48} radius="lg" color="teal" variant="light"><Handshake size={22}/></ThemeIcon>
+              <Text mt="xs" size="sm" fw={650}>Hozircha murojaatlar yo‘q</Text>
+              <Text size="xs" c="dimmed" maw={390}>Birinchi mediatsiya murojaatingizni yuboring. Jarayon holati shu yerda ko‘rinadi.</Text>
+              <Button mt="sm" size="sm" color="dark" leftSection={<Handshake size={15}/>} onClick={onStartMediation}>Yangi mediatsiya</Button>
+            </Stack>}
+          </Box>
+          {demoMode && <Text px="lg" py="sm" size="xs" c="dimmed" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>Demo ma’lumotlar ushbu brauzerda saqlanadi.</Text>}
+        </Card>
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, xl: 4 }}>
+        <Card withBorder radius="lg" p="lg" shadow="xs" h="100%">
+          <Group justify="space-between" align="flex-start">
+            <Box><Title order={2} size="lg">Tezkor amallar</Title><Text mt={4} size="sm" c="dimmed">Ko‘p ishlatiladigan xizmatlar</Text></Box>
+            <ThemeIcon size={36} radius="md" color="teal" variant="light"><ArrowUpRight size={18}/></ThemeIcon>
+          </Group>
+          <Stack mt="md" gap="xs">
+            {shortcuts.map((item) => <UnstyledButton key={item.label} onClick={() => activate(item)} className="client-quick-action flex min-h-[68px] w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600">
+              <ThemeIcon size={40} radius="md" color="teal" variant="white"><item.icon size={18}/></ThemeIcon>
+              <Box style={{ minWidth: 0, flex: 1 }}>
+                <Text size="xs" fw={650} c="dark.9">{item.label}</Text>
+                <Text mt={3} size="10px" c="dimmed" lineClamp={2}>{item.description}</Text>
+              </Box>
+              <ArrowUpRight size={15} color="var(--mantine-color-gray-5)"/>
+            </UnstyledButton>)}
+          </Stack>
+        </Card>
+      </Grid.Col>
+    </Grid>
 
-      <article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/80 sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-slate-950">Tezkor amallar</h2><p className="mt-1 text-sm text-slate-500">Ko‘p ishlatiladigan xizmatlar</p></div><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><ArrowUpRight size={18}/></span></div><div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">{shortcuts.map((item) => <button type="button" key={item.label} onClick={() => activate(item)} className="group flex min-h-[68px] items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-left transition hover:border-emerald-200 hover:bg-emerald-50/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm ring-1 ring-slate-100"><item.icon size={18}/></span><span className="min-w-0 flex-1"><strong className="block text-xs font-semibold text-slate-900">{item.label}</strong><span className="mt-1 block text-[11px] leading-4 text-slate-500">{item.description}</span></span><ArrowUpRight size={15} className="shrink-0 text-slate-400 transition group-hover:text-emerald-800"/></button>)}</div></article>
-    </section>
-
-    <section aria-labelledby="client-services-heading">
-      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[11px] font-semibold uppercase tracking-[.16em] text-emerald-800">Kabinet navigatsiyasi</p><h2 id="client-services-heading" className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Barcha xizmatlar</h2></div><p className="max-w-xl text-sm leading-5 text-slate-500">Kerakli xizmatni mavzusi bo‘yicha tanlang.</p></div>
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{groups.map((group) => <article key={group.title} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/80 sm:p-6">
-        <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><group.icon size={19}/></span><div><h3 className="text-sm font-semibold text-slate-950">{group.title}</h3><p className="mt-0.5 text-xs text-slate-500">{group.description}</p></div></div>
-        <div className="mt-4 space-y-1">{group.items.map((item) => item.href
-          ? <a key={item.label} href={item.href} className="group flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"><item.icon size={16} className="shrink-0 text-slate-500"/><span className="min-w-0 flex-1"><strong className="block text-xs font-semibold text-slate-800">{item.label}</strong><span className="mt-0.5 block text-[10px] text-slate-500">{item.description}</span></span><ArrowUpRight size={14} className="text-slate-400 group-hover:text-emerald-800"/></a>
-          : <button type="button" key={item.label} onClick={() => activate(item)} className="group flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"><item.icon size={16} className="shrink-0 text-slate-500"/><span className="min-w-0 flex-1"><strong className="block text-xs font-semibold text-slate-800">{item.label}</strong><span className="mt-0.5 block text-[10px] text-slate-500">{item.description}</span></span><ArrowUpRight size={14} className="text-slate-400 group-hover:text-emerald-800"/></button>)}</div>
-      </article>)}</div>
-    </section>
-    {demoMode && <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4"><CircleHelp size={18} className="mt-0.5 shrink-0 text-blue-700"/><p className="text-xs leading-5 text-blue-900">Demo rejimida kiritilgan o‘zgarishlar faqat ushbu brauzerda saqlanadi. Davlat tizimlari, billing, SMS, OneID va ERI integratsiyalari ulanmagan.</p></div>}
-  </div>
+    <Box component="section" aria-labelledby="client-services-heading">
+      <Group justify="space-between" align="flex-end" mb="md" wrap="wrap" gap="xs">
+        <Box><Text size="xs" fw={700} tt="uppercase" c="teal.8" style={{ letterSpacing: '.16em' }}>Kabinet navigatsiyasi</Text><Title id="client-services-heading" order={2} mt={4} size="xl">Barcha xizmatlar</Title></Box>
+        <Text size="sm" c="dimmed">Kerakli xizmatni mavzusi bo‘yicha tanlang.</Text>
+      </Group>
+      <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="md">
+        {groups.map((group) => <Card key={group.title} withBorder radius="lg" p="lg" shadow="xs">
+          <Group wrap="nowrap" gap="sm">
+            <ThemeIcon size={42} radius="md" color="teal" variant="light"><group.icon size={19}/></ThemeIcon>
+            <Box><Text size="sm" fw={650}>{group.title}</Text><Text size="xs" c="dimmed">{group.description}</Text></Box>
+          </Group>
+          <Stack mt="md" gap={3}>
+            {group.items.map((item) => item.href
+              ? <Button key={item.label} component="a" href={item.href} variant="subtle" color="dark" justify="flex-start" fullWidth leftSection={<item.icon size={16}/>} rightSection={<ArrowUpRight size={14}/>} styles={{ inner: { justifyContent: 'flex-start' }, label: { flex: 1, textAlign: 'left' } }}>{item.label}</Button>
+              : <Button key={item.label} variant="subtle" color="dark" justify="flex-start" fullWidth leftSection={<item.icon size={16}/>} rightSection={<ArrowUpRight size={14}/>} styles={{ inner: { justifyContent: 'flex-start' }, label: { flex: 1, textAlign: 'left' } }} onClick={() => activate(item)}>{item.label}</Button>)}
+          </Stack>
+        </Card>)}
+      </SimpleGrid>
+    </Box>
+    {demoMode && <Alert variant="light" color="blue" icon={<CircleHelp size={18}/>} radius="md">Demo rejimida kiritilgan o‘zgarishlar faqat ushbu brauzerda saqlanadi. Davlat tizimlari, billing, SMS, OneID va ERI integratsiyalari ulanmagan.</Alert>}
+  </Stack>
 }
 
 function StatusBadge({ status }: { status: string }) {
   const lower = status.toLocaleLowerCase('uz')
-  const style = /rad et|muvaffaqiyatsiz|erishilmadi|yopildi/.test(lower) ? 'bg-rose-50 text-rose-700' : /yakun|monitoring|imzol|belgilangan|tayinlandi/.test(lower) ? 'bg-emerald-50 text-emerald-800' : /kutil|tanlash|tekshiril/.test(lower) ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-700'
-  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${style}`}>{status}</span>
+  const color = /rad et|muvaffaqiyatsiz|erishilmadi|yopildi/.test(lower) ? 'red' : /yakun|monitoring|imzol|belgilangan|tayinlandi/.test(lower) ? 'teal' : /kutil|tanlash|tekshiril/.test(lower) ? 'orange' : 'gray'
+  return <Badge color={color} variant="light" radius="xl" size="sm" style={{ flexShrink: 0, textTransform: 'none' }}>{status}</Badge>
 }
-
 function formatStatus(status: string) { return remoteStatusLabels[status] || status || 'Holat ko‘rsatilmagan' }
 function formatDate(value?: string) {
   if (!value) return 'Sana ko‘rsatilmagan'
