@@ -7,6 +7,7 @@ import {
   LayoutDashboard, LogIn, MapPin, Menu, MessageSquare, Newspaper, Pencil, Phone, Search,
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
+import { Accordion, ActionIcon, Badge, Box, Button, Card, Container, Divider, Grid, Group, Paper, Select, SimpleGrid, Stack, Tabs, Text, TextInput, ThemeIcon, Title, UnstyledButton } from '@mantine/core'
 import { apiGet, apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, categoryAnswerDetails, categoryDetailsLabel, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 import { BusinessSpecialistDirectory, PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
@@ -513,41 +514,122 @@ function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegi
   const links = ['Bosh sahifa', 'Mediatorlar reyestri', 'Hakamlik va arbitraj', 'Reyting', 'Statistika', 'Hududlar', 'Qonunchilik', 'Yo‘riqnomalar']
   const linkLabels: Record<string, string> = { 'Bosh sahifa': 'Главная', 'Mediatorlar reyestri': 'Реестр медиаторов', 'Hakamlik va arbitraj': 'Третейский суд и арбитраж', 'Reyting': 'Рейтинг', 'Statistika': 'Статистика', 'Hududlar': 'Регионы', 'Qonunchilik': 'Законодательство', 'Yo‘riqnomalar': 'Руководства' }
   const displayLink = (link: string) => language === 'ru' ? linkLabels[link] || link : link
-  return <div className="min-h-screen overflow-hidden bg-[#eef3f6] text-slate-950">
-    <header className="relative z-10 border-b border-slate-200/70 bg-white px-3 backdrop-blur-lg sm:px-4"><div className="mx-auto flex min-h-[76px] max-w-[1600px] items-center justify-between gap-2 sm:gap-5"><button onClick={() => setPage('Bosh sahifa')} className="flex min-w-0 shrink items-center gap-2.5 text-left sm:gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-blue-900 text-white"><Handshake size={25}/></span><span className="min-w-0"><strong className="block truncate text-[11px] font-bold uppercase leading-4 tracking-tight sm:text-sm">“Nizolarni muqobil hal etish”</strong><span className="text-[9px] uppercase tracking-wide text-slate-500 sm:text-[10px]">{t('Yagona elektron platformasi', 'Единая электронная платформа')}</span></span></button><nav className="hidden items-center gap-1 xl:flex">{links.map((link) => <button key={link} onClick={() => link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link)} className={`whitespace-nowrap rounded-full px-3 py-2 text-[13px] transition ${page === link ? 'text-blue-900 font-semibold underline decoration-2 underline-offset-8' : 'text-slate-600 hover:text-blue-900'}`}>{displayLink(link)}</button>)}</nav><div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2"><a href="tel:1008" aria-label={t('Ishonch telefoni: 1008', 'Телефон доверия: 1008')} title={t('Ishonch telefoni: 1008', 'Телефон доверия: 1008')} className="hidden h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-blue-900 lg:inline-flex xl:hidden 2xl:inline-flex"><Phone size={14}/><span>1008</span></a><button type="button" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={t('Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={t('Rus tiliga o‘tish', 'Переключить на узбекский язык')} className="inline-flex h-9 w-9 items-center justify-center rounded-lg transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"><LanguageFlag language={language}/></button><button onClick={onLogin} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-blue-900 py-1.5 pl-1.5 pr-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-950 sm:gap-2 sm:py-2 sm:pl-2 sm:pr-4 sm:text-sm"><span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15 text-white sm:h-9 sm:w-9"><LogIn size={17}/></span><span className="hidden sm:inline">{t('Tizimga kirish', 'Войти в систему')}</span></button></div></div><nav className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto pb-3 xl:hidden">{links.map((link) => <button key={link} onClick={() => link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link)} className={`whitespace-nowrap rounded-sm px-3 py-1.5 text-xs ${page === link ? 'bg-blue-50 font-semibold text-blue-900' : 'text-slate-600'}`}>{displayLink(link)}</button>)}</nav></header>
+  const navigate = (link: string) => link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link)
+  return <Box mih="100vh" bg="gray.0" c="dark.9" style={{ overflowX: 'hidden' }}>
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur">
+      <Container size="xl" style={{ maxWidth: 1600 }} px="md">
+        <Group justify="space-between" wrap="nowrap" gap="md" mih={76}>
+          <UnstyledButton onClick={() => setPage('Bosh sahifa')} className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700">
+            <Group gap="sm" wrap="nowrap">
+              <ThemeIcon size={46} radius="md" color="blue" variant="filled"><Handshake size={24}/></ThemeIcon>
+              <Box className="min-w-0 text-left">
+                <Text fw={750} size="sm" c="dark.9" className="truncate uppercase tracking-tight">“Nizolarni muqobil hal etish”</Text>
+                <Text size="xs" c="dimmed" className="uppercase tracking-wider">{t('Yagona elektron platformasi', 'Единая электронная платформа')}</Text>
+              </Box>
+            </Group>
+          </UnstyledButton>
+          <Group gap={4} wrap="nowrap" className="hidden xl:flex">
+            {links.map((link) => <Button key={link} type="button" variant={page === link ? 'light' : 'subtle'} color="blue" radius="md" size="compact-sm" onClick={() => navigate(link)}>{displayLink(link)}</Button>)}
+          </Group>
+          <Group gap="xs" wrap="nowrap" ml="auto">
+            <Button component="a" href="tel:1008" variant="subtle" color="dark" size="sm" leftSection={<Phone size={15}/>} className="hidden 2xl:inline-flex">{t('Ishonch telefoni', 'Телефон доверия')} · 1008</Button>
+            <ActionIcon type="button" variant="subtle" color="blue" size="lg" radius="md" onClick={() => onLanguageChange(language === 'uz' ? 'ru' : 'uz')} aria-label={t('Rus tiliga o‘tish', 'Переключить на узбекский язык')} title={t('Rus tiliga o‘tish', 'Переключить на узбекский язык')}>
+              <LanguageFlag language={language}/>
+            </ActionIcon>
+            <Button type="button" onClick={onLogin} color="blue" radius="md" size="sm" leftSection={<LogIn size={17}/>} className="shrink-0"><span className="hidden sm:inline">{t('Tizimga kirish', 'Войти в систему')}</span></Button>
+          </Group>
+        </Group>
+        <Group gap={4} wrap="nowrap" className="overflow-x-auto pb-2 xl:hidden">
+          {links.map((link) => <Button key={link} type="button" variant={page === link ? 'light' : 'subtle'} color="blue" radius="md" size="compact-xs" onClick={() => navigate(link)} className="shrink-0">{displayLink(link)}</Button>)}
+        </Group>
+      </Container>
+    </header>
     {page === 'Bosh sahifa' ? <>
-      <section className="relative isolate overflow-hidden bg-[#082f5f] text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60" style={{ backgroundImage: 'radial-gradient(rgba(147,197,253,.2) 1px, transparent 1px)', backgroundSize: '22px 22px' }}/>
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-[#12477d]/80 via-transparent to-[#061b36]/80"/>
-        <div className="relative mx-auto grid max-w-[1420px] items-center gap-10 px-5 py-12 sm:px-8 md:grid-cols-[1.1fr_.9fr] md:gap-12 md:py-20 lg:px-10 lg:py-24">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-200/20 bg-white/10 px-4 py-2 text-xs font-semibold text-sky-100"><Sparkles size={15} className="text-amber-400"/>{t('O‘zbekiston Respublikasi Adliya vazirligi platformasi', 'Платформа Министерства юстиции Республики Узбекистан')}</div>
-            <h1 className="max-w-3xl text-[2.65rem] font-bold leading-[1.04] tracking-tight sm:text-5xl lg:text-[3.65rem]">{t('Nizolarni', 'Разрешайте споры')} <span className="text-sky-300">{t('tinch', 'мирно')}</span> {t('va o‘zaro manfaatli hal eting', 'и на взаимовыгодных условиях')}</h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-blue-100 sm:text-lg">{t('Mediatsiya, hakamlik va arbitraj mutaxassislarini toping. Nizoni sudgacha kelishuv bilan hal etish yo‘lini tanlang.', 'Найдите специалистов по медиации, третейскому разбирательству и арбитражу. Выберите способ урегулировать спор до суда.')}</p>
-            <div className="mt-8 flex flex-wrap gap-3"><button onClick={() => onContact('')} className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-amber-400 px-5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-950/20 transition hover:bg-amber-300"><Handshake size={18}/>{t('Mediatsiyaga murojaat qilish', 'Подать заявление на медиацию')}<ArrowRight size={16}/></button><button onClick={onRegistry} className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-white/25 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15"><Search size={17}/>{t('Reyestrni ko‘rish', 'Открыть реестр')}</button><button onClick={onApplyMediator} className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-emerald-200/35 bg-emerald-300/10 px-4 text-sm font-semibold text-white transition hover:bg-emerald-300/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#082f5f]"><FilePlus2 size={17} className="text-emerald-200"/>{t('Mediator bo‘lish uchun ariza', 'Подать заявление на статус медиатора')}<ArrowRight size={15} className="text-emerald-200"/></button></div>
-          </div>
-          <RegistrySearchBox language={language} query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} onSearch={onRegistry}/>
-        </div>
-      </section>
-      <PublicHomeSections language={language} onRegistry={onRegistry} setRegion={setRegion} setRegistryKind={setRegistryKind} onContact={onContact}/>
+      <Box component="main">
+        <Box component="section" pos="relative" style={{ isolation: 'isolate', overflow: 'hidden', background: 'linear-gradient(125deg, #0c3b6b 0%, #082f5f 52%, #061b36 100%)' }} c="white">
+          <Box aria-hidden="true" pos="absolute" inset={0} style={{ zIndex: -1, opacity: 0.45, backgroundImage: 'radial-gradient(rgba(147,197,253,.24) 1px, transparent 1px)', backgroundSize: '22px 22px' }}/>
+          <Container size="xl" style={{ maxWidth: 1420 }} px="lg" py={72}>
+            <Grid align="center" gap={{ base: 36, md: 56 }}>
+              <Grid.Col span={{ base: 12, md: 7 }}>
+                <Stack gap="lg">
+                  <Badge variant="light" color="cyan" radius="xl" size="lg" leftSection={<Sparkles size={14} className="text-amber-400"/>}>
+                    {t('O‘zbekiston Respublikasi Adliya vazirligi platformasi', 'Платформа Министерства юстиции Республики Узбекистан')}
+                  </Badge>
+                  <Title order={1} fw={750} style={{ maxWidth: 780, fontSize: 'clamp(2.6rem, 5vw, 4.6rem)', lineHeight: 1.04, letterSpacing: '-0.045em', color: '#fff' }}>
+                    {t('Nizolarni', 'Разрешайте споры')} <Text component="span" inherit c="cyan.3">{t('tinch', 'мирно')}</Text> {t('va o‘zaro manfaatli hal eting', 'и на взаимовыгодных условиях')}
+                  </Title>
+                  <Text size="lg" c="blue.0" maw={700} lh={1.65}>
+                    {t('Mediatsiya, hakamlik va arbitraj mutaxassislarini toping. Nizoni sudgacha kelishuv bilan hal etish yo‘lini tanlang.', 'Найдите специалистов по медиации, третейскому разбирательству и арбитражу. Выберите способ урегулировать спор до суда.')}
+                  </Text>
+                  <Group gap="sm" mt="xs" wrap="wrap">
+                    <Button type="button" size="lg" radius="md" leftSection={<Handshake size={19}/>} rightSection={<ArrowRight size={17}/>} onClick={() => onContact('')} style={{ background: '#ffc126', color: '#071a31', boxShadow: '0 12px 28px rgba(4, 18, 34, .22)' }}>
+                      {t('Mediatsiyaga murojaat qilish', 'Подать заявление на медиацию')}
+                    </Button>
+                    <Button type="button" size="lg" radius="md" variant="default" leftSection={<Search size={18}/>} onClick={onRegistry} styles={{ root: { background: 'rgba(255,255,255,.1)', color: '#fff', borderColor: 'rgba(255,255,255,.28)' } }}>
+                      {t('Reyestrni ko‘rish', 'Открыть реестр')}
+                    </Button>
+                    <Button type="button" size="md" radius="md" variant="light" color="teal" leftSection={<FilePlus2 size={17}/>} rightSection={<ArrowRight size={15}/>} onClick={onApplyMediator} styles={{ root: { background: 'rgba(110,231,183,.14)', color: '#d1fae5', border: '1px solid rgba(167,243,208,.25)' } }}>
+                      {t('Mediator bo‘lish uchun ariza', 'Подать заявление на статус медиатора')}
+                    </Button>
+                  </Group>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <RegistrySearchBox language={language} query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} onSearch={onRegistry}/>
+              </Grid.Col>
+            </Grid>
+          </Container>
+        </Box>
+        <PublicHomeSections language={language} onRegistry={onRegistry} setRegion={setRegion} setRegistryKind={setRegistryKind} onContact={onContact}/>
+      </Box>
       <PublicFooter language={language} onLogin={onLogin} setPage={setPage}/>
     </> : <PublicInfoPage page={page} registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} onRegistry={onRegistry} onLogin={onLogin} onToast={onToast} onContact={onContact}/>}
-  </div>
+  </Box>
 }
 
-function RegistrySearchBox({ language, query, setQuery, region, setRegion, kind, setKind, onSearch }: { language: ApplicantLanguage; query: string; setQuery: (v: string) => void; region: string; setRegion: (v: string) => void; kind: string; setKind: (v: string) => void; onSearch: () => void }) {
+function RegistrySearchBox({ language, query, setQuery, region, setRegion, kind, setKind, onSearch }: { language: ApplicantLanguage; query: string; setQuery: (v: string) => void; setRegion: (v: string) => void; region: string; kind: string; setKind: (v: string) => void; onSearch: () => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
-  return <aside className="w-full rounded-2xl border border-white/20 bg-white/10 p-5 shadow-2xl shadow-slate-950/20 backdrop-blur-md sm:p-7">
-    <h2 className="mb-1 flex items-center gap-2.5 text-lg font-bold text-white"><Search size={21} className="text-amber-400"/>{t('Mutaxassisni tez topish', 'Быстрый поиск специалиста')}</h2>
-    <div className="mb-5 mt-4 flex max-w-full gap-1 overflow-x-auto border-b border-white/15">{[['Mediatorlar', 'Медиаторы'], ['Hakamlik sudyalari', 'Третейские судьи'], ['Arbitrlar', 'Арбитры']].map(([tab, label])=><button key={tab} onClick={()=>setKind(tab)} className={`shrink-0 border-b-2 px-3 py-2.5 text-xs font-semibold transition sm:px-4 ${kind===tab?'border-amber-400 text-white':'border-transparent text-blue-100/75 hover:text-white'}`}>{language === 'ru' ? label : tab}</button>)}</div>
-    <div className="space-y-4">
-      <label className="block text-xs font-semibold text-blue-50">{t('F.I.Sh. yoki kalit so‘z', 'Ф.И.О. или ключевое слово')}<input aria-label={t('Mutaxassis nomi yoki ixtisosligi', 'Имя или специализация специалиста')} value={query} onChange={(e)=>setQuery(e.target.value)} onKeyDown={(e)=>e.key==='Enter'&&onSearch()} placeholder={t('Masalan: Karimova, tijorat, oila...', 'Например: Каримова, торговля, семья...')} className="mt-2 h-12 w-full rounded-xl border border-white/80 bg-white px-4 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-300/20"/></label>
-      <label className="block text-xs font-semibold text-blue-50">{t('Hududni tanlang', 'Выберите регион')}<span className="relative mt-2 block"><select aria-label={t('Hududni tanlang', 'Выберите регион')} value={region} onChange={(e)=>setRegion(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-white/80 bg-white px-4 pr-10 text-sm font-normal text-slate-900 outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-300/20"><option value="Barcha hududlar">{t('Barcha hududlar (O‘zbekiston)', 'Все регионы (Узбекистан)')}</option>{['Toshkent shahri','Samarqand viloyati','Buxoro viloyati','Farg‘ona viloyati'].map((r)=><option key={r}>{r}</option>)}</select><ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-700"/></span></label>
-      <button onClick={onSearch} className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#0875cf] px-5 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition hover:bg-[#0b83e3]"><Search size={18}/>{t('Reyestrdan qidirish', 'Искать в реестре')}<ArrowRight size={16}/></button>
-    </div>
-  </aside>
+  const specialistTypes = [['Mediatorlar', 'Медиаторы'], ['Hakamlik sudyalari', 'Третейские судьи'], ['Arbitrlar', 'Арбитры']]
+  return <Card withBorder radius="xl" padding="lg" shadow="xl" style={{ background: 'rgba(255,255,255,.1)', borderColor: 'rgba(255,255,255,.2)', backdropFilter: 'blur(14px)' }}>
+    <Stack gap="lg">
+      <Group gap="sm">
+        <ThemeIcon variant="light" color="yellow" radius="md" size="lg"><Search size={19}/></ThemeIcon>
+        <Text fw={700} size="lg" c="white">{t('Mutaxassisni tez topish', 'Быстрый поиск специалиста')}</Text>
+      </Group>
+      <Tabs value={kind} onChange={(value) => { if (value) setKind(value) }} color="yellow" variant="default">
+        <Tabs.List grow>
+          {specialistTypes.map(([tab, label]) => <Tabs.Tab key={tab} value={tab} c="white" fw={600}>{language === 'ru' ? label : tab}</Tabs.Tab>)}
+        </Tabs.List>
+      </Tabs>
+      <Stack gap="md">
+        <TextInput
+          label={t('F.I.Sh. yoki kalit so‘z', 'Ф.И.О. или ключевое слово')}
+          aria-label={t('Mutaxassis nomi yoki ixtisosligi', 'Имя или специализация специалиста')}
+          value={query}
+          onChange={(event) => setQuery(event.currentTarget.value)}
+          onKeyDown={(event) => { if (event.key === 'Enter') onSearch() }}
+          placeholder={t('Masalan: Karimova, tijorat, oila...', 'Например: Каримова, торговля, семья...')}
+          styles={{ label: { color: '#eff6ff', marginBottom: 8 }, input: { height: 52, background: '#fff', borderRadius: 12 } }}
+        />
+        <Select
+          label={t('Hududni tanlang', 'Выберите регион')}
+          aria-label={t('Hududni tanlang', 'Выберите регион')}
+          value={region}
+          onChange={(value) => setRegion(value || '')}
+          data={[
+            { value: 'Barcha hududlar', label: t('Barcha hududlar (O‘zbekiston)', 'Все регионы (Узбекистан)') },
+            ...['Toshkent shahri', 'Samarqand viloyati', 'Buxoro viloyati', 'Farg‘ona viloyati'].map((value) => ({ value, label: value })),
+          ]}
+          allowDeselect={false}
+          styles={{ label: { color: '#eff6ff', marginBottom: 8 }, input: { height: 52, background: '#fff', borderRadius: 12 } }}
+        />
+        <Button type="button" color="blue" size="lg" radius="md" fullWidth leftSection={<Search size={18}/>} rightSection={<ArrowRight size={16}/>} onClick={onSearch}>
+          {t('Reyestrdan qidirish', 'Искать в реестре')}
+        </Button>
+      </Stack>
+    </Stack>
+  </Card>
 }
-
 function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, onContact }: { language: ApplicantLanguage; onRegistry: () => void; setRegion: (region: string) => void; setRegistryKind: (kind: string) => void; onContact: (name: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const [content, setContent] = useState<Record<string, PublicContentItem[]>>({ news: [], announcements: [], legal_framework: [], templates: [], manuals: [], video_manuals: [], faq: [], mandatory_mediation: [] })
@@ -616,31 +698,115 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
   const latestUpdates = [...content.news, ...content.announcements].sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime()).slice(0, 3)
 
   return <>
-    <section className="relative z-10 mx-auto -mt-7 max-w-[1420px] px-5 sm:px-8 lg:px-10">
-      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/10 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
-        {[[statistics ? String(publicSpecialistsTotal ?? '—') : '—', t('Faol mutaxassislar', 'Действующие специалисты'), t('Ochiq reyestr bo‘yicha', 'По открытому реестру'), 'text-blue-800'], [statistics ? String(statistics.mediationCasesTotal ?? '—') : '—', t('Mediatsiya murojaatlari', 'Заявления на медиацию'), t('Umumiy soni', 'Всего'), 'text-emerald-600'], [statistics ? String(statistics.mediationCasesSettled ?? '—') : '—', t('Yakunlangan mediatsiyalar', 'Завершённые медиации'), t('Kelishuv bilan yakunlangan', 'Завершены соглашением'), 'text-amber-500'], [statistics ? String(coveredRegions) : '—', t('Hudud qamrovi', 'Охват регионов'), t('Faol mediatorlar mavjud hududlar', 'Регионы с действующими медиаторами'), 'text-violet-600']].map(([value, label, detail, color]) => <div key={label} className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-4 text-center"><p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p><p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</p><p className="mt-1 text-[11px] text-slate-400">{detail}</p></div>)}
-      </div>
-      <p className="mt-2 text-right text-[11px] text-slate-400">{statisticsUpdatedAt ? `${t('Ko‘rsatkichlar hisoblangan vaqt:', 'Время расчёта показателей:')} ${statisticsUpdatedAt}` : statisticsUnavailable ? t('Statistika ma’lumoti vaqtincha mavjud emas', 'Статистические данные временно недоступны') : t('Statistika ma’lumoti yuklanmoqda', 'Загрузка статистики')}</p>
+    <section aria-label={t('Platforma ko‘rsatkichlari', 'Показатели платформы')} className="relative z-10 -mt-7">
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <Paper withBorder radius="xl" p="sm" shadow="md">
+          <SimpleGrid cols={{ base: 2, sm: 2, lg: 4 }} spacing="sm">
+            {[
+              { value: statistics ? String(publicSpecialistsTotal ?? '—') : '—', label: t('Faol mutaxassislar', 'Действующие специалисты'), detail: t('Ochiq reyestr bo‘yicha', 'По открытому реестру'), color: 'blue.8' },
+              { value: statistics ? String(statistics.mediationCasesTotal ?? '—') : '—', label: t('Mediatsiya murojaatlari', 'Заявления на медиацию'), detail: t('Umumiy soni', 'Всего'), color: 'teal.7' },
+              { value: statistics ? String(statistics.mediationCasesSettled ?? '—') : '—', label: t('Yakunlangan mediatsiyalar', 'Завершённые медиации'), detail: t('Kelishuv bilan yakunlangan', 'Завершены соглашением'), color: 'orange.7' },
+              { value: statistics ? String(coveredRegions) : '—', label: t('Hudud qamrovi', 'Охват регионов'), detail: t('Faol mediatorlar mavjud hududlar', 'Регионы с действующими медиаторами'), color: 'violet.7' },
+            ].map((metric) => <Paper key={metric.label} withBorder radius="lg" bg="gray.0" p="md" ta="center">
+              <Text size="2rem" fw={750} c={metric.color} lh={1.15}>{metric.value}</Text>
+              <Text mt={8} size="xs" fw={700} c="dark.6" tt="uppercase" lts={0.35}>{metric.label}</Text>
+              <Text mt={4} size="xs" c="dimmed">{metric.detail}</Text>
+            </Paper>)}
+          </SimpleGrid>
+        </Paper>
+        <Text mt={8} ta="right" size="xs" c="dimmed">
+          {statisticsUpdatedAt ? t('Ko‘rsatkichlar hisoblangan vaqt:', 'Время расчёта показателей:') + ' ' + statisticsUpdatedAt : statisticsUnavailable ? t('Statistika ma’lumoti vaqtincha mavjud emas', 'Статистические данные временно недоступны') : t('Statistika ma’lumoti yuklanmoqda', 'Загрузка статистики')}
+        </Text>
+      </Container>
     </section>
 
     <section className="bg-slate-50 px-5 pb-10 pt-12 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-[1420px]">
-        <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('Muqobil hal etish yo‘llari', 'Способы альтернативного урегулирования')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{t('Nizo turiga mos xizmatni tanlang', 'Выберите способ урегулирования спора')}</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{t('Nizo va taraflarning ehtiyojiga qarab mediatsiya, hakamlik yoki arbitraj tartibi bilan tanishing.', 'Ознакомьтесь с медиацией, третейским разбирательством и арбитражем с учётом спора и потребностей сторон.')}</p></div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Handshake size={21}/></span><h3 className="mt-4 text-base font-bold text-slate-900">{t('Mediatsiya', 'Медиация')}</h3><p className="mt-2 min-h-12 text-sm leading-6 text-slate-500">{t('Taraflar mediator ko‘magida nizoni kelishuv asosida hal qilish uchun murojaat yuboradi.', 'Стороны обращаются за помощью медиатора, чтобы урегулировать спор на основе соглашения.')}</p><button onClick={() => onContact('')} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800 hover:text-blue-950">{t('Murojaat boshlash', 'Подать заявление')}<ArrowRight size={15}/></button></article>
-          <article id="mandatory-mediation" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><FileCheck2 size={21}/></span><h3 className="mt-4 text-base font-bold text-slate-900">{t('Majburiy sudgacha mediatsiya', 'Обязательная досудебная медиация')}</h3><p className="mt-2 min-h-12 text-sm leading-6 text-slate-500">{t('Qonunchilikda belgilangan holatlarda sudgacha mediatsiya tartibi va tegishli toifalar bilan tanishing.', 'Ознакомьтесь с порядком и категориями обязательной досудебной медиации, предусмотренными законодательством.')}</p><a href="#mandatory-guidance" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800 hover:text-blue-950">{t('Toifalar va yo‘riqnoma', 'Категории и руководство')}<ArrowRight size={15}/></a></article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-800"><Gavel size={21}/></span><h3 className="mt-4 text-base font-bold text-slate-900">{t('Hakamlik va arbitraj', 'Третейское разбирательство и арбитраж')}</h3><p className="mt-2 min-h-12 text-sm leading-6 text-slate-500">{t('Hakamlik muhokamasi va arbitraj bo‘yicha tartib, mutaxassislar hamda hujjat namunalari.', 'Порядок третейского разбирательства и арбитража, специалисты и образцы документов.')}</p><button onClick={() => { setRegistryKind('Hakamlik sudyalari'); onRegistry() }} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-800 hover:text-blue-950">{t('Mutaxassislarni topish', 'Найти специалистов')}<ArrowRight size={15}/></button></article>
-        </div>
-      </div>
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <Stack gap="xl">
+          <Stack gap="xs">
+            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Muqobil hal etish yo‘llari', 'Способы альтернативного урегулирования')}</Text>
+            <Title order={2} size="h2" c="dark.9">{t('Nizo turiga mos xizmatni tanlang', 'Выберите способ урегулирования спора')}</Title>
+            <Text size="sm" c="dimmed" maw={780}>{t('Nizo va taraflarning ehtiyojiga qarab mediatsiya, hakamlik yoki arbitraj tartibi bilan tanishing.', 'Ознакомьтесь с медиацией, третейским разбирательством и арбитражем с учётом спора и потребностей сторон.')}</Text>
+          </Stack>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+            <Card withBorder radius="xl" padding="lg" shadow="xs" h="100%">
+              <Stack align="flex-start" gap="sm" h="100%">
+                <ThemeIcon size={46} radius="md" color="teal" variant="light"><Handshake size={22}/></ThemeIcon>
+                <Title order={3} size="h4">{t('Mediatsiya', 'Медиация')}</Title>
+                <Text size="sm" c="dimmed" lh={1.6} flex={1}>{t('Taraflar mediator ko‘magida nizoni kelishuv asosida hal qilish uchun murojaat yuboradi.', 'Стороны обращаются за помощью медиатора, чтобы урегулировать спор на основе соглашения.')}</Text>
+                <Button type="button" variant="light" color="blue" rightSection={<ArrowRight size={15}/>} onClick={() => onContact('')}>{t('Murojaat boshlash', 'Подать заявление')}</Button>
+              </Stack>
+            </Card>
+            <Card id="mandatory-mediation" withBorder radius="xl" padding="lg" shadow="xs" h="100%" style={{ scrollMarginTop: 100 }}>
+              <Stack align="flex-start" gap="sm" h="100%">
+                <ThemeIcon size={46} radius="md" color="orange" variant="light"><FileCheck2 size={22}/></ThemeIcon>
+                <Title order={3} size="h4">{t('Majburiy sudgacha mediatsiya', 'Обязательная досудебная медиация')}</Title>
+                <Text size="sm" c="dimmed" lh={1.6} flex={1}>{t('Qonunchilikda belgilangan holatlarda sudgacha mediatsiya tartibi va tegishli toifalar bilan tanishing.', 'Ознакомьтесь с порядком и категориями обязательной досудебной медиации, предусмотренными законодательством.')}</Text>
+                <Button component="a" href="#mandatory-guidance" variant="subtle" color="blue" rightSection={<ArrowRight size={15}/>} px={0}>{t('Toifalar va yo‘riqnoma', 'Категории и руководство')}</Button>
+              </Stack>
+            </Card>
+            <Card withBorder radius="xl" padding="lg" shadow="xs" h="100%">
+              <Stack align="flex-start" gap="sm" h="100%">
+                <ThemeIcon size={46} radius="md" color="blue" variant="light"><Gavel size={22}/></ThemeIcon>
+                <Title order={3} size="h4">{t('Hakamlik va arbitraj', 'Третейское разбирательство и арбитраж')}</Title>
+                <Text size="sm" c="dimmed" lh={1.6} flex={1}>{t('Hakamlik muhokamasi va arbitraj bo‘yicha tartib, mutaxassislar hamda hujjat namunalari.', 'Порядок третейского разбирательства и арбитража, специалисты и образцы документов.')}</Text>
+                <Button type="button" variant="subtle" color="blue" rightSection={<ArrowRight size={15}/>} px={0} onClick={() => { setRegistryKind('Hakamlik sudyalari'); onRegistry() }}>{t('Mutaxassislarni topish', 'Найти специалистов')}</Button>
+              </Stack>
+            </Card>
+          </SimpleGrid>
+        </Stack>
+      </Container>
     </section>
 
     <section id="mandatory-guidance" className="scroll-mt-24 bg-white px-5 py-12 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-[1420px]"><div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-amber-700">{t('Sudgacha tartib', 'Досудебный порядок')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{t('Majburiy mediatsiya toifalari', 'Категории обязательной медиации')}</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{t('Toifalar va talablar vakolatli organ tasdiqlagan, nashr qilingan ma’lumotlar asosida ko‘rsatiladi.', 'Категории и требования отображаются по опубликованным данным, утверждённым уполномоченным органом.')}</p></div></div>
-        {content.mandatory_mediation.length ? <div className="grid gap-3 md:grid-cols-2">{content.mandatory_mediation.slice(0, 6).map((item) => <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-5"><h3 className="text-sm font-bold text-slate-900">{publicContentTitle(item, language)}</h3>{publicContentSummary(item, language) && <p className="mt-2 text-sm leading-6 text-slate-600">{publicContentSummary(item, language)}</p>}{publicContentBody(item, language) && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-slate-500">{publicContentBody(item, language)}</p>}{item.fileUrl && <a href={item.fileUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-blue-800 hover:underline">{t('Tegishli hujjatni ochish', 'Открыть документ')}<ArrowUpRight size={14}/></a>}</article>)}</div> : <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5"><p className="text-sm font-semibold text-slate-800">{contentErrors.mandatory_mediation ? t('Majburiy mediatsiya ma’lumotini yuklab bo‘lmadi', 'Не удалось загрузить сведения об обязательной медиации') : t('Toifalar hali e’lon qilinmagan', 'Категории пока не опубликованы')}</p><p className="mt-1 text-sm leading-6 text-slate-500">{contentErrors.mandatory_mediation ? t('Keyinroq qayta urinib ko‘ring.', 'Попробуйте позже.') : t('Vakolatli organ tasdiqlagan ma’lumotlar nashr qilingach, toifalar va yo‘riqnomalar shu yerda ko‘rinadi. Muayyan nizoga tatbiq etilishini amaldagi qonunchilik bo‘yicha tekshiring.', 'Категории и рекомендации появятся после публикации сведений, утверждённых уполномоченным органом. Проверьте применимость к конкретному спору по действующему законодательству.')}</p></div>}
-      </div>
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <Stack gap="lg">
+          <Stack gap="xs">
+            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="orange.8">{t('Sudgacha tartib', 'Досудебный порядок')}</Text>
+            <Title order={2} size="h2">{t('Majburiy mediatsiya toifalari', 'Категории обязательной медиации')}</Title>
+            <Text size="sm" c="dimmed" maw={780}>{t('Toifalar va talablar vakolatli organ tasdiqlagan, nashr qilingan ma’lumotlar asosida ko‘rsatiladi.', 'Категории и требования отображаются по опубликованным данным, утверждённым уполномоченным органом.')}</Text>
+          </Stack>
+          {content.mandatory_mediation.length
+            ? <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">{content.mandatory_mediation.slice(0, 6).map((item) => <Card key={item.id} withBorder radius="lg" bg="gray.0">
+              <Stack gap="xs">
+                <Text fw={700}>{publicContentTitle(item, language)}</Text>
+                {publicContentSummary(item, language) && <Text size="sm" c="dimmed">{publicContentSummary(item, language)}</Text>}
+                {publicContentBody(item, language) && <Text size="sm" c="dimmed" style={{ whiteSpace: 'pre-line' }}>{publicContentBody(item, language)}</Text>}
+                {item.fileUrl && <Button component="a" href={item.fileUrl} target="_blank" rel="noreferrer" variant="subtle" color="blue" size="compact-sm" leftSection={<ArrowUpRight size={14}/>} px={0}>{t('Tegishli hujjatni ochish', 'Открыть документ')}</Button>}
+              </Stack>
+            </Card>)}</SimpleGrid>
+            : <Paper withBorder radius="lg" p="lg" bg="gray.0">
+              <Text fw={600}>{contentErrors.mandatory_mediation ? t('Majburiy mediatsiya ma’lumotini yuklab bo‘lmadi', 'Не удалось загрузить сведения об обязательной медиации') : t('Toifalar hali e’lon qilinmagan', 'Категории пока не опубликованы')}</Text>
+              <Text mt="xs" size="sm" c="dimmed">{contentErrors.mandatory_mediation ? t('Keyinroq qayta urinib ko‘ring.', 'Попробуйте позже.') : t('Vakolatli organ tasdiqlagan ma’lumotlar nashr qilingach, toifalar va yo‘riqnomalar shu yerda ko‘rinadi. Muayyan nizoga tatbiq etilishini amaldagi qonunchilik bo‘yicha tekshiring.', 'Категории и рекомендации появятся после публикации сведений, утверждённых уполномоченным органом. Проверьте применимость к конкретному спору по действующему законодательству.')}</Text>
+            </Paper>}
+        </Stack>
+      </Container>
     </section>
 
-    <section className="bg-slate-50 px-5 py-12 sm:px-8 lg:px-10"><div className="mx-auto max-w-[1420px]"><div className="mb-6"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('Jarayon', 'Порядок работы')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{t('Platformadan foydalanish tartibi', 'Как пользоваться платформой')}</h2></div><ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[['1', t('Tizimga kiring', 'Войдите в систему'), t('OneID yoki mavjud identifikatsiya usuli orqali shaxsni tasdiqlang.', 'Подтвердите личность через OneID или другой доступный способ идентификации.')], ['2', t('Nizo yo‘lini tanlang', 'Выберите способ урегулирования'), t('Mediatsiya, sudgacha mediatsiya yoki hakamlik/arbitraj bo‘limini tanlang.', 'Выберите медиацию, досудебную медиацию, третейское разбирательство или арбитраж.')], ['3', t('Murojaatni yuboring', 'Отправьте заявление'), t('Nizo haqida zarur ma’lumotni kiriting va mutaxassisni tanlang.', 'Укажите необходимые сведения о споре и выберите специалиста.')], ['4', t('Jarayonni kuzating', 'Следите за ходом дела'), t('Kabinetda xabarnomalar, uchrashuvlar va hujjatlar bilan ishlang.', 'Работайте с уведомлениями, встречами и документами в личном кабинете.')]].map(([number, title, detail]) => <li key={number} className="rounded-xl border border-slate-200 bg-white p-5"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">{number}</span><h3 className="mt-4 text-sm font-bold text-slate-900">{title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p></li>)}</ol></div></section>
+    <section className="bg-slate-50 px-5 py-12 sm:px-8 lg:px-10">
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <Stack gap="lg">
+          <div>
+            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Jarayon', 'Порядок работы')}</Text>
+            <Title order={2} size="h2" mt="xs">{t('Platformadan foydalanish tartibi', 'Как пользоваться платформой')}</Title>
+          </div>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+            {[
+              [t('Tizimga kiring', 'Войдите в систему'), t('OneID yoki mavjud identifikatsiya usuli orqali shaxsni tasdiqlang.', 'Подтвердите личность через OneID или другой доступный способ идентификации.')],
+              [t('Nizo yo‘lini tanlang', 'Выберите способ урегулирования'), t('Mediatsiya, sudgacha mediatsiya yoki hakamlik/arbitraj bo‘limini tanlang.', 'Выберите медиацию, досудебную медиацию, третейское разбирательство или арбитраж.')],
+              [t('Murojaatni yuboring', 'Отправьте заявление'), t('Nizo haqida zarur ma’lumotni kiriting va mutaxassisni tanlang.', 'Укажите необходимые сведения о споре и выберите специалиста.')],
+              [t('Jarayonni kuzating', 'Следите за ходом дела'), t('Kabinetda xabarnomalar, uchrashuvlar va hujjatlar bilan ishlang.', 'Работайте с уведомлениями, встречами и документами в личном кабинете.')],
+            ].map(([title, detail], index) => <Paper key={title} withBorder radius="lg" p="md" bg="white">
+              <Stack gap="sm">
+                <ThemeIcon size={38} radius="xl" color="blue" variant="light">{index + 1}</ThemeIcon>
+                <Text fw={700}>{title}</Text>
+                <Text size="sm" c="dimmed" lh={1.55}>{detail}</Text>
+              </Stack>
+            </Paper>)}
+          </SimpleGrid>
+        </Stack>
+      </Container>
+    </section>
 
     <section className="bg-slate-50 px-5 pb-12 pt-16 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-[1420px] rounded-3xl bg-gradient-to-br from-[#101b31] to-[#082f5f] p-5 text-white shadow-xl shadow-slate-900/10 sm:p-8 lg:p-10">
@@ -670,31 +836,162 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
     </section>
 
     <section className="bg-slate-50 px-5 py-10 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-[1420px]">
-        <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('Ochiq reyting', 'Открытый рейтинг')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{t('Mutaxassislar reytingi', 'Рейтинг специалистов')}</h2><p className="mt-2 text-sm text-slate-500">{t('Reyestrdagi mediator, hakamlik sudyasi va arbitrlar reytingi.', 'Рейтинг медиаторов, третейских судей и арбитров из реестра.')}</p></div><button onClick={() => { setRegistryKind(registryLabel); onRegistry() }} className="inline-flex items-center gap-2 self-start text-sm font-semibold text-blue-800 hover:text-blue-950">{t('Reyestrni ochish', 'Открыть реестр')}<ArrowRight size={16}/></button></div>
-        <div className="mb-5 flex flex-wrap gap-2">{([['MEDIATOR', 'Mediatorlar', 'Медиаторы'], ['ARBITRATION_JUDGE', 'Hakamlik sudyalari', 'Третейские судьи'], ['ARBITRATOR', 'Arbitrlar', 'Арбитры']] as const).map(([type, labelUz, labelRu]) => <button key={type} onClick={() => setLeadingType(type)} aria-pressed={leadingType === type} className={`rounded-full px-4 py-2 text-xs font-semibold transition ${leadingType === type ? 'bg-blue-900 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-300'}`}>{language === 'ru' ? labelRu : labelUz}</button>)}</div>
-        <div className="grid gap-4 md:grid-cols-3">{leadingSpecialists.map(({ profile: person, rating }) => <article key={person.id} className="flex min-h-52 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"><div className="flex items-center gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-blue-900">{person.fullName.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{person.fullName}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><MapPin size={12}/>{person.region}</p><p className="mt-1 text-[10px] text-slate-400">{t('Reyting davri:', 'Период рейтинга:')} {rating?.periodYear || ratingPeriod || '—'}</p></div><span className="flex items-center gap-1 text-sm font-bold text-slate-800"><Star size={14} className="fill-amber-400 text-amber-400"/>{Number(rating?.score).toFixed(1)}</span></div><div className="mt-5 flex flex-wrap gap-2">{(person.specialization || []).slice(0, 2).map((specialty) => <span key={specialty} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-medium text-slate-600">{specialty}</span>)}</div><div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs text-slate-500">{t('Reyestr №', 'Реестр №')} {person.registryNumber || '—'}</span><button onClick={() => { if (leadingType === 'MEDIATOR') onContact(person.fullName); else { setRegistryKind(registryLabel); onRegistry() } }} className="rounded-lg bg-blue-800 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-900">{leadingType === 'MEDIATOR' ? t('Mediatsiyaga murojaat', 'Обратиться за медиацией') : t('Reyestrda ko‘rish', 'Открыть реестр')}</button></div></article>)}</div>
-        {!leadingSpecialists.length && <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">{ratingErrors[leadingType] ? t(`${registryLabel} reytingini yuklab bo‘lmadi.`, `Не удалось загрузить рейтинг: ${registryDisplayLabel.toLowerCase()}.`) : t(`${registryLabel} bo‘yicha reyting shakllanmagan.`, `Рейтинг ${registryDisplayLabel.toLowerCase()} пока не сформирован.`)}</p>}
-        <details className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3"><summary className="cursor-pointer text-sm font-semibold text-slate-800">{t('Reyting metodikasi', 'Методика рейтинга')}</summary><div className="mt-3 border-t border-slate-100 pt-3 text-xs leading-5 text-slate-500"><p>{ratingMethodology?.description || t('Reyting metodikasi yuklanmoqda.', 'Загрузка методики рейтинга.')}</p>{ratingMethodology && <p className="mt-2">{t('Mezonlar:', 'Критерии:')} {t('hisobot intizomi', 'соблюдение отчётности')} {ratingMethodology.reportComplianceWeight ?? '—'}%, {t('nizolarni yakunlash', 'завершение споров')} {ratingMethodology.resolutionRateWeight ?? '—'}%, {t('kelishuv ijrosi', 'исполнение соглашений')} {ratingMethodology.agreementExecutionWeight ?? '—'}%. {t('Yangilangan:', 'Обновлено:')} {ratingMethodology.updatedAt ? formatPublicDate(ratingMethodology.updatedAt) : t('tasdiqlanishi kutilmoqda', 'ожидается утверждение')}.</p>}</div></details>
-      </div>
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <Stack gap="lg">
+          <Group justify="space-between" align="flex-end" wrap="wrap">
+            <Stack gap="xs">
+              <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Ochiq reyting', 'Открытый рейтинг')}</Text>
+              <Title order={2} size="h2">{t('Mutaxassislar reytingi', 'Рейтинг специалистов')}</Title>
+              <Text size="sm" c="dimmed">{t('Reyestrdagi mediator, hakamlik sudyasi va arbitrlar reytingi.', 'Рейтинг медиаторов, третейских судей и арбитров из реестра.')}</Text>
+            </Stack>
+            <Button type="button" variant="subtle" color="blue" rightSection={<ArrowRight size={16}/>} onClick={() => { setRegistryKind(registryLabel); onRegistry() }}>
+              {t('Reyestrni ochish', 'Открыть реестр')}
+            </Button>
+          </Group>
+
+          <Tabs value={leadingType} onChange={(value) => { if (value) setLeadingType(value as typeof leadingType) }} color="blue" variant="pills">
+            <Tabs.List>
+              {([
+                ['MEDIATOR', 'Mediatorlar', 'Медиаторы'],
+                ['ARBITRATION_JUDGE', 'Hakamlik sudyalari', 'Третейские судьи'],
+                ['ARBITRATOR', 'Arbitrlar', 'Арбитры'],
+              ] as const).map(([type, labelUz, labelRu]) => <Tabs.Tab key={type} value={type}>{language === 'ru' ? labelRu : labelUz}</Tabs.Tab>)}
+            </Tabs.List>
+          </Tabs>
+
+          {leadingSpecialists.length
+            ? <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">{leadingSpecialists.map(({ profile: person, rating }) => <Card key={person.id} withBorder radius="xl" shadow="xs" padding="lg" h="100%">
+              <Stack gap="md" h="100%">
+                <Group align="flex-start" wrap="nowrap">
+                  <ThemeIcon size={48} radius="md" variant="light" color="blue">{person.fullName.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</ThemeIcon>
+                  <Box className="min-w-0 flex-1">
+                    <Text fw={700} lineClamp={1}>{person.fullName}</Text>
+                    <Text mt={4} size="sm" c="dimmed" className="flex items-center gap-1"><MapPin size={13}/>{person.region}</Text>
+                    <Text mt={4} size="xs" c="dimmed">{t('Reyting davri:', 'Период рейтинга:')} {rating?.periodYear || ratingPeriod || '—'}</Text>
+                  </Box>
+                  <Badge color="yellow" variant="light" leftSection={<Star size={12} className="fill-current"/>}>{Number(rating?.score).toFixed(1)}</Badge>
+                </Group>
+                <Group gap="xs" flex={1} align="flex-start">
+                  {(person.specialization || []).slice(0, 2).map((specialty) => <Badge key={specialty} color="gray" variant="light" radius="sm">{specialty}</Badge>)}
+                </Group>
+                <Group justify="space-between" align="center" wrap="wrap" className="border-t border-slate-100 pt-3">
+                  <Text size="xs" c="dimmed">{t('Reyestr №', 'Реестр №')} {person.registryNumber || '—'}</Text>
+                  <Button type="button" size="compact-sm" color="blue" onClick={() => { if (leadingType === 'MEDIATOR') onContact(person.fullName); else { setRegistryKind(registryLabel); onRegistry() } }}>
+                    {leadingType === 'MEDIATOR' ? t('Mediatsiyaga murojaat', 'Обратиться за медиацией') : t('Reyestrda ko‘rish', 'Открыть реестр')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Card>)}</SimpleGrid>
+            : <Paper withBorder radius="lg" p="lg" bg="white">
+              <Text size="sm" c="dimmed">{ratingErrors[leadingType] ? t(registryLabel + ' reytingini yuklab bo‘lmadi.', 'Не удалось загрузить рейтинг: ' + registryDisplayLabel.toLowerCase() + '.') : t(registryLabel + ' bo‘yicha reyting shakllanmagan.', 'Рейтинг ' + registryDisplayLabel.toLowerCase() + ' пока не сформирован.')}</Text>
+            </Paper>}
+
+          <Accordion variant="separated" radius="md">
+            <Accordion.Item value="rating-methodology">
+              <Accordion.Control>{t('Reyting metodikasi', 'Методика рейтинга')}</Accordion.Control>
+              <Accordion.Panel>
+                <Text size="sm" c="dimmed">{ratingMethodology?.description || t('Reyting metodikasi yuklanmoqda.', 'Загрузка методики рейтинга.')}</Text>
+                {ratingMethodology && <Text mt="sm" size="sm" c="dimmed">
+                  {t('Mezonlar:', 'Критерии:')} {t('hisobot intizomi', 'соблюдение отчётности')} {ratingMethodology.reportComplianceWeight ?? '—'}%, {t('nizolarni yakunlash', 'завершение споров')} {ratingMethodology.resolutionRateWeight ?? '—'}%, {t('kelishuv ijrosi', 'исполнение соглашений')} {ratingMethodology.agreementExecutionWeight ?? '—'}%. {t('Yangilangan:', 'Обновлено:')} {ratingMethodology.updatedAt ? formatPublicDate(ratingMethodology.updatedAt) : t('tasdiqlanishi kutilmoqda', 'ожидается утверждение')}.
+                </Text>}
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        </Stack>
+      </Container>
     </section>
 
     <section className="bg-slate-50 px-5 py-12 sm:px-8 lg:px-10">
-      <div className="mx-auto grid max-w-[1420px] gap-8 lg:grid-cols-[1.55fr_1fr]">
-        <div><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('So‘nggi xabarlar', 'Последние новости')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{t('Yangiliklar va e’lonlar', 'Новости и объявления')}</h2></div>
-          <div className="space-y-3">{latestUpdates.length ? latestUpdates.map((item) => <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start gap-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-800"><Newspaper size={18}/></span><div className="min-w-0"><p className="text-[11px] font-medium text-blue-700">{formatPublicDate(item.publishedAt, language)}</p><h3 className="mt-1 text-sm font-bold text-slate-900">{publicContentTitle(item, language)}</h3><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{publicContentSummary(item, language) || publicContentBody(item, language)}</p></div></div></article>) : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6"><p className="text-sm font-semibold text-slate-800">{contentLoaded ? contentErrors.news && contentErrors.announcements ? t('Yangiliklar va e’lonlarni yuklab bo‘lmadi', 'Не удалось загрузить новости и объявления') : t('Hozircha yangiliklar joylanmagan', 'Пока нет опубликованных новостей') : t('Yangiliklar yuklanmoqda', 'Загрузка новостей')}</p><p className="mt-1 text-xs leading-5 text-slate-500">{t('Nashr qilingan yangiliklar va e’lonlar shu bo‘limda ko‘rinadi.', 'Опубликованные новости и объявления появятся в этом разделе.')}</p></div>}</div>
-        </div>
-        <div><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('Rasmiy manbalar', 'Официальные источники')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{t('Huquqiy baza', 'Правовая база')}</h2></div>
-          <div className="space-y-3"><a href="https://www.lex.uz/mact/-3805227" target="_blank" rel="noreferrer" className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"><span><span className="block text-sm font-bold text-slate-900">{t('“Mediatsiya to‘g‘risida”gi Qonun', 'Закон «О медиации»')}</span><span className="mt-1 block text-xs text-slate-500">O‘RQ-482 · LexUZ</span></span><ArrowUpRight size={17} className="shrink-0 text-blue-700"/></a>{content.legal_framework.slice(0, 3).map((item) => <a key={item.id} href={item.fileUrl || '#legal-framework'} target={item.fileUrl ? '_blank' : undefined} rel={item.fileUrl ? 'noreferrer' : undefined} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"><span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-800">{publicContentTitle(item, language)}</span><span className="mt-1 block truncate text-xs text-slate-500">{publicContentSummary(item, language) || t('Huquqiy hujjat', 'Правовой документ')}</span></span><ArrowUpRight size={17} className="shrink-0 text-blue-700"/></a>)}</div>
-        </div>
-      </div>
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl">
+          <Stack gap="md">
+            <Stack gap="xs">
+              <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('So‘nggi xabarlar', 'Последние новости')}</Text>
+              <Title order={2} size="h2">{t('Yangiliklar va e’lonlar', 'Новости и объявления')}</Title>
+            </Stack>
+            <Stack gap="sm">
+              {latestUpdates.length ? latestUpdates.map((item) => <Card key={item.id} withBorder radius="lg" shadow="xs" padding="md">
+                <Group align="flex-start" wrap="nowrap" gap="sm">
+                  <ThemeIcon size={40} radius="md" variant="light" color="blue"><Newspaper size={18}/></ThemeIcon>
+                  <Box className="min-w-0">
+                    <Text size="xs" fw={600} c="blue.8">{formatPublicDate(item.publishedAt, language)}</Text>
+                    <Text mt={4} fw={700}>{publicContentTitle(item, language)}</Text>
+                    <Text mt={6} size="sm" c="dimmed" lineClamp={2}>{publicContentSummary(item, language) || publicContentBody(item, language)}</Text>
+                  </Box>
+                </Group>
+              </Card>) : <Paper withBorder radius="lg" p="lg" bg="white">
+                <Text fw={600}>{contentLoaded ? contentErrors.news && contentErrors.announcements ? t('Yangiliklar va e’lonlarni yuklab bo‘lmadi', 'Не удалось загрузить новости и объявления') : t('Hozircha yangiliklar joylanmagan', 'Пока нет опубликованных новостей') : t('Yangiliklar yuklanmoqda', 'Загрузка новостей')}</Text>
+                <Text mt="xs" size="sm" c="dimmed">{t('Nashr qilingan yangiliklar va e’lonlar shu bo‘limda ko‘rinadi.', 'Опубликованные новости и объявления появятся в этом разделе.')}</Text>
+              </Paper>}
+            </Stack>
+          </Stack>
+          <Stack gap="md">
+            <Stack gap="xs">
+              <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Rasmiy manbalar', 'Официальные источники')}</Text>
+              <Title order={2} size="h2">{t('Huquqiy baza', 'Правовая база')}</Title>
+            </Stack>
+            <Stack gap="sm">
+              <Card component="a" href="https://www.lex.uz/mact/-3805227" target="_blank" rel="noreferrer" withBorder radius="lg" shadow="xs" padding="md" className="transition hover:border-blue-200 hover:shadow-sm">
+                <Group justify="space-between" wrap="nowrap">
+                  <Box><Text fw={700}>{t('“Mediatsiya to‘g‘risida”gi Qonun', 'Закон «О медиации»')}</Text><Text mt={4} size="xs" c="dimmed">O‘RQ-482 · LexUZ</Text></Box>
+                  <ArrowUpRight size={17} className="shrink-0 text-blue-700"/>
+                </Group>
+              </Card>
+              {content.legal_framework.slice(0, 3).map((item) => <Card key={item.id} component="a" href={item.fileUrl || '#legal-framework'} target={item.fileUrl ? '_blank' : undefined} rel={item.fileUrl ? 'noreferrer' : undefined} withBorder radius="lg" shadow="xs" padding="md" className="transition hover:border-blue-200 hover:shadow-sm">
+                <Group justify="space-between" wrap="nowrap" gap="sm">
+                  <Box className="min-w-0"><Text fw={600} lineClamp={1}>{publicContentTitle(item, language)}</Text><Text mt={4} size="sm" c="dimmed" lineClamp={1}>{publicContentSummary(item, language) || t('Huquqiy hujjat', 'Правовой документ')}</Text></Box>
+                  <ArrowUpRight size={17} className="shrink-0 text-blue-700"/>
+                </Group>
+              </Card>)}
+            </Stack>
+          </Stack>
+        </SimpleGrid>
+      </Container>
     </section>
 
     <section className="bg-slate-50 px-5 py-12 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-4xl"><div className="mb-7 text-center"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('Yordam', 'Помощь')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{t('Ko‘p beriladigan savollar', 'Часто задаваемые вопросы')}</h2></div><div className="space-y-3">{faqs.slice(0, 6).map((faq, index) => <details key={`${faq.question}-${index}`} className="group rounded-2xl border border-slate-200 bg-white px-5 py-4 open:shadow-sm"><summary className="flex cursor-pointer list-none items-center gap-3 text-sm font-semibold text-slate-800"><CircleHelp size={18} className="shrink-0 text-blue-700"/><span className="flex-1">{faq.question}</span><ChevronDown size={17} className="shrink-0 text-slate-400 transition group-open:rotate-180"/></summary><p className="ml-8 mt-3 max-w-3xl text-sm leading-6 text-slate-600">{faq.answer}</p></details>)}</div><p className="mt-4 text-center text-[11px] text-slate-400">{t('Huquqiy ma’lumot:', 'Правовая информация:')} <a className="font-medium text-blue-700 hover:underline" href="https://www.lex.uz/mact/-3805227" target="_blank" rel="noreferrer">{t('“Mediatsiya to‘g‘risida”gi Qonun', 'Закон «О медиации»')}</a>.</p></div>
+      <Container size="sm" px="lg">
+        <Stack gap="lg">
+          <Stack gap="xs" align="center" ta="center">
+            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Yordam', 'Помощь')}</Text>
+            <Title order={2} size="h2">{t('Ko‘p beriladigan savollar', 'Часто задаваемые вопросы')}</Title>
+          </Stack>
+          <Accordion variant="separated" radius="lg">
+            {faqs.slice(0, 6).map((faq, index) => <Accordion.Item key={faq.question + index} value={String(index)}>
+              <Accordion.Control icon={<CircleHelp size={18}/>}>{faq.question}</Accordion.Control>
+              <Accordion.Panel><Text size="sm" c="dimmed" lh={1.65}>{faq.answer}</Text></Accordion.Panel>
+            </Accordion.Item>)}
+          </Accordion>
+          <Text ta="center" size="xs" c="dimmed">
+            {t('Huquqiy ma’lumot:', 'Правовая информация:')}{' '}
+            <Button component="a" href="https://www.lex.uz/mact/-3805227" target="_blank" rel="noreferrer" variant="subtle" size="compact-xs" px={4} color="blue">
+              {t('“Mediatsiya to‘g‘risida”gi Qonun', 'Закон «О медиации»')}
+            </Button>
+          </Text>
+        </Stack>
+      </Container>
     </section>
 
-    {materials.length > 0 && <section className="bg-slate-50 px-5 pb-14 pt-4 sm:px-8 lg:px-10"><div className="mx-auto max-w-[1420px]"><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-blue-700">{t('Foydali materiallar', 'Полезные материалы')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{t('Namunalar va qo‘llanmalar', 'Образцы и руководства')}</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{materials.slice(0, 6).map((item) => <a key={item.id} href={item.fileUrl || '#materials'} target={item.fileUrl ? '_blank' : undefined} rel={item.fileUrl ? 'noreferrer' : undefined} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-800 hover:border-blue-300"><FileText size={18} className="shrink-0 text-blue-700"/>{publicContentTitle(item, language)}<ArrowUpRight size={15} className="ml-auto shrink-0 text-slate-400"/></a>)}</div></div></section>}
+    {materials.length > 0 && <section className="bg-slate-50 px-5 pb-14 pt-4 sm:px-8 lg:px-10">
+      <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
+        <Stack gap="lg">
+          <div>
+            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Foydali materiallar', 'Полезные материалы')}</Text>
+            <Title order={2} size="h2" mt="xs">{t('Namunalar va qo‘llanmalar', 'Образцы и руководства')}</Title>
+          </div>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+            {materials.slice(0, 6).map((item) => <Card key={item.id} component="a" href={item.fileUrl || '#materials'} target={item.fileUrl ? '_blank' : undefined} rel={item.fileUrl ? 'noreferrer' : undefined} withBorder radius="lg" padding="md" className="transition hover:border-blue-300">
+              <Group wrap="nowrap" gap="sm">
+                <ThemeIcon variant="light" color="blue" radius="md"><FileText size={18}/></ThemeIcon>
+                <Text size="sm" fw={600} flex={1}>{publicContentTitle(item, language)}</Text>
+                <ArrowUpRight size={15} className="shrink-0 text-slate-400"/>
+              </Group>
+            </Card>)}
+          </SimpleGrid>
+        </Stack>
+      </Container>
+    </section>}
+
   </>
 }
 
@@ -782,9 +1079,26 @@ function PublicFooter({ language, onLogin, setPage }: { language: ApplicantLangu
     { title: t('Foydali ma’lumotlar', 'Полезная информация'), links: [['Qonunchilik', t('Qonunchilik', 'Законодательство')], ['Hududlar', t('Hududlar', 'Регионы')], ['Reyting', t('Reyting', 'Рейтинг')]] },
     { title: t('Kabinetlar', 'Кабинеты'), links: [['Tizimga kirish', t('Tizimga kirish', 'Войти в систему')], ['Administrator', t('Administrator', 'Администратор')], ['Mediator', t('Mediator', 'Медиатор')]] },
   ]
-  return <footer className="bg-slate-950 px-5 py-10 text-white md:px-10"><div className="mx-auto grid max-w-[1420px] gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]"><div><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-slate-950"><Handshake size={22}/></span><strong className="text-sm">Nizolarni muqobil hal etish</strong></div><p className="mt-4 max-w-sm text-xs leading-5 text-slate-400">{t('Fuqarolar va tashkilotlar uchun nizolarni tinch yo‘l bilan hal etishning yagona elektron platformasi.', 'Единая электронная платформа мирного урегулирования споров для граждан и организаций.')}</p></div>{groups.map((group)=><div key={group.title}><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{group.title}</p><div className="mt-3 space-y-2">{group.links.map(([destination, label])=><button key={destination} onClick={destination==='Tizimga kirish'||destination==='Administrator'||destination==='Mediator'?onLogin:()=>setPage(destination)} className="block text-left text-sm text-slate-300 hover:text-white">{label}</button>)}</div></div>)}</div><div className="mx-auto mt-8 max-w-[1420px] border-t border-white/10 pt-5 text-xs text-slate-500">© 2026 {t('Nizolarni muqobil hal etish elektron platformasi', 'Электронная платформа альтернативного разрешения споров')}</div></footer>
+  return <Box component="footer" bg="dark.9" c="white" px="md" py="xl">
+    <Container size="xl" style={{ maxWidth: 1420 }}>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="xl">
+        <Stack gap="sm">
+          <Group gap="sm">
+            <ThemeIcon size={42} radius="md" color="yellow" variant="filled"><Handshake size={21}/></ThemeIcon>
+            <Text size="sm" fw={700}>{t('Nizolarni muqobil hal etish', 'Альтернативное разрешение споров')}</Text>
+          </Group>
+          <Text size="sm" c="gray.4" maw={360}>{t('Fuqarolar va tashkilotlar uchun nizolarni tinch yo‘l bilan hal etishning yagona elektron platformasi.', 'Единая электронная платформа мирного урегулирования споров для граждан и организаций.')}</Text>
+        </Stack>
+        {groups.map((group) => <Stack key={group.title} gap="xs">
+          <Text size="xs" fw={700} tt="uppercase" lts={1} c="gray.4">{group.title}</Text>
+          {group.links.map(([destination, label]) => <Button key={destination} type="button" variant="subtle" color="gray" size="compact-sm" justify="flex-start" px={0} onClick={destination === 'Tizimga kirish' || destination === 'Administrator' || destination === 'Mediator' ? onLogin : () => setPage(destination)}>{label}</Button>)}
+        </Stack>)}
+      </SimpleGrid>
+      <Divider my="lg" color="dark.5"/>
+      <Text size="xs" c="gray.5">© 2026 {t('Nizolarni muqobil hal etish elektron platformasi', 'Электронная платформа альтернативного разрешения споров')}</Text>
+    </Container>
+  </Box>
 }
-
 function RolePicker({ initialRoles, onClose, onChoose }: { initialRoles: RoleKey[]; onClose: () => void; onChoose: (roles: RoleKey[]) => void }) {
   const currentGroup = cabinetGroups.find((group) => initialRoles.some((role) => group.roles.includes(role)))
   return <ModalShell onClose={onClose}>
