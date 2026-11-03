@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Bell, BookOpen,
   BriefcaseBusiness, Building2, CalendarDays, Check, CheckCheck, ChevronDown,
@@ -11,6 +11,7 @@ import { Accordion, ActionIcon, Badge, Box, Button, Card, Container, Divider, Gr
 import { apiGet, apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, categoryAnswerDetails, categoryDetailsLabel, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 import { BusinessSpecialistDirectory, PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
+import type { PublicMapPoint } from './PublicMediatorMap'
 import { ReportsWorkspace } from './ReportsWorkspace'
 import { ExamWorkspace } from './ExamWorkspace'
 import { ContractsWorkspace } from './ContractsWorkspace'
@@ -28,6 +29,8 @@ import { ClientBusinessDashboard, ClientCabinetHeader, type ClientRole } from '.
 import { ApplicantDashboard, ApplicantHeader, ApplicantSidebar, LanguageFlag } from './ApplicantDashboard'
 import { applicantText, type ApplicantLanguage } from './applicantLocale'
 import AdminWorkspace from './AdminWorkspace'
+
+const PublicMediatorMap = lazy(() => import('./PublicMediatorMap').then((module) => ({ default: module.PublicMediatorMap })))
 
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
@@ -131,7 +134,6 @@ const publicContentTitle = (item: PublicContentItem, language: ApplicantLanguage
 const publicContentSummary = (item: PublicContentItem, language: ApplicantLanguage) => language === 'ru' ? item.summaryRu || item.summaryUz : item.summaryUz
 const publicContentBody = (item: PublicContentItem, language: ApplicantLanguage) => language === 'ru' ? item.bodyRu || item.bodyUz : item.bodyUz
 type PublicContentList = { items: PublicContentItem[] }
-type PublicMapPoint = { id: string; fullName: string; type: string; region: string; phone?: string | null; address?: string | null; specialization: string[]; latitude: number; longitude: number }
 type PublicMediatorCard = { id: string; fullName: string; region: string; specialization: string[]; registryNumber?: string | null; rating?: { score?: number | string } | null }
 type PublicRatingItem = { profile: PublicMediatorCard; rating: { score?: number | string; periodYear?: number } | null }
 type PublicRatingResponse = { items: PublicRatingItem[]; periodYear: number }
@@ -630,6 +632,34 @@ function RegistrySearchBox({ language, query, setQuery, region, setRegion, kind,
     </Stack>
   </Card>
 }
+function DeferredPublicMediatorMap({ points, selectedId, onSelect, label, loadingText }: { points: PublicMapPoint[]; selectedId?: string; onSelect: (point: PublicMapPoint) => void; label: string; loadingText: string }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
+
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host || !('IntersectionObserver' in window)) {
+      setShouldLoad(true)
+      return
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setShouldLoad(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '320px' })
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
+
+  return <div ref={hostRef} className="relative z-0 h-[300px] w-full sm:h-[420px]">
+    {shouldLoad ? <Suspense fallback={<div className="flex h-full items-center justify-center bg-[#dcebf0] text-sm font-medium text-slate-600">{loadingText}</div>}>
+      <PublicMediatorMap points={points} selectedId={selectedId} onSelect={onSelect} label={label}/>
+    </Suspense> : <div role="status" className="flex h-full items-center justify-center bg-[#dcebf0] text-sm font-medium text-slate-600">{loadingText}</div>}
+  </div>
+}
+
 function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, onContact }: { language: ApplicantLanguage; onRegistry: () => void; setRegion: (region: string) => void; setRegistryKind: (kind: string) => void; onContact: (name: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const [content, setContent] = useState<Record<string, PublicContentItem[]>>({ news: [], announcements: [], legal_framework: [], templates: [], manuals: [], video_manuals: [], faq: [], mandatory_mediation: [] })
@@ -813,19 +843,7 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
         <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-amber-400">{t('Interaktiv xarita', 'Интерактивная карта')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{t('Hududlar bo‘yicha mediatorlar', 'Медиаторы по регионам')}</h2><p className="mt-2 text-sm text-blue-100/70">{t('Hududni tanlab, reyestrdagi mutaxassislarni ko‘ring.', 'Выберите регион и посмотрите специалистов в реестре.')}</p></div><button onClick={onRegistry} className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-semibold text-white transition hover:bg-white/15 sm:self-auto"><MapPin size={15} className="text-amber-400"/>{t('To‘liq reyestr', 'Полный реестр')}<ArrowRight size={14}/></button></div>
         <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_.8fr]">
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#dcebf0]">
-            <svg viewBox="0 0 1000 600" role="img" aria-label={t('Mediatorlar manzillari ko‘rsatilgan O‘zbekiston xaritasi', 'Карта Узбекистана с адресами медиаторов')} className="block h-[300px] w-full sm:h-[420px]">
-              <defs><linearGradient id="mapWater" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#e9f3f4"/><stop offset="1" stopColor="#c7dfe7"/></linearGradient></defs>
-              <rect width="1000" height="600" fill="url(#mapWater)"/>
-              <path d="M94 241 L142 179 L218 159 L278 184 L351 144 L420 162 L477 127 L559 158 L631 145 L701 180 L776 170 L844 206 L817 247 L880 273 L843 315 L882 354 L829 377 L806 425 L757 417 L725 455 L676 448 L647 483 L592 467 L551 442 L489 451 L433 431 L389 452 L343 423 L297 428 L260 399 L208 403 L172 376 L129 367 L151 330 L112 306 L135 275 Z" fill="#f3ead6" stroke="#ffffff" strokeWidth="8" strokeLinejoin="round"/>
-              <path d="M235 202 L267 257 L238 310 L279 356 M351 161 L368 222 L336 272 L365 328 L344 419 M477 139 L468 206 L503 259 L479 318 L513 376 L490 447 M620 154 L598 215 L638 259 L612 312 L659 370 L644 465 M751 181 L728 240 L768 286 L733 343 L790 397" fill="none" stroke="#d7c9ad" strokeWidth="4" strokeDasharray="8 7"/>
-              {mapPoints.map((point) => {
-                const x = 94 + ((point.longitude - 55.5) / 19) * 790
-                const y = 127 + ((46.5 - point.latitude) / 10) * 350
-                const selected = selectedMapPoint?.id === point.id
-                return <g key={point.id} role="button" tabIndex={0} aria-label={`${point.fullName}, ${point.region}`} onClick={() => setSelectedMapPoint(point)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSelectedMapPoint(point) }} className="cursor-pointer"><circle cx={x} cy={y} r={selected ? 17 : 12} fill="#0b4d78" fillOpacity=".18"/><circle cx={x} cy={y} r={selected ? 9 : 7} fill={selected ? '#f59e0b' : '#0875cf'} stroke="#ffffff" strokeWidth="4"/><title>{point.fullName} · {point.region}</title></g>
-              })}
-              <text x="62" y="555" fill="#425d67" fontSize="20" fontWeight="600">{t('Mediatorlar manzili koordinatalar asosida', 'Адреса медиаторов по координатам')}</text>
-            </svg>
+            <DeferredPublicMediatorMap points={mapPoints} selectedId={selectedMapPoint?.id} onSelect={setSelectedMapPoint} label={t('Mediatorlar manzillari ko‘rsatilgan O‘zbekiston xaritasi', 'Карта Узбекистана с адресами медиаторов')} loadingText={t('Haqiqiy xarita yuklanmoqda…', 'Загружается карта…')}/>
           </div>
           <div className="flex min-h-[300px] flex-col rounded-2xl border border-white/10 bg-white/[.07] p-4 sm:p-5">
             {selectedMapPoint ? <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{t('Tanlangan mediator', 'Выбранный медиатор')}</p><h3 className="mt-3 text-lg font-bold text-white">{selectedMapPoint.fullName}</h3><p className="mt-1 text-sm text-blue-100/75">{selectedMapPoint.region}</p><p className="mt-3 text-xs leading-5 text-blue-100/70">{selectedMapPoint.address || t('Manzil qo‘shilmagan', 'Адрес не указан')}</p>{selectedMapPoint.phone && <a className="mt-2 text-xs text-amber-200 hover:underline" href={`tel:${selectedMapPoint.phone}`}>{selectedMapPoint.phone}</a>}{selectedMapPoint.specialization?.length > 0 && <p className="mt-3 text-xs leading-5 text-blue-100/70">{t('Ixtisoslik:', 'Специализация:')} {selectedMapPoint.specialization.join(', ')}</p>}<a className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-amber-300 hover:text-amber-200" href={`https://www.openstreetmap.org/?mlat=${selectedMapPoint.latitude}&mlon=${selectedMapPoint.longitude}#map=12/${selectedMapPoint.latitude}/${selectedMapPoint.longitude}`} target="_blank" rel="noreferrer">{t('Xaritada ochish', 'Открыть на карте')}<ArrowUpRight size={15}/></a></> : <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{t('Mediatorlar xaritasi', 'Карта медиаторов')}</p><h3 className="mt-3 text-lg font-bold text-white">{mapPoints.length ? `${mapPoints.length} ${t('ta manzil', 'адресов')}` : t('Koordinatalar kiritilmagan', 'Координаты не указаны')}</h3><p className="mt-2 text-sm leading-6 text-blue-100/70">{t('Xaritadagi belgini tanlab, mediatorning hududi va manzilini ko‘ring. Reyestr yozuviga koordinata kiritilgach, belgi xaritada avtomatik chiqadi.', 'Выберите отметку на карте, чтобы посмотреть регион и адрес медиатора. После добавления координат в реестр отметка появится на карте автоматически.')}</p><div className="mt-4 grid grid-cols-2 gap-2">{publicRegions.map(([regionName, shortName]) => <button key={regionName} onClick={() => { setRegion(regionName); onRegistry() }} className="rounded-lg border border-white/10 bg-white/[.06] px-3 py-2 text-left text-xs font-semibold text-slate-100 hover:bg-white/10">{shortName}<span className="ml-2 text-amber-300">{mapPoints.filter((point) => point.region.toLocaleLowerCase('uz').includes(shortName.toLocaleLowerCase('uz'))).length}</span></button>)}</div></>}
@@ -1081,21 +1099,21 @@ function PublicFooter({ language, onLogin, setPage }: { language: ApplicantLangu
   ]
   return <Box component="footer" bg="dark.9" c="white" px="md" py="xl">
     <Container size="xl" style={{ maxWidth: 1420 }}>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="xl">
-        <Stack gap="sm">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-8 min-[560px]:grid-cols-2 lg:grid-cols-4">
+        <Stack gap="sm" className="min-[560px]:col-span-2 lg:col-span-1">
           <Group gap="sm">
             <ThemeIcon size={42} radius="md" color="yellow" variant="filled"><Handshake size={21}/></ThemeIcon>
             <Text size="sm" fw={700}>{t('Nizolarni muqobil hal etish', 'Альтернативное разрешение споров')}</Text>
           </Group>
-          <Text size="sm" c="gray.4" maw={360}>{t('Fuqarolar va tashkilotlar uchun nizolarni tinch yo‘l bilan hal etishning yagona elektron platformasi.', 'Единая электронная платформа мирного урегулирования споров для граждан и организаций.')}</Text>
+          <Text size="sm" c="gray.3" maw={360}>{t('Fuqarolar va tashkilotlar uchun nizolarni tinch yo‘l bilan hal etishning yagona elektron platformasi.', 'Единая электронная платформа мирного урегулирования споров для граждан и организаций.')}</Text>
         </Stack>
-        {groups.map((group) => <Stack key={group.title} gap="xs">
-          <Text size="xs" fw={700} tt="uppercase" lts={1} c="gray.4">{group.title}</Text>
-          {group.links.map(([destination, label]) => <Button key={destination} type="button" variant="subtle" color="gray" size="compact-sm" justify="flex-start" px={0} onClick={destination === 'Tizimga kirish' || destination === 'Administrator' || destination === 'Mediator' ? onLogin : () => setPage(destination)}>{label}</Button>)}
+        {groups.map((group) => <Stack key={group.title} gap={4}>
+          <Text size="xs" fw={700} tt="uppercase" lts={1} c="gray.2" mb={4}>{group.title}</Text>
+          {group.links.map(([destination, label]) => <UnstyledButton key={destination} type="button" onClick={destination === 'Tizimga kirish' || destination === 'Administrator' || destination === 'Mediator' ? onLogin : () => setPage(destination)} className="inline-flex min-h-9 w-full items-center rounded-lg px-2 py-2 text-left text-sm font-medium leading-5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">{label}</UnstyledButton>)}
         </Stack>)}
-      </SimpleGrid>
+      </div>
       <Divider my="lg" color="dark.5"/>
-      <Text size="xs" c="gray.5">© 2026 {t('Nizolarni muqobil hal etish elektron platformasi', 'Электронная платформа альтернативного разрешения споров')}</Text>
+      <Text size="xs" c="gray.4">© 2026 {t('Nizolarni muqobil hal etish elektron platformasi', 'Электронная платформа альтернативного разрешения споров')}</Text>
     </Container>
   </Box>
 }
