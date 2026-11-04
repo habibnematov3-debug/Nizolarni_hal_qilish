@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { AlertCircle, CalendarDays, Check, FileText, RefreshCw, ShieldCheck, Star, Upload, Video, X } from 'lucide-react'
-import { Alert, Button, Checkbox, FileInput, Group, Modal, Paper, Select, Stack, Text, TextInput, ThemeIcon } from '@mantine/core'
+import { Alert, Button, Checkbox, FileInput, Group, Modal, MultiSelect, Paper, Select, Stack, Text, TextInput, ThemeIcon } from '@mantine/core'
 import { apiGet, apiGetPublic, apiPatch, apiPost, getAccessToken } from './api'
 import { DocumentExchangeWorkspace } from './DocumentExchangeWorkspace'
 import { applicantText, type ApplicantLanguage } from './applicantLocale'
@@ -329,17 +329,33 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
             <TextInput label={t('Ma’lumoti / diplom yo‘nalishi (mavjud bo‘lsa)', 'Образование / специальность по диплому (если есть)')} maxLength={250} value={draft.education} onChange={(event) => update('education', event.currentTarget.value)} placeholder={t('Ma’lumotingizni kiriting', 'Укажите образование')}/>
           </div>
 
-          <Checkbox.Group label={t('Ixtisoslashgan mediatsiya sohalari', 'Специализации по медиации')} withAsterisk value={draft.specialization} onChange={(value) => update('specialization', value)}>
-            <div className="grid gap-x-5 gap-y-3 pt-2 sm:grid-cols-2">
-              {specializations.map(([value, label]) => <Checkbox key={value} value={value} label={label}/>)}
-            </div>
-          </Checkbox.Group>
+          <MultiSelect
+            label={t('Ixtisoslashgan mediatsiya sohalari', 'Специализации по медиации')}
+            withAsterisk
+            required
+            data={specializations.map(([value, label]) => ({ value, label }))}
+            value={draft.specialization}
+            onChange={(value) => update('specialization', value)}
+            placeholder={t('Bir yoki bir nechta sohani tanlang', 'Выберите одну или несколько специализаций')}
+            searchable
+            clearable
+            hidePickedOptions
+            comboboxProps={{ withinPortal: true }}
+          />
 
-          <Checkbox.Group label={t('Mediatsiya olib boriladigan tillar', 'Языки проведения медиации')} withAsterisk value={draft.languages} onChange={(value) => update('languages', value)}>
-            <Group gap="md" mt="sm">
-              {workLanguages.map(([value, label]) => <Checkbox key={value} value={value} label={label}/>)}
-            </Group>
-          </Checkbox.Group>
+          <MultiSelect
+            label={t('Mediatsiya olib boriladigan tillar', 'Языки проведения медиации')}
+            withAsterisk
+            required
+            data={workLanguages.map(([value, label]) => ({ value, label }))}
+            value={draft.languages}
+            onChange={(value) => update('languages', value)}
+            placeholder={t('Bir yoki bir nechta tilni tanlang', 'Выберите один или несколько языков')}
+            searchable
+            clearable
+            hidePickedOptions
+            comboboxProps={{ withinPortal: true }}
+          />
         </Stack>
       </Paper>
 
