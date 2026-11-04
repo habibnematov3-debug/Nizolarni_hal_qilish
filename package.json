@@ -16,6 +16,8 @@
     "test:ent": "ts-node test/test-ent-apis.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "node scripts/prisma-with-database-url.cjs migrate deploy",
+    "prisma:migrate:status": "node scripts/prisma-with-database-url.cjs migrate status",
     "prisma:seed": "ts-node prisma/seed.ts",
     "db:push": "prisma db push"
   },

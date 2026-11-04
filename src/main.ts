@@ -8,7 +8,33 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
+/**
+ * Vercel/Supabase integration may prefix the generated Postgres variables.
+ * Resolve the Supabase URL first so an older Neon DATABASE_URL cannot silently
+ * keep the app pointed at the wrong database.
+ */
+function configureDatabaseUrl() {
+  const supabaseUrl =
+    process.env.DATABASE_POSTGRES_PRISMA_URL ||
+    process.env.DATABASE_SUPABASE_POSTGRES_PRISMA_URL ||
+    process.env.SUPABASE_POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.DATABASE_POSTGRES_URL ||
+    process.env.DATABASE_SUPABASE_POSTGRES_URL ||
+    process.env.SUPABASE_POSTGRES_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL;
+
+  if (supabaseUrl) process.env.DATABASE_URL = supabaseUrl;
+  if (!supabaseUrl) {
+    throw new Error(
+      'PostgreSQL ulanishi topilmadi. Vercel’da DATABASE_POSTGRES_PRISMA_URL yoki POSTGRES_PRISMA_URL sozlang.',
+    );
+  }
+}
+
 async function createApp(expressInstance?: express.Express) {
+  configureDatabaseUrl();
   if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGINS?.trim()) {
     throw new Error('Production API uchun CORS_ORIGINS da ruxsat etilgan frontend domenlarini belgilang');
   }
