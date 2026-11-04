@@ -10,7 +10,7 @@ import { FileAccessLevel } from '../platform/files/dto/file-upload.dto';
 import { FileStorageService } from '../platform/files/file-storage.service';
 import { randomInt } from 'crypto';
 import { normalizeWorkExperience, validateCalendarDate } from './questionnaire';
-import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
+import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, CreateTrainingCourseDto, InviteToExamDto, MarkTrainingAttendanceDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @Injectable()
 export class MkService {
@@ -21,6 +21,57 @@ export class MkService {
     private readonly legalCapacity: LegalCapacityIntegrationAdapter,
     private readonly files: FileStorageService,
   ) {}
+
+  async listTrainingCourses(user: AuthUser) {
+    const courses = await this.prisma.trainingCourse.findMany({
+      where: { isPublished: true },
+      include: { enrollments: { where: { userId: user.id }, select: { id: true, enrolledAt: true, attendedAt: true, completedAt: true } }, _count: { select: { enrollments: true } } },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+    return courses.map(({ enrollments, ...course }) => ({ ...course, enrollment: enrollments[0] || null, enrollmentCount: course._count.enrollments }));
+  }
+
+  async enrollTrainingCourse(user: AuthUser, courseId: string) {
+    const course = await this.prisma.trainingCourse.findFirst({ where: { id: courseId, isPublished: true }, select: { id: true } });
+    if (!course) throw new NotFoundException('E’lon qilingan kurs topilmadi');
+    return this.prisma.trainingEnrollment.upsert({
+      where: { courseId_userId: { courseId, userId: user.id } },
+      create: { courseId, userId: user.id },
+      update: {},
+      select: { id: true, courseId: true, enrolledAt: true, attendedAt: true, completedAt: true },
+    });
+  }
+
+  async listCommitteeTrainingCourses() {
+    const courses = await this.prisma.trainingCourse.findMany({
+      include: { enrollments: { include: { user: { select: { id: true, fullName: true, pinfl: true } }, }, orderBy: { enrolledAt: 'asc' } }, _count: { select: { enrollments: true } } },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+    return courses.map((course) => ({ ...course, enrollmentCount: course._count.enrollments }));
+  }
+
+  async createTrainingCourse(user: AuthUser, dto: CreateTrainingCourseDto) {
+    return this.prisma.trainingCourse.create({
+      data: {
+        title: dto.title.trim(), type: dto.type, durationHours: dto.durationHours,
+        dateLabel: dto.dateLabel.trim(), description: dto.description.trim(),
+        joinUrl: dto.joinUrl?.trim() || null, isPublished: true, createdById: user.id,
+      },
+    });
+  }
+
+  async markTrainingAttendance(user: AuthUser, enrollmentId: string, dto: MarkTrainingAttendanceDto, ipAddress?: string) {
+    const enrollment = await this.prisma.trainingEnrollment.findUnique({ where: { id: enrollmentId }, select: { id: true, attendedAt: true, completedAt: true } });
+    if (!enrollment) throw new NotFoundException('Kursga yozilish topilmadi');
+    const attendedAt = dto.attended ? enrollment.attendedAt || new Date() : null;
+    const updated = await this.prisma.trainingEnrollment.update({
+      where: { id: enrollmentId },
+      data: { attendedAt, completedAt: dto.completed && dto.attended ? enrollment.completedAt || new Date() : dto.attended ? enrollment.completedAt : null, markedById: user.id },
+      select: { id: true, courseId: true, enrolledAt: true, attendedAt: true, completedAt: true },
+    });
+    await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'MARK_TRAINING_ATTENDANCE', entityType: 'TRAINING_ENROLLMENT', entityId: enrollmentId, newValues: { attended: dto.attended, completed: Boolean(dto.completed) }, ipAddress });
+    return updated;
+  }
 
   async createApplication(user: AuthUser, dto: CreateMkApplicationDto) {
     if (dto.education !== undefined && dto.education.trim().length < 2) throw new BadRequestException('Ma’lumoti va diplom yo‘nalishini kiriting');
@@ -249,6 +300,8 @@ export class MkService {
     this.assertRegionalScope(user, item.region);
     if (item.status !== MkApplicationStatus.FORWARDED && item.status !== MkApplicationStatus.ACCEPTED) throw new ConflictException('Imtihon faqat komissiyaga yuborilgan ariza bo‘yicha tayinlanadi');
     if (['NOTARY', 'ADVOCATE'].includes((item.profession || '').toUpperCase())) throw new ConflictException('Notarius va advokatlar malaka imtihonidan ozod');
+    const completedCourse = await this.prisma.trainingEnrollment.findFirst({ where: { userId: item.applicantId, completedAt: { not: null }, course: { isPublished: true, type: 'COURSE' } }, select: { id: true } });
+    if (!completedCourse) throw new ConflictException('Malaka imtihonini tayinlashdan oldin talabgor kamida bitta e’lon qilingan o‘quv kursini tugatgan bo‘lishi kerak');
     const forwardedAt = item.forwardedAt || item.reviewedAt || item.submittedAt;
     const scheduledAt = new Date(dto.scheduledAt);
     if (scheduledAt <= new Date()) throw new BadRequestException('Imtihon sanasi kelajakdagi vaqt bo‘lishi kerak');

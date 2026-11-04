@@ -28,7 +28,7 @@ export class MkController {
   createTrainingCourse(@CurrentUser() user: AuthUser, @Body() dto: CreateTrainingCourseDto) { return this.service.createTrainingCourse(user, dto); }
 
   @Patch('committee/mk/training-enrollments/:id/attendance') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Nomzod davomatini komissiya tomonidan qayd etish' })
-  markTrainingAttendance(@Param('id') id: string, @Body() dto: MarkTrainingAttendanceDto) { return this.service.markTrainingAttendance(id, dto); }
+  markTrainingAttendance(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: MarkTrainingAttendanceDto, @Req() req: any) { return this.service.markTrainingAttendance(user, id, dto, req.ip); }
 
   @Post('cabinet/mk/applications') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediator bo\'lish uchun ariza yuborish' })
   createApplication(@CurrentUser() user: AuthUser, @Body() dto: CreateMkApplicationDto) { return this.service.createApplication(user, dto); }

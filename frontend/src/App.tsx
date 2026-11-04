@@ -1207,7 +1207,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (page === 'Hujjat almashinuvi') return <DocumentExchangeWorkspace role={role} onToast={onToast}/>
   if (['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && /ariza|talabgor|mediator bo‘lish/i.test(page)) return <MkApplicationWorkspace language={role === 'APPLICANT' ? language : 'uz'} role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
   if (role === 'APPLICANT' && ['O‘quv kurslari', 'Malaka imtihoni', 'Malaka guvohnomasi'].includes(page)) return <ApplicantLearningWorkspace language={language} page={page} onNavigate={onNavigatePage} onToast={onToast}/>
-  if (role === 'COMMISSION' && page === 'O‘quv nazorati') return <CommissionTrainingWorkspace onToast={onToast}/>
+  if (['COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF'].includes(role) && page === 'O‘quv nazorati') return <CommissionTrainingWorkspace onToast={onToast}/>
   if ((role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) || (role === 'MINISTRY' && page === 'Nomzod arizalari')) return <ExamPage role={role} page={page} onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Guvohnomalar') return <MediatorCertificateWorkspace onToast={onToast}/>
