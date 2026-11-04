@@ -3,8 +3,9 @@ import { IntegrationLoggerService } from '../services/integration-logger.service
 
 export interface LegalCapacityResult {
   pinfl: string;
-  hasCriminalRecord: boolean; // Sudlanganlik bormi
-  isLegallyIncompetent: boolean; // Muomalaga layoqatsizmi
+  hasCriminalRecord: boolean | null; // null: vakolatli manbadan javob olinmagan
+  isLegallyIncompetent: boolean | null;
+  isLegalCapacityRestricted: boolean | null;
   status: 'APPROVED' | 'REJECTED' | 'IN_PROGRESS'; // 3-bo'lim: «tekshiruv jarayonda» holati
   referenceNumber: string;
   checkDate: string;
@@ -22,8 +23,9 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
   async checkStatus(pinfl: string): Promise<LegalCapacityResult> {
     const endpoint = process.env.LEGAL_CAPACITY_API_URL?.trim();
     const pending = (notes: string): Omit<LegalCapacityResult, 'pinfl'> => ({
-      hasCriminalRecord: false,
-      isLegallyIncompetent: false,
+      hasCriminalRecord: null,
+      isLegallyIncompetent: null,
+      isLegalCapacityRestricted: null,
       status: 'IN_PROGRESS',
       referenceNumber: `PENDING-${Date.now()}`,
       checkDate: new Date().toISOString(),
@@ -49,7 +51,8 @@ export class LegalCapacityIntegrationAdapter implements ILegalCapacityPort {
         return {
           hasCriminalRecord: result.hasCriminalRecord,
           isLegallyIncompetent: result.isLegallyIncompetent,
-          status: result.status as LegalCapacityResult['status'],
+          isLegalCapacityRestricted: typeof result.isLegalCapacityRestricted === 'boolean' ? result.isLegalCapacityRestricted : null,
+          status: result.status === 'APPROVED' && typeof result.isLegalCapacityRestricted !== 'boolean' ? 'IN_PROGRESS' : result.status as LegalCapacityResult['status'],
           referenceNumber: result.referenceNumber,
           checkDate: result.checkDate || new Date().toISOString(),
           notes: result.notes,

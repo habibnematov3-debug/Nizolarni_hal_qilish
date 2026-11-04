@@ -208,6 +208,10 @@ export type ApplicationDraft = {
   passportNumber: string
   passportGivenDate: string
   passportExpireDate: string
+  passportIssuedBy: string
+  birthDate: string
+  practiceAddress: string
+  powerOfAttorney: File | null
   phone: string
   email: string
   address: string
@@ -216,7 +220,7 @@ export type ApplicationDraft = {
   education: string
   specialization: string[]
   languages: string[]
-  workExperience: { startedAt: string; endedAt: string; workplace: string; position: string }[]
+  workExperience: { startedAt: string; endedAt: string; isCurrent?: boolean; workplace: string; position: string }[]
   ethicsAccepted: boolean
   diplomaFile: File | null
   passportFile: File | null
@@ -226,7 +230,7 @@ export type ApplicationDraft = {
 
 export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: { language?: ApplicantLanguage; onClose: () => void; onSubmit: (draft: ApplicationDraft) => Promise<void> }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
-  const [draft, setDraft] = useState<ApplicationDraft>({ fullName: '', pinfl: '', passportNumber: '', passportGivenDate: '', passportExpireDate: '', phone: '', email: '', address: '', region: '', profession: 'MEDIATOR', education: '', specialization: [], languages: [], workExperience: [], ethicsAccepted: false, diplomaFile: null, passportFile: null, courseCertificate: null, professionProof: null })
+  const [draft, setDraft] = useState<ApplicationDraft>({ fullName: '', pinfl: '', passportNumber: '', passportGivenDate: '', passportExpireDate: '', passportIssuedBy: '', birthDate: '', phone: '', email: '', address: '', practiceAddress: '', region: '', profession: 'MEDIATOR', education: '', specialization: [], languages: [], workExperience: [], ethicsAccepted: false, diplomaFile: null, passportFile: null, courseCertificate: null, professionProof: null, powerOfAttorney: null })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const courseRequired = draft.profession === 'MEDIATOR'
@@ -237,18 +241,19 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
   useEffect(() => {
     if (!authenticated) return
     apiGet<{ fullName: string; pinfl?: string | null; passportSeriesNumber?: string | null; passportGivenDate?: string | null; passportExpireDate?: string | null; phone?: string | null; email?: string | null; address?: string | null }>('/cabinet/profile')
-      .then((profile) => setDraft((current) => ({ ...current, fullName: profile.fullName || '', pinfl: profile.pinfl || '', passportNumber: profile.passportSeriesNumber || '', passportGivenDate: profile.passportGivenDate || '', passportExpireDate: profile.passportExpireDate || '', phone: profile.phone || '', email: profile.email || '', address: profile.address || '' })))
+      .then((profile) => setDraft((current) => ({ ...current, fullName: profile.fullName || '', pinfl: profile.pinfl || '', passportNumber: profile.passportSeriesNumber || '', passportGivenDate: profile.passportGivenDate || '', passportExpireDate: profile.passportExpireDate || '', phone: profile.phone || '', email: profile.email || '', address: profile.address || '', birthDate: (profile as any).birthDate || '' })))
       .catch((cause) => setError(cause instanceof Error ? cause.message : t('Shaxsiy profilni yuklab bo‘lmadi.', 'Не удалось загрузить личный профиль.')))
   }, [authenticated])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!/^\d{14}$/.test(draft.pinfl)) { setError(t('PINFL 14 ta raqam bo‘lishi kerak.', 'ПИНФЛ должен состоять из 14 цифр.')); return }
+    if (!draft.passportIssuedBy.trim()) { setError(t('Pasportni bergan organni kiriting.', 'Укажите орган, выдавший паспорт.')); return }
+    if (!draft.practiceAddress.trim()) { setError(t('Faoliyat manzilini kiriting.', 'Укажите адрес осуществления деятельности.')); return }
     if (!draft.region) { setError(t('Hududni tanlang.', 'Выберите регион.')); return }
     if (!draft.specialization.length || !draft.languages.length) { setError(t('Ixtisoslashgan soha va ish tilini tanlang.', 'Выберите специализацию и язык работы.')); return }
     if (!draft.ethicsAccepted) { setError(t('Qonunchilik va kasb etikasi bilan tanishganingizni tasdiqlang.', 'Подтвердите ознакомление с законодательством и профессиональной этикой.')); return }
-    if (draft.workExperience.some((item) => Object.values(item).some(Boolean) && Object.values(item).some((value) => !value.trim()))) { setError(t('Ish tajribasi qatoridagi barcha maydonlarni to‘ldiring yoki qatorni olib tashlang.', 'Заполните все поля строки опыта работы или удалите её.')); return }
-    if (courseRequired && !draft.courseCertificate) { setError(t('Maxsus o‘quv kursi sertifikatini biriktiring.', 'Приложите сертификат специального учебного курса.')); return }
+    if (draft.workExperience.some((item) => !item.startedAt || !item.workplace.trim() || !item.position.trim() || (!item.isCurrent && !item.endedAt) || (!item.isCurrent && item.endedAt < item.startedAt))) { setError(t('Ish tajribasi qatoridagi barcha maydonlarni to‘ldiring yoki qatorni olib tashlang.', 'Заполните все поля строки опыта работы или удалите её.')); return }
     if (professionProofRequired && !draft.professionProof) { setError(t('Notarius yoki advokat maqomini tasdiqlovchi hujjatni biriktiring.', 'Приложите документ, подтверждающий статус нотариуса или адвоката.')); return }
     setError('')
     setBusy(true)
@@ -301,6 +306,8 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
             <TextInput label={t('Pasport seriyasi va raqami', 'Серия и номер паспорта')} withAsterisk required maxLength={20} value={draft.passportNumber} onChange={(event) => update('passportNumber', event.currentTarget.value.toUpperCase())} readOnly={authenticated} placeholder="AA1234567"/>
             <TextInput label={t('Pasport berilgan sana', 'Дата выдачи паспорта')} withAsterisk required type="date" value={draft.passportGivenDate} onChange={(event) => update('passportGivenDate', event.currentTarget.value)} readOnly={authenticated}/>
             <TextInput label={t('Pasport amal qilish muddati', 'Срок действия паспорта')} withAsterisk required type="date" value={draft.passportExpireDate} onChange={(event) => update('passportExpireDate', event.currentTarget.value)} readOnly={authenticated}/>
+            <TextInput label={t('Pasportni bergan organ', 'Орган, выдавший паспорт')} withAsterisk required maxLength={250} value={draft.passportIssuedBy} onChange={(event) => update('passportIssuedBy', event.currentTarget.value)} placeholder={t('Masalan, IIV Toshkent shahar boshqarmasi', 'Например, УВД г. Ташкент')}/>
+            <TextInput label={t("Tug‘ilgan sana", 'Дата рождения')} type="date" value={draft.birthDate} onChange={(event) => update('birthDate', event.currentTarget.value)} readOnly={authenticated} description={authenticated ? t('Profildan olingan', 'Получено из профиля') : undefined}/>
             <TextInput label={t('Yashash manzili', 'Адрес проживания')} withAsterisk required maxLength={1000} value={draft.address} onChange={(event) => update('address', event.currentTarget.value)}/>
           </div>
         </Stack>
@@ -312,13 +319,14 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
           <div className="grid gap-4 sm:grid-cols-2">
             <TextInput label={t('Telefon', 'Телефон')} withAsterisk required type="tel" value={draft.phone} onChange={(event) => update('phone', event.currentTarget.value)} placeholder="+998 90 123 45 67" autoComplete="tel"/>
             <TextInput label={t('Elektron pochta', 'Электронная почта')} type="email" maxLength={254} value={draft.email} onChange={(event) => update('email', event.currentTarget.value)} placeholder="name@example.uz" autoComplete="email"/>
+            <TextInput label={t('Faoliyatni amalga oshirish manzili', 'Адрес осуществления деятельности')} withAsterisk required maxLength={1000} value={draft.practiceAddress} onChange={(event) => update('practiceAddress', event.currentTarget.value)} placeholder={t('Mediatsiya faoliyati olib boriladigan manzil', 'Адрес осуществления медиационной деятельности')}/>
             <Select label={t('Faoliyat hududi', 'Регион деятельности')} withAsterisk required placeholder={t('Hududni tanlang', 'Выберите регион')} data={regions.map((region) => ({ value: region, label: region }))} value={draft.region || null} onChange={(value) => update('region', value || '')}/>
             <Select label={t('Kasbiy maqom', 'Профессиональный статус')} withAsterisk data={[
               { value: 'MEDIATOR', label: t('Mediator talabgori', 'Кандидат в медиаторы') },
               { value: 'NOTARY', label: t('Amaldagi notarius', 'Действующий нотариус') },
               { value: 'ADVOCATE', label: t('Amaldagi advokat', 'Действующий адвокат') },
             ]} value={draft.profession} onChange={(value) => { if (value) update('profession', value as ApplicationDraft['profession']) }}/>
-            <TextInput label={t('Ma’lumoti / diplom yo‘nalishi', 'Образование / специальность по диплому')} withAsterisk required maxLength={250} value={draft.education} onChange={(event) => update('education', event.currentTarget.value)} placeholder={t('Ma’lumotingizni kiriting', 'Укажите образование')}/>
+            <TextInput label={t('Ma’lumoti / diplom yo‘nalishi (mavjud bo‘lsa)', 'Образование / специальность по диплому (если есть)')} maxLength={250} value={draft.education} onChange={(event) => update('education', event.currentTarget.value)} placeholder={t('Ma’lumotingizni kiriting', 'Укажите образование')}/>
           </div>
 
           <Checkbox.Group label={t('Ixtisoslashgan mediatsiya sohalari', 'Специализации по медиации')} withAsterisk value={draft.specialization} onChange={(value) => update('specialization', value)}>
@@ -339,7 +347,7 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
         <Stack gap="md">
           <Group justify="space-between" align="flex-start" wrap="wrap">
             {sectionTitle(t('Ish staji', 'Трудовой стаж'), t('Ish joyi va lavozimni ko‘rsating; ma’lumot bo‘lmasa bo‘sh qoldiring.', 'Укажите место работы и должность; при отсутствии данных оставьте поля пустыми.'))}
-            <Button type="button" variant="light" color="teal" size="sm" onClick={() => update('workExperience', [...draft.workExperience, { startedAt: '', endedAt: '', workplace: '', position: '' }])}>
+            <Button type="button" variant="light" color="teal" size="sm" onClick={() => update('workExperience', [...draft.workExperience, { startedAt: '', endedAt: '', isCurrent: false, workplace: '', position: '' }])}>
               + {t('Ish joyi', 'Место работы')}
             </Button>
           </Group>
@@ -347,9 +355,9 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
           {draft.workExperience.map((item, index) => <Paper key={index} withBorder radius="md" p="sm" bg="gray.0">
             <div className="grid gap-4 sm:grid-cols-2">
               <TextInput type="date" label={t('Ishga kirgan sana', 'Дата начала')} value={item.startedAt} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, startedAt: event.currentTarget.value } : row))}/>
-              <TextInput type="date" label={t('Ishdan ketgan sana', 'Дата окончания')} value={item.endedAt} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, endedAt: event.currentTarget.value } : row))}/>
+              {!item.isCurrent && <TextInput type="date" label={t('Ishdan ketgan sana', 'Дата окончания')} value={item.endedAt} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, endedAt: event.currentTarget.value } : row))}/>}
               <TextInput maxLength={250} label={t('Ish joyi', 'Место работы')} value={item.workplace} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, workplace: event.currentTarget.value } : row))}/>
-              <TextInput maxLength={250} label={t('Lavozim', 'Должность')} value={item.position} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, position: event.currentTarget.value } : row))}/>
+              <TextInput maxLength={250} label={t('Lavozim', 'Должность')} value={item.position} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, position: event.currentTarget.value } : row))}/><Checkbox checked={Boolean(item.isCurrent)} label={t('Hozir ham shu joyda ishlayman', 'Работаю здесь сейчас')} onChange={(event) => update('workExperience', draft.workExperience.map((row, rowIndex) => rowIndex === index ? { ...row, isCurrent: event.currentTarget.checked, endedAt: '' } : row))}/>
             </div>
             <Button type="button" variant="subtle" color="red" size="xs" mt="xs" onClick={() => update('workExperience', draft.workExperience.filter((_, rowIndex) => rowIndex !== index))}>
               {t('Qatorni olib tashlash', 'Удалить строку')}
@@ -364,8 +372,10 @@ export function MediatorApplicationForm({ language = 'uz', onClose, onSubmit }: 
           <FileField language={language} label={t('Diplom nusxasi (ixtiyoriy)', 'Копия диплома (необязательно)')} file={draft.diplomaFile} onChange={(file) => update('diplomaFile', file)}/>
           <FileField language={language} label={t('Pasport nusxasi (ixtiyoriy)', 'Копия паспорта (необязательно)')} file={draft.passportFile} onChange={(file) => update('passportFile', file)}/>
           {courseRequired
-            ? <FileField language={language} label={t('Mediatorlar maxsus kursi sertifikati', 'Сертификат специального курса медиаторов')} required file={draft.courseCertificate} onChange={(file) => update('courseCertificate', file)}/>
+            ? <FileField language={language} label={t('Maxsus o‘quv kursi sertifikati (mavjud bo‘lsa)', 'Сертификат специального курса (если есть)')} file={draft.courseCertificate} onChange={(file) => update('courseCertificate', file)}/>
             : <FileField language={language} label={t('Notarius/advokat maqomini tasdiqlovchi hujjat', 'Документ, подтверждающий статус нотариуса/адвоката')} required file={draft.professionProof} onChange={(file) => update('professionProof', file)}/>}
+          <FileField language={language} label={t('Notarial tasdiqlangan ishonchnoma nusxasi (vakil orqali murojaatda)', 'Нотариально заверенная доверенность (при подаче представителем)')} file={draft.powerOfAttorney} onChange={(file) => update('powerOfAttorney', file)}/>
+          <Alert color="blue" variant="light">{t('Hozirgi kabinet arizani faqat o‘z nomidan yuboradi. Vakil nomidan ariza berish vakolatini tizim alohida tekshirmaydi.', 'Сейчас кабинет подает заявление только от собственного имени. Полномочия представителя система отдельно не проверяет.')}</Alert>
         </Stack>
       </Paper>
 

@@ -16,6 +16,10 @@
     {
       "path": "/internal/cron/ratings",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/internal/cron/registry-expiry",
+      "schedule": "0 3 * * *"
     }
   ]
 }

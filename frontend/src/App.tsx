@@ -404,10 +404,15 @@ export default function App() {
         if (professionProof) uploadedIds.push(professionProof.id)
         const passport = draft.passportFile ? await uploadPrivateDocument(draft.passportFile, 'Mediator arizasi: pasport nusxasi') : undefined
         if (passport) uploadedIds.push(passport.id)
+        const powerOfAttorney = draft.powerOfAttorney ? await uploadPrivateDocument(draft.powerOfAttorney, 'Mediator arizasi: notarial ishonchnoma') : undefined
+        if (powerOfAttorney) uploadedIds.push(powerOfAttorney.id)
         const created = await apiPost<{ id: string; status: string }>('/cabinet/mk/applications', {
           phone: draft.phone,
           email: draft.email,
           address: draft.address,
+          practiceAddress: draft.practiceAddress,
+          passportIssuedBy: draft.passportIssuedBy,
+          birthDate: draft.birthDate || undefined,
           region: draft.region,
           education: draft.education,
           profession: draft.profession,
@@ -419,6 +424,7 @@ export default function App() {
           passportFileId: passport?.id,
           courseCertificateId: course?.id,
           professionProofFileId: professionProof?.id,
+          powerOfAttorneyFileId: powerOfAttorney?.id,
         })
         setApplications((items) => [{ id: created.id, title: 'Mediator maqomini olish', status: applicationStatusLabel(created.status), detail: 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Hududiy tekshiruv', createdAt: new Date().toLocaleDateString('uz-UZ') }, ...items])
         setToast('Mediator arizasi serverga yuborildi')

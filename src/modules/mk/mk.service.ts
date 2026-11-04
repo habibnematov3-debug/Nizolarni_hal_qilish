@@ -9,6 +9,7 @@ import PDFDocument from 'pdfkit';
 import { FileAccessLevel } from '../platform/files/dto/file-upload.dto';
 import { FileStorageService } from '../platform/files/file-storage.service';
 import { randomInt } from 'crypto';
+import { normalizeWorkExperience, validateCalendarDate } from './questionnaire';
 import { CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @Injectable()
@@ -22,9 +23,12 @@ export class MkService {
   ) {}
 
   async createApplication(user: AuthUser, dto: CreateMkApplicationDto) {
-    if (dto.education.trim().length < 2) throw new BadRequestException('Ma’lumoti va diplom yo‘nalishini kiriting');
+    if (dto.education !== undefined && dto.education.trim().length < 2) throw new BadRequestException('Ma’lumoti va diplom yo‘nalishini kiriting');
     if (!dto.ethicsAccepted) throw new BadRequestException('Mediatsiya qonunchiligi va kasb etikasi bilan tanishganingizni tasdiqlang');
     if (!dto.region.trim()) throw new BadRequestException('Faoliyat hududini tanlang');
+    if (!dto.address?.trim() || !dto.practiceAddress?.trim()) throw new BadRequestException('Yashash va faoliyat manzilini kiriting');
+    if (!dto.passportIssuedBy?.trim()) throw new BadRequestException('Pasport yoki ID-kartani bergan organni kiriting');
+    if (!dto.specialization.some((value) => value.trim()) || !dto.languages.some((value) => value.trim())) throw new BadRequestException('Ixtisoslashuv va mediatsiya tilini tanlang');
     const active = await this.prisma.mkApplication.findFirst({ where: { applicantId: user.id, status: { notIn: [MkApplicationStatus.REJECTED, MkApplicationStatus.FAILED] } } });
     if (active) throw new ConflictException('Sizda faol MK arizasi mavjud');
     const profession = dto.profession.toUpperCase();
@@ -40,17 +44,20 @@ export class MkService {
       where: { id: user.id },
       select: { id: true, fullName: true, pinfl: true, phone: true, email: true, address: true, passportSeriesNumber: true, passportGivenDate: true, passportExpireDate: true, birthDate: true, birthPlace: true, nationality: true, gender: true },
     });
-    if (!profile?.pinfl || !/^\d{14}$/.test(profile.pinfl) || !profile.passportSeriesNumber || !profile.passportGivenDate || !profile.passportExpireDate) {
+    if (!profile?.pinfl || !/^\d{14}$/.test(profile.pinfl) || !profile.fullName?.trim() || !profile.passportSeriesNumber || !profile.passportGivenDate) {
       throw new BadRequestException('Ariza uchun OneID profilidagi PINFL va to‘liq pasport ma’lumotlari zarur');
     }
+    const birthDate = profile.birthDate?.slice(0, 10) || dto.birthDate;
+    validateCalendarDate(birthDate || '', 'Tug‘ilgan sana');
+    validateCalendarDate(profile.passportGivenDate.slice(0, 10), 'Pasport berilgan sana');
+    if (profile.passportGivenDate.slice(0, 10) < birthDate) throw new BadRequestException('Pasport berilgan sana tug‘ilgan sanadan oldin bo‘lishi mumkin emas');
+    const workExperience = normalizeWorkExperience(dto.workExperience, birthDate);
     if (!profile.phone || this.normalizePhone(profile.phone) !== this.normalizePhone(dto.phone)) {
       throw new BadRequestException('Telefon raqamini avval shaxsiy profilda yangilang va tasdiqlang');
     }
-    if (!profile.email || profile.email.toLowerCase() !== dto.email.toLowerCase()) {
-      throw new BadRequestException('Elektron pochtani avval shaxsiy profilda yangilang va tasdiqlang');
-    }
-    const requiredFileIds = [dto.diplomaFileId, dto.passportFileId, dto.courseCertificateId, dto.professionProofFileId].filter((id): id is string => Boolean(id));
-    if (!specialProfession && !dto.courseCertificateId) throw new BadRequestException('Mediatorlar maxsus o‘quv kursi sertifikati majburiy');
+    const requiredFileIds = [dto.diplomaFileId, dto.passportFileId, dto.courseCertificateId, dto.professionProofFileId, dto.powerOfAttorneyFileId].filter((id): id is string => Boolean(id));
+    // Annex 2 starred information is requested through interagency exchange.
+    // A missing optional copy is pending evidence, never an automatic exemption.
     if (specialProfession && !dto.professionProofFileId) throw new BadRequestException('Notarius yoki advokat maqomini tasdiqlovchi hujjatni biriktiring');
     const ownedFiles = await this.prisma.fileRecord.findMany({
       where: { id: { in: requiredFileIds }, uploadedById: user.id, accessLevel: 'PRIVATE' },
@@ -65,22 +72,36 @@ export class MkService {
       seriesNumber: profile.passportSeriesNumber,
       givenDate: profile.passportGivenDate,
       expireDate: profile.passportExpireDate,
-      birthDate: profile.birthDate,
+      issuedBy: dto.passportIssuedBy.trim(),
+      birthDate,
       birthPlace: profile.birthPlace,
       nationality: profile.nationality,
       gender: profile.gender,
       fullName: profile.fullName,
       pinfl: profile.pinfl,
+      questionnaire: {
+        version: 'regulation-140-annex-2',
+        submissionMode: 'SELF',
+        practiceAddress: dto.practiceAddress.trim(),
+        sources: {
+          identity: 'PROFILE',
+          passportIssuedBy: 'APPLICANT',
+          birthDate: profile.birthDate ? 'PROFILE' : 'APPLICANT',
+          education: dto.education ? 'APPLICANT' : 'PENDING',
+          workExperience: workExperience.length ? 'APPLICANT' : 'PENDING',
+          courseCertificate: dto.courseCertificateId ? 'APPLICANT' : 'PENDING',
+        },
+      },
     };
     const application = await this.prisma.mkApplication.create({
       data: {
-        applicantId: user.id, phone: profile.phone, email: profile.email, address: dto.address || profile.address, region: dto.region.trim(), education: dto.education.trim(), profession,
+        applicantId: user.id, phone: profile.phone, email: dto.email?.trim().toLowerCase() || null, address: dto.address.trim(), region: dto.region.trim(), education: dto.education?.trim() || null, profession,
         specialization: dto.specialization.map((item) => item.trim()).filter(Boolean), languages: dto.languages.map((item) => item.trim()).filter(Boolean),
-        workExperience: (dto.workExperience || []) as Prisma.InputJsonValue, ethicsAcceptedAt: new Date(),
-        diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId, professionProofFileId: dto.professionProofFileId,
+        workExperience: workExperience as Prisma.InputJsonValue, ethicsAcceptedAt: new Date(),
+        diplomaFileId: dto.diplomaFileId, passportFileId: dto.passportFileId, courseCertificateId: dto.courseCertificateId, professionProofFileId: dto.professionProofFileId, powerOfAttorneyFileId: dto.powerOfAttorneyFileId,
         passportData: passportData as unknown as Prisma.InputJsonValue,
         status: check?.status === 'IN_PROGRESS' ? MkApplicationStatus.SUBMITTED : MkApplicationStatus.CHECKING,
-        regionalReviewDeadline: this.addBusinessDays(new Date(), 1),
+        regionalReviewDeadline: this.addBusinessDays(new Date(), 10),
         autoCheckResult: check as unknown as Prisma.InputJsonValue,
       },
     });
@@ -160,14 +181,37 @@ export class MkService {
     }
     const patch: Prisma.MkApplicationUpdateInput = {
       correctionNote: null, correctionDeadline: null, rejectionCode: null, rejectionReason: null,
-      status: MkApplicationStatus.SUBMITTED, regionalReviewDeadline: this.addBusinessDays(new Date(), 1),
+      status: MkApplicationStatus.SUBMITTED, regionalReviewDeadline: this.addBusinessDays(new Date(), 10),
     };
     if (dto.region !== undefined) patch.region = dto.region.trim();
     if (dto.address !== undefined) patch.address = dto.address;
     if (dto.education !== undefined) patch.education = dto.education.trim();
+    if (dto.email !== undefined) patch.email = dto.email.trim().toLowerCase() || null;
     if (dto.specialization !== undefined) patch.specialization = dto.specialization.map((value) => value.trim()).filter(Boolean);
     if (dto.languages !== undefined) patch.languages = dto.languages.map((value) => value.trim()).filter(Boolean);
-    if (dto.workExperience !== undefined) patch.workExperience = dto.workExperience as Prisma.InputJsonValue;
+    const passport = (item.passportData || {}) as Record<string, any>;
+    const questionnaire = passport.questionnaire || {};
+    const birthDate = questionnaire.sources?.birthDate === 'PROFILE' ? passport.birthDate : dto.birthDate || passport.birthDate;
+    if (dto.birthDate !== undefined) validateCalendarDate(birthDate || '', 'Tug‘ilgan sana');
+    if (dto.workExperience !== undefined || dto.birthDate !== undefined) {
+      patch.workExperience = normalizeWorkExperience(dto.workExperience ?? (item.workExperience as any[]) ?? [], birthDate) as Prisma.InputJsonValue;
+    }
+    patch.passportData = {
+      ...passport,
+      ...(dto.passportIssuedBy !== undefined ? { issuedBy: dto.passportIssuedBy.trim() } : {}),
+      ...(birthDate ? { birthDate } : {}),
+      questionnaire: {
+        ...questionnaire,
+        ...(dto.practiceAddress !== undefined ? { practiceAddress: dto.practiceAddress.trim() } : {}),
+        sources: {
+          ...questionnaire.sources,
+          ...(dto.passportIssuedBy !== undefined ? { passportIssuedBy: 'APPLICANT' } : {}),
+          ...(dto.birthDate !== undefined && questionnaire.sources?.birthDate !== 'PROFILE' ? { birthDate: 'APPLICANT' } : {}),
+          ...(dto.education !== undefined ? { education: 'APPLICANT' } : {}),
+          ...(dto.workExperience !== undefined ? { workExperience: dto.workExperience.length ? 'APPLICANT' : 'PENDING' } : {}),
+        },
+      },
+    };
     const updated = await this.prisma.mkApplication.update({ where: { id }, data: patch });
     await this.audit.log({ userId: user.id, username: user.username, userFullName: user.fullName, action: 'RESUBMIT_MK_APPLICATION', entityType: 'MK_APPLICATION', entityId: id, newValues: { response: dto.correctionResponse } });
     await this.notify(user.id, 'Tuzatilgan arizangiz hududiy adliya organiga qayta yuborildi.', `mk-${id}-resubmitted-${updated.updatedAt.toISOString()}`);
@@ -320,10 +364,11 @@ export class MkService {
     const person = await this.prisma.user.findUnique({ where: { id: application.applicantId } });
     if (!person) throw new NotFoundException('Talabgor profili topilmadi');
     if (!dto.registryNumber.trim()) throw new BadRequestException('Mediator reyestridagi rasmiy tartib raqamini kiriting');
+    const questionnairePassport = application.passportData as Record<string, any> | null;
     const registryData = {
       registryNumber: dto.registryNumber.trim(), pinfl: person.pinfl, type: RegistryType.MEDIATOR,
-      fullName: person.fullName, phone: application.phone, email: application.email, address: application.address,
-      region: application.region, gender: person.gender, birthDate: person.birthDate ? new Date(person.birthDate) : null,
+      fullName: person.fullName, phone: application.phone, email: application.email, address: questionnairePassport?.questionnaire?.practiceAddress || application.address,
+      region: application.region, gender: person.gender, birthDate: person.birthDate || questionnairePassport?.birthDate ? new Date(person.birthDate || questionnairePassport.birthDate) : null,
       education: application.education, specialization: application.specialization, languages: application.languages,
       status: RegistryEntryStatus.ACTIVE, publicProfile: true, registeredAt: new Date(), createdById: actor.id,
     };

@@ -22,6 +22,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { MyGovIntegrationAdapter } from '../integration/adapters/mygov.adapter';
 import { CreateRegistryEntryDto, UpdateRegistryEntryDto } from './dto/registry-entry.dto';
 import { PublicRegistryQueryDto, RegistryQueryDto } from './dto/registry-query.dto';
+import { NotificationsService } from '../notifications/services/notifications.service';
+import { NotificationChannel } from '@prisma/client';
 
 const IMPORT_HEADERS = [
   'registryNumber', 'pinfl', 'type', 'fullName', 'phone', 'email', 'region', 'address',
@@ -41,6 +43,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly myGov: MyGovIntegrationAdapter,
+    private readonly notifications: NotificationsService,
   ) {}
 
   onModuleInit() {
@@ -61,6 +64,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       status: RegistryEntryStatus.ACTIVE,
       publicProfile: true,
       deletedAt: null,
+      AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
       type: query.type || RegistryType.MEDIATOR,
       ...(query.region ? { region: { contains: query.region, mode: 'insensitive' } } : {}),
       ...(query.specialization ? { specialization: { has: query.specialization } } : {}),
@@ -71,7 +75,6 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
             OR: [
               { fullName: { contains: query.search, mode: 'insensitive' } },
               { region: { contains: query.search, mode: 'insensitive' } },
-              { address: { contains: query.search, mode: 'insensitive' } },
             ],
           }
         : {}),
@@ -100,6 +103,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         status: RegistryEntryStatus.ACTIVE,
         publicProfile: true,
         deletedAt: null,
+        AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
       },
       include: { ratings: { orderBy: [{ periodYear: 'desc' }, { calculatedAt: 'desc' }], take: 1 } },
     });
@@ -114,6 +118,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         status: RegistryEntryStatus.ACTIVE,
         publicProfile: true,
         deletedAt: null,
+        AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
         latitude: { not: null },
         longitude: { not: null },
         ...(query.region ? { region: { contains: query.region, mode: 'insensitive' } } : {}),
@@ -125,7 +130,6 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
               OR: [
                 { fullName: { contains: query.search, mode: 'insensitive' } },
                 { region: { contains: query.search, mode: 'insensitive' } },
-                { address: { contains: query.search, mode: 'insensitive' } },
               ],
             }
           : {}),
@@ -134,8 +138,6 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         id: true,
         fullName: true,
         type: true,
-        phone: true,
-        address: true,
         region: true,
         specialization: true,
         latitude: true,
@@ -663,6 +665,63 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
     return { examined: pending.length };
   }
 
+  async checkCertificateExpirations(now = new Date()) {
+    const warningEnd = new Date(now);
+    warningEnd.setDate(warningEnd.getDate() + 30);
+    const expired = await this.prisma.registryEntry.findMany({
+      where: { type: RegistryType.MEDIATOR, status: RegistryEntryStatus.ACTIVE, deletedAt: null, certificateExpiresAt: { lt: now } },
+      select: { id: true, userId: true, certificateExpiresAt: true },
+    });
+    for (const entry of expired) {
+      await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.registryEntry.updateMany({ where: { id: entry.id, status: RegistryEntryStatus.ACTIVE }, data: { status: RegistryEntryStatus.SUSPENDED } });
+        if (updated.count) {
+          await tx.registryStatusHistory.create({ data: { registryEntryId: entry.id, previousStatus: RegistryEntryStatus.ACTIVE, status: RegistryEntryStatus.SUSPENDED, reason: 'Malaka guvohnomasining amal qilish muddati tugadi', changedById: null } });
+          const current = await tx.registryEntry.findUnique({ where: { id: entry.id } });
+          if (current?.userId) await this.syncLinkedUser(tx, current, current.userId);
+        }
+      });
+      await this.enqueueMyGovSync(entry.id, 'STATUS_CHANGE');
+    }
+    const expiring = await this.prisma.registryEntry.findMany({
+      where: { type: RegistryType.MEDIATOR, status: RegistryEntryStatus.ACTIVE, deletedAt: null, certificateExpiresAt: { gte: now, lte: warningEnd } },
+      select: { id: true, userId: true, registryNumber: true, certificateExpiresAt: true },
+    });
+    const notified: string[] = [];
+    for (const entry of expiring) {
+      if (!entry.certificateExpiresAt) continue;
+      const day = entry.certificateExpiresAt.toISOString().slice(0, 10);
+      if (entry.userId) await this.notifications.send({
+        userId: entry.userId,
+        templateCode: 'APPLICATION_STATUS',
+        variables: { title: 'Malaka guvohnomasi muddati', content: `Mediator guvohnomangiz ${day} kuni tugaydi. Reyestrdagi holatingizni yangilash uchun Adliya organiga murojaat qiling.` },
+        idempotencyKey: `mediator-certificate-expiry-${entry.id}-${day}`,
+        channels: [NotificationChannel.CABINET],
+      });
+      notified.push(entry.id);
+    }
+    if (notified.length) {
+      const ministry = await this.prisma.user.findMany({
+        where: { userRoles: { some: { role: { name: 'MINISTRY_STAFF' } } } },
+        select: { id: true },
+      });
+      for (const staff of ministry) {
+        for (const entry of expiring) {
+          if (!entry.certificateExpiresAt) continue;
+          const day = entry.certificateExpiresAt.toISOString().slice(0, 10);
+          await this.notifications.send({
+            userId: staff.id,
+            templateCode: 'APPLICATION_STATUS',
+            variables: { title: 'Guvohnoma muddati tugayotgan mediator', content: `${entry.registryNumber || 'Reyestr yozuvi'} guvohnomasi ${day} kuni tugaydi.` },
+            idempotencyKey: `mediator-certificate-expiry-ministry-${entry.id}-${day}-${staff.id}`,
+            channels: [NotificationChannel.CABINET],
+          });
+        }
+      }
+    }
+    return { expired: expired.length, warned: notified.length };
+  }
+
   private staffWhere(query: RegistryQueryDto, actor: AuthUser): Prisma.RegistryEntryWhereInput {
     const isRegionScoped = actor.roles.includes('REGIONAL_STAFF') && !actor.roles.includes('ADMIN');
     const region = isRegionScoped
@@ -873,8 +932,6 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       type: entry.type,
       fullName: entry.fullName,
       photoUrl: entry.photoUrl,
-      phone: entry.phone,
-      address: entry.address,
       region: entry.region,
       education: entry.education,
       specialization: entry.specialization,

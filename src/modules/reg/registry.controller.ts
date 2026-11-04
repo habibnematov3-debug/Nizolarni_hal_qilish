@@ -10,6 +10,7 @@ import {
   Query,
   Req,
   Res,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -55,6 +56,18 @@ export class PublicRegistryController {
   @ApiOperation({ summary: 'Reyestr yozuvining ochiq profili' })
   getProfile(@Param('id', ParseUUIDPipe) id: string) {
     return this.registry.getPublicProfile(id);
+  }
+}
+
+@Controller('internal/cron')
+export class RegistryExpiryCronController {
+  constructor(private readonly registry: RegistryService) {}
+
+  @Get('registry-expiry')
+  checkExpirations(@Req() request: Request) {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || request.headers.authorization !== `Bearer ${secret}`) throw new UnauthorizedException();
+    return this.registry.checkCertificateExpirations();
   }
 }
 
