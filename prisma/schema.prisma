@@ -410,6 +410,8 @@ model User {
   notifications                Notification[]
   trainingCertificates         TrainingCertificate[]
   trainingApplications         TrainingApplication[]
+  trainingCoursesCreated      TrainingCourse[]             @relation("TrainingCourseCreator")
+  trainingEnrollments         TrainingEnrollment[]
   registryEntries              RegistryEntry[]
   contractsCreated             ServiceContract[]             @relation("ContractCreator")
   contractsAsProvider          ServiceContract[]             @relation("ContractProvider")
@@ -663,6 +665,40 @@ model TrainingApplication {
   @@index([userId, createdAt])
   @@index([status])
   @@map("training_applications")
+}
+
+model TrainingCourse {
+  id          String   @id @default(uuid())
+  title       String
+  type        String   @default("COURSE") // COURSE, WEBINAR
+  durationHours Int    @map("duration_hours")
+  dateLabel   String   @map("date_label")
+  description String
+  joinUrl     String?  @map("join_url")
+  isPublished Boolean  @default(false) @map("is_published")
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("TrainingCourseCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  enrollments TrainingEnrollment[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, createdAt])
+  @@map("training_courses")
+}
+
+model TrainingEnrollment {
+  id         String   @id @default(uuid())
+  courseId   String   @map("course_id")
+  course     TrainingCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  attendedAt DateTime? @map("attended_at")
+  completedAt DateTime? @map("completed_at")
+  markedById String?  @map("marked_by_id")
+  @@unique([courseId, userId])
+  @@index([userId, enrolledAt])
+  @@map("training_enrollments")
 }
 
 model TrainingContract {

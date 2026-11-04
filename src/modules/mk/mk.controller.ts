@@ -6,7 +6,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MkService } from './mk.service';
-import { AssignCommitteeMemberDto, CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, InviteToExamDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
+import { AssignCommitteeMemberDto, CreateCommitteeMemberDto, CreateMkApplicationDto, CreateQuestionDto, CreateTrainingCourseDto, InviteToExamDto, MarkTrainingAttendanceDto, QueryMkApplicationsDto, RegisterMkApplicantDto, RequestMkCorrectionDto, ResubmitMkApplicationDto, ReviewMkApplicationDto, SubmitScoreDto } from './dto/mk.dto';
 
 @ApiTags('Malaka komissiyasi va imtihon (MK)')
 @ApiBearerAuth('JWT-auth')
@@ -14,6 +14,21 @@ import { AssignCommitteeMemberDto, CreateCommitteeMemberDto, CreateMkApplication
 @Controller()
 export class MkController {
   constructor(private readonly service: MkService) {}
+
+  @Get('cabinet/mk/training-courses') @Roles('TALABGOR') @ApiOperation({ summary: 'Ochiq malaka kurslari va vebinarlar' })
+  trainingCourses(@CurrentUser() user: AuthUser) { return this.service.listTrainingCourses(user); }
+
+  @Post('cabinet/mk/training-courses/:id/enroll') @Roles('TALABGOR') @ApiOperation({ summary: 'Malaka kursi yoki vebinariga yozilish' })
+  enrollTrainingCourse(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.enrollTrainingCourse(user, id); }
+
+  @Get('committee/mk/training-courses') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Kurslar va yozilgan nomzodlar' })
+  committeeTrainingCourses() { return this.service.listCommitteeTrainingCourses(); }
+
+  @Post('committee/mk/training-courses') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Kurs yoki vebinar yaratish va e’lon qilish' })
+  createTrainingCourse(@CurrentUser() user: AuthUser, @Body() dto: CreateTrainingCourseDto) { return this.service.createTrainingCourse(user, dto); }
+
+  @Patch('committee/mk/training-enrollments/:id/attendance') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Nomzod davomatini komissiya tomonidan qayd etish' })
+  markTrainingAttendance(@Param('id') id: string, @Body() dto: MarkTrainingAttendanceDto) { return this.service.markTrainingAttendance(id, dto); }
 
   @Post('cabinet/mk/applications') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediator bo\'lish uchun ariza yuborish' })
   createApplication(@CurrentUser() user: AuthUser, @Body() dto: CreateMkApplicationDto) { return this.service.createApplication(user, dto); }

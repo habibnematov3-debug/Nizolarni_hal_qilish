@@ -83,3 +83,17 @@ export class CreateCommitteeMemberDto {
 export class AssignCommitteeMemberDto {
   @IsUUID() memberId: string;
 }
+
+export class CreateTrainingCourseDto {
+  @IsString() @MinLength(3) @MaxLength(160) title: string;
+  @IsIn(['COURSE', 'WEBINAR']) type: 'COURSE' | 'WEBINAR';
+  @IsNumber() @Min(1) @Max(500) durationHours: number;
+  @IsString() @MinLength(3) @MaxLength(100) dateLabel: string;
+  @IsString() @MinLength(5) @MaxLength(2000) description: string;
+  @IsOptional() @IsUrl({ protocols: ['https'], require_protocol: true }) joinUrl?: string;
+}
+
+export class MarkTrainingAttendanceDto {
+  @IsBoolean() attended: boolean;
+  @IsOptional() @IsBoolean() completed?: boolean;
+}
