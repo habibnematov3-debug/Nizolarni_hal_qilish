@@ -3,5 +3,10 @@ import { MonController } from './mon.controller';
 import { MonService } from './mon.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 
-@Module({ imports: [NotificationsModule], controllers: [MonController], providers: [MonService] })
+@Module({
+  imports: [NotificationsModule],
+  controllers: [MonController],
+  providers: [MonService],
+  exports: [MonService],
+})
 export class MonModule {}

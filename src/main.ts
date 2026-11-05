@@ -48,7 +48,21 @@ async function createApp(expressInstance?: express.Express) {
     .map((origin) => origin.trim())
     .filter(Boolean);
   app.enableCors({
-    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+    origin: (origin, callback) => {
+      const isAllowed =
+        !origin ||
+        allowedOrigins.some((allowedOrigin) => {
+          if (allowedOrigin === origin) return true;
+          const wildcardIndex = allowedOrigin.indexOf('*');
+          if (wildcardIndex < 0) return false;
+
+          const prefix = allowedOrigin.slice(0, wildcardIndex);
+          const suffix = allowedOrigin.slice(wildcardIndex + 1);
+          return origin.startsWith(prefix) && origin.endsWith(suffix) && origin.length > prefix.length + suffix.length;
+        });
+
+      callback(null, isAllowed);
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
