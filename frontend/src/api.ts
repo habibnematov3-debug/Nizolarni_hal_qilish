@@ -1,10 +1,45 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '')
+const API_BASE_URL = configuredApiBaseUrl || (import.meta.env.DEV ? 'http://localhost:3000' : '')
 const ACCESS_TOKEN_KEY = 'nizolar.auth.accessToken'
+
+function apiUrl(path: string) {
+  if (!API_BASE_URL) throw new Error('Vercel muhitida VITE_API_BASE_URL sozlanmagan. Frontendni backend API manziliga ulang.')
+  return `${API_BASE_URL}${path}`
+}
 
 export type ApiError = Error & { status?: number }
 
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY)
+}
+
+export function storeAccessToken(token: string) {
+  localStorage.setItem(ACCESS_TOKEN_KEY, token)
+}
+
+export function clearAccessToken() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+}
+
+export async function apiLogin(username: string, password: string) {
+  let response: Response
+  try {
+    response = await fetch(apiUrl('/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+  } catch {
+    throw new Error('Platforma serveriga ulanib bo‘lmadi. Vercel API manzilini tekshiring.')
+  }
+  const payload = await response.json().catch(() => null) as { data?: { accessToken?: string }; accessToken?: string; message?: string | string[] } | null
+  if (!response.ok) {
+    const message = Array.isArray(payload?.message) ? payload.message.join('. ') : payload?.message
+    throw new Error(message || `Kirish amalga oshmadi (${response.status})`)
+  }
+  const token = payload?.data?.accessToken || payload?.accessToken
+  if (!token) throw new Error('Server kirish tokenini qaytarmadi.')
+  storeAccessToken(token)
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -15,7 +50,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   let response: Response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
+    response = await fetch(apiUrl(path), { ...options, headers })
   } catch {
     throw new Error('Platforma serveriga ulanib bo‘lmadi. Internet yoki server holatini tekshiring.')
   }
@@ -60,7 +95,7 @@ export async function apiDownload(path: string, filename: string) {
   if (!token) throw new Error('Faylni yuklab olish uchun tizimga kiring.')
   let response: Response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    response = await fetch(apiUrl(path), { headers: { Authorization: `Bearer ${token}` } })
   } catch {
     throw new Error('Platforma serveriga ulanib bo‘lmadi.')
   }
@@ -82,7 +117,7 @@ export async function apiDownload(path: string, filename: string) {
 
 export async function apiGetPublic<T>(path: string): Promise<T> {
   let response: Response
-  try { response = await fetch(`${API_BASE_URL}${path}`) }
+  try { response = await fetch(apiUrl(path)) }
   catch { throw new Error('Ochiq reyestrga ulanib bo‘lmadi.') }
   const payload = await response.json().catch(() => null) as { data?: T; message?: string | string[] } | null
   if (!response.ok) {

@@ -457,19 +457,42 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
     if (!sheet || sheet.rowCount < 2) throw new BadRequestException('Excel faylida import qatorlari yo\'q');
     if (sheet.rowCount > 5001) throw new BadRequestException('Bitta importda 5000 tadan ortiq qator yuborib bo\'lmaydi');
 
-    const headers = sheet.getRow(1).values as ExcelJS.CellValue[];
+    let headerRowNumber = 1;
+    let headers = sheet.getRow(headerRowNumber).values as ExcelJS.CellValue[];
+    const headerSearchLimit = Math.min(5, sheet.rowCount);
+    for (let rowNumber = 1; rowNumber <= headerSearchLimit; rowNumber++) {
+      const candidate = sheet.getRow(rowNumber).values as ExcelJS.CellValue[];
+      const cells = candidate.slice(1).map((value) => String(value ?? '').trim().toLocaleLowerCase());
+      if (cells.includes('fullname') || cells.some((value) => value.includes('медиаторнинг ф.и.о'))) {
+        headerRowNumber = rowNumber;
+        headers = candidate;
+        break;
+      }
+    }
     const columns = new Map<string, number>();
     headers.slice(1).forEach((header, index) => {
       if (header !== null && header !== undefined) columns.set(String(header).trim().toLowerCase(), index + 1);
     });
-    if (!columns.has('fullname')) throw new BadRequestException('Excel sarlavhasida fullName ustuni bo\'lishi kerak');
+    const isQashqadaryoSample = !columns.has('fullname') &&
+      headers.some((header) => String(header ?? '').toLocaleLowerCase().includes('медиаторнинг ф.и.о'));
+    if (isQashqadaryoSample) {
+      columns.clear();
+      columns.set('source_registered_at', 2);
+      columns.set('fullname', 3);
+      columns.set('specialization', 4);
+      columns.set('languages', 5);
+      columns.set('source_certificate', 6);
+      columns.set('source_contact', 7);
+      columns.set('source_removed_at', 8);
+    }
+    if (!columns.has('fullname')) throw new BadRequestException('Excel sarlavhasida fullName ustuni yoki Qashqadaryo reyestri sarlavhasi bo\'lishi kerak');
 
     const errors: Array<{ row: number; reason: string; data?: Record<string, string> }> = [];
     let imported = 0;
     let duplicates = 0;
     let totalRows = 0;
 
-    for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    for (let rowNumber = headerRowNumber + 1; rowNumber <= sheet.rowCount; rowNumber++) {
       const row = sheet.getRow(rowNumber);
       const rowData: Record<string, string> = {};
       for (const [header, column] of columns) rowData[header] = this.cellText(row.getCell(column));
@@ -477,6 +500,20 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       totalRows++;
 
       try {
+        if (isQashqadaryoSample) {
+          if (rowData.source_removed_at && !rowData.source_removed_at.toLocaleLowerCase().includes('чиқарилмаган')) {
+            throw new Error('Reyestrdan chiqarilgan mediator faol namuna sifatida import qilinmadi');
+          }
+          const contact = rowData.source_contact || '';
+          rowData.type = 'MEDIATOR';
+          rowData.region = 'Qashqadaryo viloyati';
+          rowData.isSample = 'true';
+          rowData.registeredAt = this.extractSourceDate(rowData.source_registered_at);
+          rowData.certificateNumber = this.extractCertificateNumber(rowData.source_certificate);
+          rowData.certificateIssuedAt = this.extractSourceDate(rowData.source_certificate);
+          rowData.address = contact;
+          rowData.phone = this.extractUzbekPhone(contact);
+        }
         const type = this.parseRegistryType(rowData.type);
         const fullName = rowData.fullname.trim();
         const region = rowData.region.trim();
@@ -1018,9 +1055,29 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
       return new Date(Date.UTC(1899, 11, 30) + rawValue * 86_400_000);
     }
     if (!value?.trim()) return null;
+    const localizedDate = value.match(/(?:^|\D)(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\D|$)/);
+    if (localizedDate) {
+      const [, day, month, year] = localizedDate;
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    }
     const date = new Date(value.trim());
     if (Number.isNaN(date.getTime())) throw new Error(`Sana yaroqsiz: ${value}`);
     return date;
+  }
+
+  private extractSourceDate(value?: string) {
+    return value?.match(/\d{1,2}[./]\d{1,2}[./]\d{4}/)?.[0] || '';
+  }
+
+  private extractCertificateNumber(value?: string) {
+    return value?.match(/(?:МТ|MT)\s*№?\s*([A-Za-zА-Яа-я0-9/-]+)/i)?.[1] || '';
+  }
+
+  private extractUzbekPhone(value?: string) {
+    const candidate = value?.match(/\+?\s*998[\s()-]*\d{2}[\s()-]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/)?.[0];
+    if (!candidate) return '';
+    const digits = candidate.replace(/\D/g, '');
+    return digits.length === 12 ? `+${digits}` : '';
   }
 
   private optionalNumber(value?: string) {

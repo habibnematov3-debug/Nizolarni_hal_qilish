@@ -31,7 +31,7 @@ function readDemoCourses(): LearningCourse[] {
 export function ApplicantLearningWorkspace({ language, page, onNavigate, onToast }: { language: ApplicantLanguage; page: string; onNavigate: (page: string) => void; onToast: (message: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const authenticated = Boolean(getAccessToken())
-  const [courses, setCourses] = useState<LearningCourse[]>(readDemoCourses)
+  const [courses, setCourses] = useState<LearningCourse[]>(() => authenticated ? [] : readDemoCourses())
   const [state, setState] = useState<LearningState>(() => {
     try { return { ...initial, ...JSON.parse(localStorage.getItem(storageKey) || '{}') } }
     catch { return initial }

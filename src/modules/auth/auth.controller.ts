@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
@@ -96,6 +96,9 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Muvaffaqiyatli kirish' })
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+    if (process.env.NODE_ENV === 'production' && process.env.ENABLE_PASSWORD_LOGIN !== 'true') {
+      throw new ForbiddenException('Parolli kirish ushbu muhitda o‘chirilgan');
+    }
     const ipAddress = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     return this.authService.login(loginDto, ipAddress, userAgent);

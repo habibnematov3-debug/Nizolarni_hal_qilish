@@ -8,7 +8,7 @@ import {
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
 import { Accordion, ActionIcon, Badge, Box, Button, Card, Container, Divider, Grid, Group, Paper, Select, SimpleGrid, Stack, Tabs, Text, TextInput, ThemeIcon, Title, UnstyledButton } from '@mantine/core'
-import { apiGet, apiGetPublic, apiPost, getAccessToken, uploadPrivateDocument } from './api'
+import { apiDelete, apiGet, apiGetPublic, apiLogin, apiPost, clearAccessToken, getAccessToken, uploadPrivateDocument } from './api'
 import { ApplicationDraft, categoryAnswerDetails, categoryDetailsLabel, CourtClaimsWorkspace, MediatorApplicationForm, MediationDraft, MediationRequestForm, MkApplicationWorkspace, MtsWorkspace } from './workflows'
 import { BusinessSpecialistDirectory, PublicRegistryDirectory, StaffRegistryWorkspace } from './RegistryDirectory'
 import type { PublicMapPoint } from './PublicMediatorMap'
@@ -35,8 +35,9 @@ const PublicMediatorMap = lazy(() => import('./PublicMediatorMap').then((module)
 type RoleKey = 'CITIZEN' | 'BUSINESS' | 'APPLICANT' | 'MEDIATOR' | 'REGIONAL' | 'MINISTRY' | 'COMMISSION' | 'JUDGE' | 'ARBITRATOR' | 'ADMIN' | 'OPERATOR'
 type PortalRecord = { id: string; title: string; status: string; detail?: string; region?: string; createdAt?: string; data?: Record<string, unknown> }
 type Role = { key: RoleKey; title: string; summary: string; icon: typeof UserRound }
-type Metric = [string, number, string, typeof UserRound]
+type Metric = [string, number | string, string, typeof UserRound]
 type CabinetGroup = { title: string; summary: string; roles: RoleKey[] }
+const demoModeEnabled = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true'
 
 const roles: Role[] = [
   { key: 'CITIZEN', title: 'Fuqaro', summary: 'JSHSHIR/OneID orqali: nizo arizalari, mediator tanlash va ishlaringiz', icon: UserRound },
@@ -84,6 +85,7 @@ const backendRoleToCabinetRole: Record<string, RoleKey> = {
 }
 
 function readDemoRoles(): RoleKey[] {
+  if (!demoModeEnabled) return []
   try {
     const saved = JSON.parse(localStorage.getItem('nizolar.demo.roles') || 'null')
     if (Array.isArray(saved)) {
@@ -174,6 +176,7 @@ const applicationSteps = ['Yangi yuborildi', 'Ko‘rib chiqilmoqda', 'Imtihonga 
 const demoNotice = { title: 'Platformadagi yangiliklar', text: 'Mediatorlar uchun hisobot topshirish muddati va malaka oshirish kurslariga ariza qabul qilish boshlandi. E’lon bilan tanishganingizdan so‘ng kabinet bo‘limlari ochiladi.' }
 
 function loadRecords(key: string, initial: PortalRecord[]): PortalRecord[] {
+  if (!demoModeEnabled) return []
   try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) as PortalRecord[] : initial }
   catch { return initial }
 }
@@ -181,15 +184,20 @@ function loadRecords(key: string, initial: PortalRecord[]): PortalRecord[] {
 export default function App() {
   const [assignedRoles, setAssignedRoles] = useState<RoleKey[]>(readDemoRoles)
   const [role, setRole] = useState<RoleKey | null>(() => {
+    if (!demoModeEnabled) return null
     const savedRole = normalizeRoleKey(localStorage.getItem('nizolar.demo.role'))
     const availableRoles = readDemoRoles()
     return savedRole && availableRoles.includes(savedRole) ? savedRole : availableRoles[0] || null
   })
   const [publicPage, setPublicPage] = useState('Bosh sahifa')
-  const [accountFullName, setAccountFullName] = useState('Demo foydalanuvchi')
+  const [accountFullName, setAccountFullName] = useState('Foydalanuvchi')
   const [applicantLanguage, setApplicantLanguage] = useState<ApplicantLanguage>(() => localStorage.getItem('nizolar.applicant.language') === 'ru' ? 'ru' : 'uz')
   const [showLogin, setShowLogin] = useState(false)
   const [loginMethod, setLoginMethod] = useState('')
+  const [previewUsername, setPreviewUsername] = useState('')
+  const [previewPassword, setPreviewPassword] = useState('')
+  const [previewLoginError, setPreviewLoginError] = useState('')
+  const [previewLoginLoading, setPreviewLoginLoading] = useState(false)
   const [chooseRole, setChooseRole] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [activePage, setActivePage] = useState('Umumiy ko‘rsatkich')
@@ -218,7 +226,7 @@ export default function App() {
 
   useEffect(() => {
     if (role !== 'CITIZEN' && role !== 'BUSINESS' && role !== 'APPLICANT') return
-    if (!getAccessToken()) { setAccountFullName('Demo foydalanuvchi'); return }
+    if (!getAccessToken()) { setAccountFullName(demoModeEnabled ? 'Demo foydalanuvchi' : 'Foydalanuvchi'); return }
     let active = true
     setAccountFullName('Foydalanuvchi')
     apiGet<{ fullName?: string }>('/cabinet/profile')
@@ -227,16 +235,16 @@ export default function App() {
     return () => { active = false }
   }, [role])
 
-  useEffect(() => { localStorage.setItem('nizolar.demo.cases', JSON.stringify(cases)) }, [cases])
+  useEffect(() => { if (demoModeEnabled) localStorage.setItem('nizolar.demo.cases', JSON.stringify(cases)) }, [cases])
   useEffect(() => {
     localStorage.setItem('nizolar.applicant.language', applicantLanguage)
     document.documentElement.lang = applicantLanguage === 'ru' ? 'ru' : 'uz'
   }, [applicantLanguage])
-  useEffect(() => { localStorage.setItem('nizolar.demo.applications', JSON.stringify(applications)) }, [applications])
-  useEffect(() => { localStorage.setItem('nizolar.demo.reports', JSON.stringify(reports)) }, [reports])
-  useEffect(() => { localStorage.setItem('nizolar.demo.items', JSON.stringify(genericItems)) }, [genericItems])
-  useEffect(() => { if (role) localStorage.setItem('nizolar.demo.role', role); else localStorage.removeItem('nizolar.demo.role') }, [role])
-  useEffect(() => { if (role && assignedRoles.length) localStorage.setItem('nizolar.demo.roles', JSON.stringify(assignedRoles)); else localStorage.removeItem('nizolar.demo.roles') }, [assignedRoles, role])
+  useEffect(() => { if (demoModeEnabled) localStorage.setItem('nizolar.demo.applications', JSON.stringify(applications)) }, [applications])
+  useEffect(() => { if (demoModeEnabled) localStorage.setItem('nizolar.demo.reports', JSON.stringify(reports)) }, [reports])
+  useEffect(() => { if (demoModeEnabled) localStorage.setItem('nizolar.demo.items', JSON.stringify(genericItems)) }, [genericItems])
+  useEffect(() => { if (!demoModeEnabled) return; if (role) localStorage.setItem('nizolar.demo.role', role); else localStorage.removeItem('nizolar.demo.role') }, [role])
+  useEffect(() => { if (!demoModeEnabled) return; if (role && assignedRoles.length) localStorage.setItem('nizolar.demo.roles', JSON.stringify(assignedRoles)); else localStorage.removeItem('nizolar.demo.roles') }, [assignedRoles, role])
   useEffect(() => {
     if (!getAccessToken()) return
     let active = true
@@ -257,6 +265,25 @@ export default function App() {
     }).catch(() => { /* A stale demo token must not block the public/demo cabinet. */ })
     return () => { active = false }
   }, [])
+  useEffect(() => {
+    if (!getAccessToken() || !role) return
+    let active = true
+    const mapDate = (value?: string) => value ? new Date(value).toLocaleDateString('uz-UZ') : '—'
+    if (['CITIZEN', 'BUSINESS', 'MEDIATOR'].includes(role)) {
+      apiGet<{ id: string; disputeSubject: string; status: string; region?: string; createdAt?: string; participants?: { side: string; fullName: string }[] }[]>('/cabinet/mts/mediations')
+        .then((rows) => { if (active) setCases((rows || []).map((row) => ({ id: row.id, title: row.disputeSubject, status: mediationStatusLabel(row.status), detail: row.participants?.map((item) => `${item.side === 'CLAIMANT' ? 'Da’vogar' : 'Javobgar'}: ${item.fullName}`).join(' · ') || '', region: row.region, createdAt: mapDate(row.createdAt) }))) })
+        .catch(() => { if (active) setCases([]) })
+    } else if (role === 'APPLICANT') {
+      apiGet<{ id: string; status: string; submittedAt?: string; region?: string; profession?: string }[]>('/cabinet/mk/applications')
+        .then((rows) => { if (active) setApplications((rows || []).map((row) => ({ id: row.id, title: 'Mediator maqomini olish', status: applicationStatusLabel(row.status), detail: row.profession || 'Mediator talabgori', region: row.region, createdAt: mapDate(row.submittedAt) }))) })
+        .catch(() => { if (active) setApplications([]) })
+    } else if (['COMMISSION', 'REGIONAL', 'MINISTRY'].includes(role)) {
+      apiGet<{ id: string; status: string; submittedAt?: string; region?: string; profession?: string }[]>('/committee/mk/applications')
+        .then((rows) => { if (active) setApplications((rows || []).map((row) => ({ id: row.id, title: 'Mediator maqomini olish', status: applicationStatusLabel(row.status), detail: row.profession || 'Mediator talabgori', region: row.region, createdAt: mapDate(row.submittedAt) }))) })
+        .catch(() => { if (active) setApplications([]) })
+    }
+    return () => { active = false }
+  }, [role])
   useEffect(() => { if (!toast) return; const t = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(t) }, [toast])
   useEffect(() => {
     if (role !== 'MEDIATOR' || !getAccessToken()) { setPendingAnnouncements([]); return }
@@ -276,14 +303,21 @@ export default function App() {
   useEffect(() => { if (!modal && !showLogin && !chooseRole && !announcementGate) return; const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') { setModal(''); setShowLogin(false); setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) } }; window.addEventListener('keydown', fn); return () => window.removeEventListener('keydown', fn) }, [modal, showLogin, chooseRole, announcementGate])
 
   const currentRole = roles.find((item) => item.key === role)
-  const registryRows = useMemo(() => registrySeed.filter((item) => {
-    const q = query.trim().toLocaleLowerCase('uz')
-    return (!q || [item.name, item.specialty, item.region].join(' ').toLocaleLowerCase('uz').includes(q)) && (region === 'Barcha hududlar' || item.region === region)
-  }), [query, region])
-
   const goHome = () => { setRole(null); setAssignedRoles([]); setPublicPage('Bosh sahifa'); setActivePage('Umumiy ko‘rsatkich'); setChooseRole(false); setShowLogin(false); setLoginMethod(''); setAnnouncementGate(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }
   const openLogin = () => { setLoginMethod(''); setShowLogin(true) }
   const closeLogin = () => { setShowLogin(false); setLoginMethod(''); setPendingPublicMediation(false); setPendingMediatorApplication(false) }
+  const submitPreviewLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPreviewLoginError('')
+    setPreviewLoginLoading(true)
+    try {
+      await apiLogin(previewUsername.trim(), previewPassword)
+      window.location.reload()
+    } catch (cause) {
+      setPreviewLoginError(cause instanceof Error ? cause.message : 'Kirish amalga oshmadi.')
+      setPreviewLoginLoading(false)
+    }
+  }
   const startPublicMediation = (mediatorName: string, registryId?: string, isSample = false) => {
     setPendingMediatorApplication(false)
     setSelectedMediator(mediatorName)
@@ -298,9 +332,9 @@ export default function App() {
   }
   const startPublicMediatorApplication = () => {
     setPendingPublicMediation(false)
-    setPendingMediatorApplication(true)
-    if (getAccessToken()) setChooseRole(true)
-    else openLogin()
+    if (!getAccessToken()) { setPendingMediatorApplication(true); openLogin(); return }
+    if (assignedRoles.some((item) => ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(item))) setModal('ariza')
+    else setToast('Mediatorlik arizasini yuborish uchun fuqaro yoki yuridik shaxs kabinetiga kiring.')
   }
   const activateRole = (key: RoleKey) => {
     setRole(key); setActivePage(navByRole[key][0]); setChooseRole(false); setShowLogin(false); setMobileNav(false)
@@ -334,7 +368,12 @@ export default function App() {
     } else localStorage.setItem('nizolar.demo.notice.read', 'yes')
     setAnnouncementsAccepted(true); setAnnouncementGate(false); setToast('E’lon bilan tanishilgan deb belgilandi')
   }
-  const signOut = () => { goHome(); setToast('Demo kabinetdan chiqdingiz') }
+  const signOut = async () => {
+    try { if (getAccessToken()) await apiPost('/auth/logout', {}) } catch { /* Always clear the local session, even if the server is unavailable. */ }
+    clearAccessToken()
+    goHome()
+    setToast('Tizimdan chiqdingiz')
+  }
 
   const showPublicRegistry = () => { setRole(null); setPublicPage('Mediatorlar reyestri'); setShowLogin(false) }
   const createCase = (title: string, detail = '') => {
@@ -377,15 +416,10 @@ export default function App() {
         setCases((items) => [item, ...items])
         setToast('Murojaat serverga yuborildi; respondent roziligi kutilmoqda')
       } catch (error) {
-        await Promise.allSettled(uploadedIds.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')}/platform/files/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })))
+        await Promise.allSettled(uploadedIds.map((id) => apiDelete(`/platform/files/${id}`)))
         throw error
       }
-    } else {
-      const category = { FAMILY: 'Oilaviy nizo', CIVIL: 'Fuqarolik va shartnomaviy nizo', LABOR: 'Mehnat nizosi', ECONOMIC: 'Iqtisodiy va tadbirkorlik nizosi', INTELLECTUAL: 'Intellektual mulk nizosi', BANKING: 'Bank va moliya nizosi', INVESTMENT: 'Investitsiya nizosi', DIGITAL: 'Raqamli texnologiyalar nizosi', CROSS_BORDER: 'Xalqaro tijorat nizosi' }[draft.disputeCategory] || 'Mediatsiya murojaati'
-      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: category, status: 'Rozilik kutilmoqda', detail: 'Demo murojaati · shaxsiy ma’lumotlar brauzer xotirasiga saqlanmadi', region: 'Demo', createdAt: new Date().toLocaleDateString('uz-UZ') }
-      setCases((items) => [item, ...items])
-      setToast(`Demo murojaati saqlandi. Rasmiy yuborish uchun OneID orqali kiring; demo rejimida ${draft.attachments.length ? 'hujjatlar yuklanmadi' : 'ma’lumotlar serverga yuborilmadi'}.`)
-    }
+    } else throw new Error('Murojaatni serverga yuborish uchun tizimga kiring.')
     setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId(''); setSelectedMediatorIsSample(false)
   }
   const createApplication = (title: string, detail = '') => {
@@ -429,14 +463,10 @@ export default function App() {
         setApplications((items) => [{ id: created.id, title: 'Mediator maqomini olish', status: applicationStatusLabel(created.status), detail: 'Adliya organi ko‘rib chiqishi uchun yuborildi', region: 'Hududiy tekshiruv', createdAt: new Date().toLocaleDateString('uz-UZ') }, ...items])
         setToast('Mediator arizasi serverga yuborildi')
       } catch (error) {
-        await Promise.allSettled(uploadedIds.map((id) => fetch(`${(import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')}/platform/files/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getAccessToken()}` } })))
+        await Promise.allSettled(uploadedIds.map((id) => apiDelete(`/platform/files/${id}`)))
         throw error
       }
-    } else {
-      const item = { id: `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, title: 'Mediator maqomini olish', status: 'Yangi yuborildi', detail: 'Demo ariza · shaxsiy ma’lumot va fayl mazmuni saqlanmadi', region: 'Demo', createdAt: new Date().toLocaleDateString('uz-UZ') }
-      setApplications((items) => [item, ...items])
-      setToast('Demo ariza saqlandi. Hujjatlar rasmiy serverga yuborilmadi.')
-    }
+    } else throw new Error('Mediatorlik arizasini serverga yuborish uchun tizimga kiring.')
     setAssignedRoles((items) => [...new Set<RoleKey>([...items, 'APPLICANT'])])
     setRole('APPLICANT')
     setActivePage(navByRole.APPLICANT[0])
@@ -476,13 +506,20 @@ export default function App() {
   }))
 
   if (!role) return <>
-    <PublicSite language={applicantLanguage} onLanguageChange={setApplicantLanguage} page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} onApplyMediator={startPublicMediatorApplication} registryRows={registryRows} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={startPublicMediation} onToast={setToast} />
+    <PublicSite language={applicantLanguage} onLanguageChange={setApplicantLanguage} page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} onApplyMediator={startPublicMediatorApplication} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={startPublicMediation} onToast={setToast} />
     {showLogin && <ModalShell onClose={closeLogin}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={closeLogin} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
       {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
-      {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Tashqi ulanish keyingi bosqichda ulanadi. Hozir ekranlarni ko‘rish uchun demo kabinetni tanlang.</p><button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo rejimida davom etish<ArrowRight size={15} /></button></div>}
+      {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Bu kirish usuli uchun vakolatli tizim bilan rasmiy ulanish sozlamalari hali taqdim etilmagan.</p>{demoModeEnabled && <button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo ko‘rinishida davom etish<ArrowRight size={15} /></button>}</div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
+      {import.meta.env.VITE_ENABLE_PREVIEW_TEST_LOGIN === 'true' && <form onSubmit={(event) => void submitPreviewLogin(event)} className="mt-5 space-y-3 border-t border-slate-200 pt-5">
+        <div><p className="text-sm font-semibold text-slate-900">Preview sinov kabineti</p><p className="mt-1 text-xs leading-5 text-slate-500">Faqat sinov muhiti uchun. Test foydalanuvchisi login va parolini kiriting.</p></div>
+        <TextInput label="Login" autoComplete="username" value={previewUsername} onChange={(event) => setPreviewUsername(event.currentTarget.value)} required />
+        <TextInput label="Parol" type="password" autoComplete="current-password" value={previewPassword} onChange={(event) => setPreviewPassword(event.currentTarget.value)} required />
+        {previewLoginError && <p role="alert" className="text-xs font-medium text-red-700">{previewLoginError}</p>}
+        <Button type="submit" loading={previewLoginLoading} fullWidth color="dark">Test kabinetiga kirish</Button>
+      </form>}
     </div></ModalShell>}
-    {chooseRole && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }} onChoose={startRoles} />}
+    {chooseRole && demoModeEnabled && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }} onChoose={startRoles} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialMediatorRegistryId={selectedMediatorRegistryId} initialMediatorIsSample={selectedMediatorIsSample} onClose={() => { setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId(''); setSelectedMediatorIsSample(false) }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
@@ -517,7 +554,7 @@ export default function App() {
   </div>
 }
 
-function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegistry, onApplyMediator, registryRows, query, setQuery, region, setRegion, registryKind, setRegistryKind, onContact, onToast }: { language: ApplicantLanguage; onLanguageChange: (language: ApplicantLanguage) => void; page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; onApplyMediator: () => void; registryRows: typeof registrySeed; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onToast: (text: string) => void }) {
+function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegistry, onApplyMediator, query, setQuery, region, setRegion, registryKind, setRegistryKind, onContact, onToast }: { language: ApplicantLanguage; onLanguageChange: (language: ApplicantLanguage) => void; page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; onApplyMediator: () => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onToast: (text: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const links = ['Bosh sahifa', 'Mediatorlar reyestri', 'Hakamlik va arbitraj', 'Reyting', 'Statistika', 'Hududlar', 'Qonunchilik', 'Yo‘riqnomalar']
   const linkLabels: Record<string, string> = { 'Bosh sahifa': 'Главная', 'Mediatorlar reyestri': 'Реестр медиаторов', 'Hakamlik va arbitraj': 'Третейский суд и арбитраж', 'Reyting': 'Рейтинг', 'Statistika': 'Статистика', 'Hududlar': 'Регионы', 'Qonunchilik': 'Законодательство', 'Yo‘riqnomalar': 'Руководства' }
@@ -722,6 +759,8 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
   }, [])
 
   const publicSpecialistsTotal = statistics?.publicSpecialistsTotal ?? (statistics?.registryByType ? Object.values(statistics.registryByType).reduce<number>((sum, value) => sum + (value || 0), 0) : null)
+  const getRegionCount = (shortName: string) => Object.entries(regionTotals).reduce((total, [regionName, count]) =>
+    regionName.toLocaleLowerCase('uz-UZ').includes(shortName.toLocaleLowerCase('uz-UZ')) ? total + count : total, 0)
   const coveredRegions = Object.keys(regionTotals).length
   const statisticsUpdatedAt = statistics?.generatedAt && !Number.isNaN(Date.parse(statistics.generatedAt))
     ? new Intl.DateTimeFormat(language === 'ru' ? 'ru-RU' : 'uz-UZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(statistics.generatedAt))
@@ -852,7 +891,7 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
             <DeferredPublicMediatorMap points={mapPoints} selectedId={selectedMapPoint?.id} onSelect={setSelectedMapPoint} label={t('Mediatorlar manzillari ko‘rsatilgan O‘zbekiston xaritasi', 'Карта Узбекистана с адресами медиаторов')} loadingText={t('Haqiqiy xarita yuklanmoqda…', 'Загружается карта…')}/>
           </div>
           <div className="flex min-h-[300px] flex-col rounded-2xl border border-white/10 bg-white/[.07] p-4 sm:p-5">
-            {selectedMapPoint ? <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{t('Tanlangan mediator', 'Выбранный медиатор')}</p><h3 className="mt-3 text-lg font-bold text-white">{selectedMapPoint.fullName}</h3><p className="mt-1 text-sm text-blue-100/75">{selectedMapPoint.region}</p><p className="mt-3 text-xs leading-5 text-blue-100/70">{selectedMapPoint.address || t('Manzil qo‘shilmagan', 'Адрес не указан')}</p>{selectedMapPoint.phone && <a className="mt-2 text-xs text-amber-200 hover:underline" href={`tel:${selectedMapPoint.phone}`}>{selectedMapPoint.phone}</a>}{selectedMapPoint.specialization?.length > 0 && <p className="mt-3 text-xs leading-5 text-blue-100/70">{t('Ixtisoslik:', 'Специализация:')} {selectedMapPoint.specialization.join(', ')}</p>}<a className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-amber-300 hover:text-amber-200" href={`https://www.openstreetmap.org/?mlat=${selectedMapPoint.latitude}&mlon=${selectedMapPoint.longitude}#map=12/${selectedMapPoint.latitude}/${selectedMapPoint.longitude}`} target="_blank" rel="noreferrer">{t('Xaritada ochish', 'Открыть на карте')}<ArrowUpRight size={15}/></a></> : <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{t('Mediatorlar xaritasi', 'Карта медиаторов')}</p><h3 className="mt-3 text-lg font-bold text-white">{mapPoints.length ? `${mapPoints.length} ${t('ta manzil', 'адресов')}` : t('Koordinatalar kiritilmagan', 'Координаты не указаны')}</h3><p className="mt-2 text-sm leading-6 text-blue-100/70">{t('Xaritadagi belgini tanlab, mediatorning hududi va manzilini ko‘ring. Reyestr yozuviga koordinata kiritilgach, belgi xaritada avtomatik chiqadi.', 'Выберите отметку на карте, чтобы посмотреть регион и адрес медиатора. После добавления координат в реестр отметка появится на карте автоматически.')}</p><div className="mt-4 grid grid-cols-2 gap-2">{publicRegions.map(([regionName, shortName]) => <button key={regionName} onClick={() => { setRegion(regionName); onRegistry() }} className="rounded-lg border border-white/10 bg-white/[.06] px-3 py-2 text-left text-xs font-semibold text-slate-100 hover:bg-white/10">{shortName}<span className="ml-2 text-amber-300">{mapPoints.filter((point) => point.region.toLocaleLowerCase('uz').includes(shortName.toLocaleLowerCase('uz'))).length}</span></button>)}</div></>}
+            {selectedMapPoint ? <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{t('Tanlangan mediator', 'Выбранный медиатор')}</p><h3 className="mt-3 text-lg font-bold text-white">{selectedMapPoint.fullName}</h3><p className="mt-1 text-sm text-blue-100/75">{selectedMapPoint.region}</p><p className="mt-3 text-xs leading-5 text-blue-100/70">{selectedMapPoint.address || t('Manzil qo‘shilmagan', 'Адрес не указан')}</p>{selectedMapPoint.phone && <a className="mt-2 text-xs text-amber-200 hover:underline" href={`tel:${selectedMapPoint.phone}`}>{selectedMapPoint.phone}</a>}{selectedMapPoint.specialization?.length > 0 && <p className="mt-3 text-xs leading-5 text-blue-100/70">{t('Ixtisoslik:', 'Специализация:')} {selectedMapPoint.specialization.join(', ')}</p>}<a className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-amber-300 hover:text-amber-200" href={`https://www.openstreetmap.org/?mlat=${selectedMapPoint.latitude}&mlon=${selectedMapPoint.longitude}#map=12/${selectedMapPoint.latitude}/${selectedMapPoint.longitude}`} target="_blank" rel="noreferrer">{t('Xaritada ochish', 'Открыть на карте')}<ArrowUpRight size={15}/></a></> : <><p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{t('Mediatorlar xaritasi', 'Карта медиаторов')}</p><h3 className="mt-3 text-lg font-bold text-white">{mapPoints.length ? `${mapPoints.length} ${t('ta manzil', 'адресов')}` : t('Koordinatalar kiritilmagan', 'Координаты не указаны')}</h3><p className="mt-2 text-sm leading-6 text-blue-100/70">{t('Xaritadagi belgini tanlab, mediatorning hududi va manzilini ko‘ring. Reyestr yozuviga koordinata kiritilgach, belgi xaritada avtomatik chiqadi.', 'Выберите отметку на карте, чтобы посмотреть регион и адрес медиатора. После добавления координат в реестр отметка появится на карте автоматически.')}</p><div className="mt-4 grid grid-cols-2 gap-2">{publicRegions.map(([regionName, shortName]) => <button key={regionName} onClick={() => { setRegion(regionName); onRegistry() }} className="rounded-lg border border-white/10 bg-white/[.06] px-3 py-2 text-left text-xs font-semibold text-slate-100 hover:bg-white/10">{shortName}<span className="ml-2 text-amber-300">{getRegionCount(shortName)}</span></button>)}</div></>}
           </div>
         </div>
         <p className="mt-3 text-[11px] text-blue-100/50">{t('Xarita nuqtalari ochiq reyestrdagi faol mediatorlar koordinatalaridan olinadi.', 'Отметки на карте создаются по координатам действующих медиаторов из открытого реестра.')}</p>
@@ -1206,7 +1245,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/bildirish|xabarnoma/i.test(page)) return <NotificationsWorkspace language={role === 'APPLICANT' ? language : 'uz'} onToast={onToast}/>
   if (page === 'Hujjat almashinuvi') return <DocumentExchangeWorkspace role={role} onToast={onToast}/>
   if (['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(role) && /ariza|talabgor|mediator bo‘lish/i.test(page)) return <MkApplicationWorkspace language={role === 'APPLICANT' ? language : 'uz'} role={role} demoItems={applications} onCreate={()=>onOpenModal('ariza')}/>
-  if (role === 'APPLICANT' && ['O‘quv kurslari', 'Malaka imtihoni', 'Malaka guvohnomasi'].includes(page)) return <ApplicantLearningWorkspace language={language} page={page} onNavigate={onNavigatePage} onToast={onToast}/>
+if (role === 'APPLICANT' && ['O‘quv kurslari', 'Malaka guvohnomasi'].includes(page)) return <ApplicantLearningWorkspace language={language} page={page} onNavigate={onNavigatePage} onToast={onToast}/>
   if (['COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF'].includes(role) && page === 'O‘quv nazorati') return <CommissionTrainingWorkspace onToast={onToast}/>
   if ((role === 'COMMISSION' && ['Nomzodlar', 'Imtihonlar', 'Elektron byulleten', 'Bayonnomalar'].includes(page)) || (role === 'MINISTRY' && page === 'Nomzod arizalari')) return <ExamPage role={role} page={page} onToast={onToast}/>
   if (role === 'MEDIATOR' && page === 'Arizalar') return <MediatorApplicationsWorkspace onToast={onToast}/>
@@ -1217,7 +1256,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
   if (/arbitraj ishlari|hakamlik ishlari/i.test(page)) return <RecordPage title={page} subtitle="Nizolar va mediatsiya jarayonlari bosqichma-bosqich boshqariladi." items={cases} actionLabel="Yangi murojaat" onCreate={()=>onOpenModal('mediatsiya')} onAdvance={onAdvanceCase} actionText="Jarayonni davom ettirish" progressSteps={mediationSteps} onToast={onToast}/>
   if (/ariza|talabgor|nomzodlar/i.test(page)) return <RecordPage title={page} subtitle="Mediator maqomiga ariza yuborish va ko‘rib chiqish bosqichlari." items={applications} actionLabel={role==='APPLICANT'?'Ariza yuborish':'Ariza qo‘shish'} onCreate={()=>onOpenModal('ariza')} onAdvance={onAdvanceApplication} actionText={role==='APPLICANT'?'Keyingi bosqich':'Ko‘rib chiqish'} progressSteps={applicationSteps} onToast={onToast}/>
   if (/hisobot|statistika/i.test(page)) return <ReportsPage title={page} items={reports} onCreate={()=>onOpenModal('hisobot')} onAdvance={onAdvanceReport} role={role}/>
-  if (page === 'Imtihon' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
+if (page === 'Imtihon' || page === 'Malaka imtihoni' || page === 'Imtihonlar' || page === 'Elektron byulleten' || page === 'Bayonnomalar') return <ExamPage role={role} page={page} onToast={onToast}/>
   if (/portfolio|profil/i.test(page)) return <ProfileWorkspace onToast={onToast}/>
   if (/reyestrdan chiqish|malaka oshirish|malaka nazorati|o‘quv nazorati/i.test(page)) return <TrainingWorkspace role={role} onToast={onToast}/>
   if (/shartnoma|hujjat/i.test(page)) return <ContractsWorkspace role={role} onToast={onToast}/>
@@ -1231,7 +1270,7 @@ function WorkspaceContent({ role, page, cases, applications, reports, genericIte
 function Overview({ role, cases, applications, reports, onOpenModal, onNavigatePage, onPublicRegistry }: { role: RoleKey; cases: PortalRecord[]; applications: PortalRecord[]; reports: PortalRecord[]; onOpenModal: (key: string) => void; onNavigatePage: (page: string) => void; onPublicRegistry: () => void }) {
   const roleTitle = roles.find(r=>r.key===role)?.title || 'Kabinet'
   const isMediationClient = role === 'CITIZEN' || role === 'BUSINESS'
-  const stats: Metric[] = role==='MEDIATOR' ? [['Ochiq ishlar',cases.filter(x=>x.status!=='Yakunlandi').length,'faol jarayon',Handshake],['Yakunlangan',cases.filter(x=>x.status==='Yakunlandi').length,'muvaffaqiyatli ishlar',Check],['Xabarnomalar',2,'yangi xabarlar',Bell]] : role==='APPLICANT' ? [['Mediatorlik arizalari',applications.length,'ko‘rib chiqilayotgan arizalar',FileCheck2],['Imtihon bosqichi',applications.filter(x=>/imtihon/i.test(x.status)).length,'malaka imtihoniga oid',GraduationCap],['Xabarnomalar',2,'ariza va imtihon xabarlari',Bell]] : role==='COMMISSION' ? [['Arizalar',applications.length,'jarayonlarda',FileCheck2],['Imtihon bosqichi',applications.filter(x=>/imtihon/i.test(x.status)).length,'ko‘rib chiqish kerak',GraduationCap],['Reyestr',registrySeed.length,'demo mutaxassis',Users]] : isMediationClient ? [['Faol mediatsiyalar',cases.filter(x=>x.status!=='Yakunlandi').length,'siz yuborgan murojaatlar',Handshake],['Mediatorlar reyestri',registrySeed.length,'mutaxassislar',Users],['Shartnomalar',0,'imzolash va ko‘rish',FileText]] : [['Reyestr mutaxassislari',registrySeed.length,'ochiq reyestr',Users],['Faol mediatsiyalar',cases.filter(x=>x.status!=='Yakunlandi').length,'joriy jarayon',Handshake],['Hisobotlar',reports.length,'hisobotlar oqimi',ClipboardList]]
+  const stats: Metric[] = role==='MEDIATOR' ? [['Ochiq ishlar',cases.filter(x=>!['Kelishuv monitoringi','Kelishuvga erishilmadi','Yopildi'].includes(x.status)).length,'bazadagi faol jarayonlar',Handshake],['Yakunlangan',cases.filter(x=>['Kelishuv monitoringi','Kelishuvga erishilmadi','Yopildi'].includes(x.status)).length,'bazadagi yakunlangan ishlar',Check],['Xabarnomalar','—','serverdan olinadi',Bell]] : role==='APPLICANT' ? [['Mediatorlik arizalari',applications.length,'bazadagi arizalaringiz',FileCheck2],['Imtihon bosqichi',applications.filter(x=>/imtihon/i.test(x.status)).length,'ariza holatidan hisoblandi',GraduationCap],['Xabarnomalar','—','serverdan olinadi',Bell]] : role==='COMMISSION' ? [['Arizalar',applications.length,'bazadan yuklandi',FileCheck2],['Imtihon bosqichi',applications.filter(x=>/imtihon/i.test(x.status)).length,'ariza holatidan hisoblandi',GraduationCap],['Reyestr','—','ochiq reyestr API orqali',Users]] : isMediationClient ? [['Faol mediatsiyalar',cases.filter(x=>!['Kelishuv monitoringi','Kelishuvga erishilmadi','Yopildi'].includes(x.status)).length,'bazadagi murojaatlaringiz',Handshake],['Yakunlangan',cases.filter(x=>['Kelishuv monitoringi','Kelishuvga erishilmadi','Yopildi'].includes(x.status)).length,'bazadagi yakunlangan murojaatlar',Check],['Mediator tanlash','—','ochiq reyestrga o‘ting',Users]] : [['Reyestr mutaxassislari','—','ochiq reyestr API orqali',Users],['Faol mediatsiyalar',cases.length,'bazadagi jarayonlar',Handshake],['Hisobotlar',reports.length,'hisobotlar',ClipboardList]]
   const shortcuts: [string, string, typeof UserRound, () => void][] = isMediationClient
     ? [['Mediatorni tanlash','Ochiq reyestrdan qidiring',Users,onPublicRegistry],['Mediatsiya boshlash','Fuqaro yoki tashkilot nomidan murojaat',Handshake,()=>onOpenModal('mediatsiya')],['Mediatsiyalarim','Murojaat holatini kuzatish',FileClock,()=>onNavigatePage('Mediatsiyalarim')],['Shartnomalar','Mediatsiya hujjatlarini ko‘rish',FileText,()=>onNavigatePage('Shartnomalar')]]
     : role === 'APPLICANT'
@@ -1242,7 +1281,7 @@ function Overview({ role, cases, applications, reports, onOpenModal, onNavigateP
   const primaryAction = isMediationClient ? { label: 'Yangi mediatsiya murojaati', modal: 'mediatsiya', icon: Handshake } : role === 'APPLICANT' ? { label: 'Mediator maqomiga ariza', modal: 'ariza', icon: FileCheck2 } : null
   const PrimaryActionIcon = primaryAction?.icon
   const activity = role === 'APPLICANT' ? applications.slice(0, 3) : isMediationClient ? cases.slice(0, 3) : [...cases.slice(0, 2), ...applications.slice(0, 1)]
-  return <><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Shaxsiy kabinet" title="Xush kelibsiz" description={`${roleTitle} uchun ish maydoni va asosiy ko‘rsatkichlar.`}/><div className="flex flex-wrap gap-2">{primaryAction && PrimaryActionIcon && <button onClick={()=>onOpenModal(primaryAction.modal)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"><PrimaryActionIcon size={16}/>{primaryAction.label}</button>}{['MEDIATOR','REGIONAL','MINISTRY'].includes(role) && <button onClick={()=>onOpenModal('hisobot')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ClipboardList size={16}/>Hisobot</button>}</div></div><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{stats.map(([label,value,detail,Icon])=><div key={String(label)} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-slate-500">{String(label)}</p><p className="mt-2 text-3xl font-semibold tracking-tight">{String(value).padStart(2,'0')}</p></div><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Icon size={20}/></span></div><p className="mt-3 text-xs text-slate-400">{String(detail)}</p></div>)}</section><div className="mt-6 grid gap-5 xl:grid-cols-[1.35fr_.8fr]"><section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center justify-between"><div><h2 className="font-semibold">{role === 'APPLICANT' ? 'Mediatorlik arizalarim' : isMediationClient ? 'Mediatsiya murojaatlarim' : 'So‘nggi faoliyat'}</h2><p className="mt-1 text-xs text-slate-400">{role === 'APPLICANT' ? 'Mediator maqomi va imtihon bosqichlari' : isMediationClient ? 'Siz yuborgan murojaatlarning holati' : 'Mediatsiya va ariza jarayonlari'}</p></div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Demo ma’lumot</span></div><div className="mt-4 divide-y divide-slate-100">{activity.map((item)=><div key={item.id} className="flex items-start gap-3 py-4"><span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><FileClock size={17}/></span><div className="min-w-0 flex-1"><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-slate-500">{item.id} · {item.status}</p></div><span className="text-[11px] text-slate-400">{item.createdAt}</span></div>)}</div></section><section className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Tezkor amallar</p><p className="mt-1 text-xs text-slate-400">{role === 'APPLICANT' ? 'Mediator maqomi uchun ariza va imtihon' : isMediationClient ? 'Murojaat va mediator tanlash' : 'Kabinet amallari'}</p></div><Sparkles size={18} className="text-emerald-300"/></div><div className="mt-4 space-y-2">{shortcuts.map(([title,sub,Icon,action])=><button key={title} onClick={action} className="flex w-full items-center gap-3 rounded-xl bg-white/[.07] p-3 text-left transition hover:bg-white/[.12]"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-300/15 text-emerald-200"><Icon size={17}/></span><span className="flex-1"><strong className="block text-xs font-semibold">{title}</strong><span className="mt-1 block text-[11px] text-slate-400">{sub}</span></span><ArrowUpRight size={15} className="text-slate-400"/></button>)}</div>{shortcuts.length===0 && <p className="mt-4 rounded-xl bg-white/[.07] p-3 text-xs leading-5 text-slate-300">Bu kabinetda tezkor amallar yo‘q. Kerakli bo‘limni chap menyudan tanlang.</p>}</section></div><div className="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4"><CircleHelp size={18} className="mt-0.5 shrink-0 text-blue-700"/><p className="text-xs leading-5 text-blue-900">Demo rejimida kiritilgan o‘zgarishlar faqat ushbu brauzerda saqlanadi. Davlat tizimlari, billing, SMS, OneID va ERI integratsiyalari ulanmagan.</p></div></>
+  return <><div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><PageHeading eyebrow="Shaxsiy kabinet" title="Xush kelibsiz" description={`${roleTitle} uchun ish maydoni va asosiy ko‘rsatkichlar.`}/><div className="flex flex-wrap gap-2">{primaryAction && PrimaryActionIcon && <button onClick={()=>onOpenModal(primaryAction.modal)} className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"><PrimaryActionIcon size={16}/>{primaryAction.label}</button>}{['MEDIATOR','REGIONAL','MINISTRY'].includes(role) && <button onClick={()=>onOpenModal('hisobot')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"><ClipboardList size={16}/>Hisobot</button>}</div></div><section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{stats.map(([label,value,detail,Icon])=><div key={String(label)} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-slate-500">{String(label)}</p><p className="mt-2 text-3xl font-semibold tracking-tight">{String(value).padStart(2,'0')}</p></div><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><Icon size={20}/></span></div><p className="mt-3 text-xs text-slate-400">{String(detail)}</p></div>)}</section><div className="mt-6 grid gap-5 xl:grid-cols-[1.35fr_.8fr]"><section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70"><div className="flex items-center justify-between"><div><h2 className="font-semibold">{role === 'APPLICANT' ? 'Mediatorlik arizalarim' : isMediationClient ? 'Mediatsiya murojaatlarim' : 'So‘nggi faoliyat'}</h2><p className="mt-1 text-xs text-slate-400">{role === 'APPLICANT' ? 'Mediator maqomi va imtihon bosqichlari' : isMediationClient ? 'Siz yuborgan murojaatlarning holati' : 'Mediatsiya va ariza jarayonlari'}</p></div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{getAccessToken() ? 'Server ma’lumoti' : 'Demo ma’lumot'}</span></div><div className="mt-4 divide-y divide-slate-100">{activity.map((item)=><div key={item.id} className="flex items-start gap-3 py-4"><span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><FileClock size={17}/></span><div className="min-w-0 flex-1"><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-slate-500">{item.id} · {item.status}</p></div><span className="text-[11px] text-slate-400">{item.createdAt}</span></div>)}{activity.length === 0 && <p className="py-8 text-center text-sm text-slate-500">Hozircha serverda yozuv yo‘q.</p>}</div></section><section className="rounded-2xl bg-slate-950 p-5 text-white"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">Tezkor amallar</p><p className="mt-1 text-xs text-slate-400">{role === 'APPLICANT' ? 'Mediator maqomi uchun ariza va imtihon' : isMediationClient ? 'Murojaat va mediator tanlash' : 'Kabinet amallari'}</p></div><Sparkles size={18} className="text-emerald-300"/></div><div className="mt-4 space-y-2">{shortcuts.map(([title,sub,Icon,action])=><button key={title} onClick={action} className="flex w-full items-center gap-3 rounded-xl bg-white/[.07] p-3 text-left transition hover:bg-white/[.12]"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-300/15 text-emerald-200"><Icon size={17}/></span><span className="flex-1"><strong className="block text-xs font-semibold">{title}</strong><span className="mt-1 block text-[11px] text-slate-400">{sub}</span></span><ArrowUpRight size={15} className="text-slate-400"/></button>)}</div>{shortcuts.length===0 && <p className="mt-4 rounded-xl bg-white/[.07] p-3 text-xs leading-5 text-slate-300">Bu kabinetda tezkor amallar yo‘q. Kerakli bo‘limni chap menyudan tanlang.</p>}</section></div>{demoModeEnabled && <div className="mt-6 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-4"><CircleHelp size={18} className="mt-0.5 shrink-0 text-blue-700"/><p className="text-xs leading-5 text-blue-900">Demo rejimida kiritilgan o‘zgarishlar faqat ushbu brauzerda saqlanadi. Davlat tizimlari, billing, SMS, OneID va ERI integratsiyalari ulanmagan.</p></div>}</>
 }
 
 function RecordPage({ title, subtitle, items, actionLabel, onCreate, onAdvance, actionText, progressSteps, onToast }: { title: string; subtitle: string; items: PortalRecord[]; actionLabel: string; onCreate: () => void; onAdvance: (id: string) => void; actionText: string; progressSteps: string[]; onToast: (text: string) => void }) {

@@ -15,10 +15,10 @@ import { AssignCommitteeMemberDto, CreateCommitteeMemberDto, CreateMkApplication
 export class MkController {
   constructor(private readonly service: MkService) {}
 
-  @Get('cabinet/mk/training-courses') @Roles('TALABGOR') @ApiOperation({ summary: 'Ochiq malaka kurslari va vebinarlar' })
+  @Get('cabinet/mk/training-courses') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Ochiq malaka kurslari va vebinarlar' })
   trainingCourses(@CurrentUser() user: AuthUser) { return this.service.listTrainingCourses(user); }
 
-  @Post('cabinet/mk/training-courses/:id/enroll') @Roles('TALABGOR') @ApiOperation({ summary: 'Malaka kursi yoki vebinariga yozilish' })
+  @Post('cabinet/mk/training-courses/:id/enroll') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Malaka kursi yoki vebinariga yozilish' })
   enrollTrainingCourse(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.enrollTrainingCourse(user, id); }
 
   @Get('committee/mk/training-courses') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Kurslar va yozilgan nomzodlar' })
@@ -30,16 +30,16 @@ export class MkController {
   @Patch('committee/mk/training-enrollments/:id/attendance') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Nomzod davomatini komissiya tomonidan qayd etish' })
   markTrainingAttendance(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: MarkTrainingAttendanceDto, @Req() req: any) { return this.service.markTrainingAttendance(user, id, dto, req.ip); }
 
-  @Post('cabinet/mk/applications') @Roles('TALABGOR') @ApiOperation({ summary: 'Mediator bo\'lish uchun ariza yuborish' })
+  @Post('cabinet/mk/applications') @Roles('CITIZEN', 'TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Mediator bo\'lish uchun ariza yuborish' })
   createApplication(@CurrentUser() user: AuthUser, @Body() dto: CreateMkApplicationDto) { return this.service.createApplication(user, dto); }
 
-  @Get('cabinet/mk/applications') @Roles('TALABGOR') @ApiOperation({ summary: 'Talabgor arizalari' })
+  @Get('cabinet/mk/applications') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Talabgor arizalari' })
   myApplications(@CurrentUser() user: AuthUser) { return this.service.myApplications(user); }
 
-  @Get('cabinet/mk/applications/:id') @Roles('TALABGOR') @ApiOperation({ summary: 'Ariza tafsiloti' })
+  @Get('cabinet/mk/applications/:id') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Ariza tafsiloti' })
   application(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.getOwnApplication(user, id); }
 
-  @Patch('cabinet/mk/applications/:id/corrections') @Roles('TALABGOR') @ApiOperation({ summary: 'Kamchiliklari tuzatilgan arizani qayta yuborish' })
+  @Patch('cabinet/mk/applications/:id/corrections') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Kamchiliklari tuzatilgan arizani qayta yuborish' })
   resubmit(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: ResubmitMkApplicationDto) { return this.service.resubmitApplication(user, id, dto); }
 
   @Get('committee/mk/applications') @Roles('COMMISSION', 'REGIONAL_STAFF', 'MINISTRY_STAFF') @ApiOperation({ summary: 'Komissiya arizalar jurnali' })
@@ -60,13 +60,13 @@ export class MkController {
   @Post('committee/mk/applications/:id/invite') @Roles('COMMISSION') @ApiOperation({ summary: 'Malaka imtihonini tayinlash (davlat xizmati bepul)' })
   invite(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: InviteToExamDto) { return this.service.inviteToExam(user, id, dto); }
 
-  @Get('cabinet/mk/exams/:id') @Roles('TALABGOR') @ApiOperation({ summary: 'Talabgor imtihoni' })
+  @Get('cabinet/mk/exams/:id') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Talabgor imtihoni' })
   exam(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.service.getOwnExam(user, id); }
 
   @Get('committee/mk/exams') @Roles('COMMISSION') @ApiOperation({ summary: 'Komissiya a’zosiga biriktirilgan imtihonlar' })
   assignedExams(@CurrentUser() user: AuthUser) { return this.service.listAssignedExams(user); }
 
-  @Get('cabinet/mk/exams/:id/protocol') @Roles('TALABGOR') @ApiOperation({ summary: 'Imtihon bayonnomasini yuklab olish' })
+  @Get('cabinet/mk/exams/:id/protocol') @Roles('TALABGOR', 'MEDIATOR_APPLICANT') @ApiOperation({ summary: 'Imtihon bayonnomasini yuklab olish' })
   async applicantProtocol(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() response: Response) {
     const pdf = await this.service.downloadProtocol(user, id);
     response.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="imtihon-bayonnomasi-${id}.pdf"` });

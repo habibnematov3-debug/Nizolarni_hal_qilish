@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileDown, FileUp, LoaderCircle, MapPin, Phone, Search, X } from 'lucide-react'
 import { apiDownload, apiGet, apiGetPublic, apiUpload, getAccessToken } from './api'
-import { qashqadaryoMediatorSamples } from './registrySampleData'
 
 type RegistryEntry = {
   id: string
@@ -36,69 +35,6 @@ const registryTypes = [
 ] as const
 const regions = ['Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Farg‘ona viloyati', 'Jizzax viloyati', 'Xorazm viloyati', 'Namangan viloyati', 'Navoiy viloyati', 'Qashqadaryo viloyati', 'Samarqand viloyati', 'Surxondaryo viloyati', 'Sirdaryo viloyati', 'Toshkent shahri', 'Toshkent viloyati']
 const emptyPage: RegistryPage = { items: [], pagination: { page: 1, totalPages: 1, total: 0 } }
-const cyrillicToLatin: Record<string, string> = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'j', з: 'z',
-  и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r',
-  с: 's', т: 't', у: 'u', ф: 'f', х: 'x', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch',
-  ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya', ў: "o'", қ: 'q', ғ: "g'", ҳ: 'h',
-}
-
-function normalizeRegistryText(value: string) {
-  return value.toLocaleLowerCase('uz')
-    .replace(/[‘’ʻ]/g, "'")
-    .replace(/[а-яёўқғҳ]/g, (character) => cyrillicToLatin[character] ?? character)
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function sampleRegistryPage({
-  type,
-  search = '',
-  region = '',
-  specialization = '',
-  language = '',
-  minimumRating = '',
-  page = 1,
-  limit = 12,
-}: {
-  type: string
-  search?: string
-  region?: string
-  specialization?: string
-  language?: string
-  minimumRating?: string
-  page?: number
-  limit?: number
-}): RegistryPage {
-  if (type !== 'MEDIATOR') return emptyPage
-  const normalizedSearch = normalizeRegistryText(search)
-  const rows = qashqadaryoMediatorSamples.filter((item) => {
-    const searchable = [item.fullName, item.region, ...item.specialization, item.certificateNumber || ''].join(' ')
-    if (normalizedSearch && !normalizeRegistryText(searchable).includes(normalizedSearch)) return false
-    if (region && !normalizeRegistryText(item.region).includes(normalizeRegistryText(region))) return false
-    if (language && !item.languages.includes(language.toLowerCase())) return false
-    if (minimumRating) return false
-    if (specialization) {
-      const details = normalizeRegistryText(item.specialization.join(' '))
-      const categoryMatch: Record<string, RegExp> = {
-        ECONOMIC: /tadbirkor|iqtisod|shartnoma/,
-        INVESTMENT: /investitsiya/,
-        INTELLECTUAL: /intellektual/,
-        CIVIL: /fuqarolik|oila|mehnat/,
-        BANKING: /bank|moliya/,
-        DIGITAL: /raqamli|texnologiya/,
-      }
-      if (!categoryMatch[specialization]?.test(details)) return false
-    }
-    return true
-  })
-  const totalPages = Math.max(1, Math.ceil(rows.length / limit))
-  const currentPage = Math.min(Math.max(1, page), totalPages)
-  return {
-    items: rows.slice((currentPage - 1) * limit, currentPage * limit),
-    pagination: { page: currentPage, totalPages, total: rows.length },
-  }
-}
 
 export function PublicRegistryDirectory({
   registryKind,
@@ -127,7 +63,6 @@ export function PublicRegistryDirectory({
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [sampleFallback, setSampleFallback] = useState(false)
   const type = registryTypes.find(([label]) => label === registryKind)?.[1] || 'MEDIATOR'
 
   useEffect(() => { setPage(1) }, [query, region, type])
@@ -141,16 +76,12 @@ export function PublicRegistryDirectory({
     apiGetPublic<RegistryPage>(`/public/mediators?${params.toString()}`)
       .then((result) => {
         if (!active) return
-        const useSample = type === 'MEDIATOR' && (!(result?.pagination?.total) || !result?.items?.length)
-        setData(useSample ? sampleRegistryPage({ type, search: query, region: region === 'Barcha hududlar' ? '' : region, page, limit: 12 }) : result || emptyPage)
-        setSampleFallback(useSample)
+        setData(result || emptyPage)
         setError('')
       })
       .catch((cause) => {
         if (!active) return
-        const useSample = type === 'MEDIATOR'
-        setData(useSample ? sampleRegistryPage({ type, search: query, region: region === 'Barcha hududlar' ? '' : region, page, limit: 12 }) : emptyPage)
-        setSampleFallback(useSample)
+        setData(emptyPage)
         setError(cause instanceof Error ? cause.message : 'Reyestrni yuklab bo‘lmadi.')
       })
       .finally(() => { if (active) setLoading(false) })
@@ -184,14 +115,13 @@ export function PublicRegistryDirectory({
         <button onClick={() => setMapOpen((open) => !open)} className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"><MapPin size={16}/>{mapOpen ? 'Ro‘yxatni ko‘rish' : 'Xaritani ko‘rish'}</button>
       </div>
       {error && <div role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</div>}
-      {sampleFallback && <div role="status" className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">Rasmiy reyestr ma’lumoti hozircha mavjud emas. Sinov uchun Qashqadaryo mediatorlar ro‘yxati ko‘rsatilmoqda; yozuvlar “Namuna” deb belgilangan.</div>}
       {mapOpen && <div className="mt-5 grid gap-4 rounded-2xl bg-slate-950 p-4 text-white sm:p-6 lg:grid-cols-[1.25fr_.75fr]">
         <div className="overflow-hidden rounded-xl bg-[#dcebf0]"><svg viewBox="0 0 1000 600" role="img" aria-label={`${typeLabel(selectedType || 'MEDIATOR')} manzillari xaritasi`} className="block h-[280px] w-full sm:h-[390px]"><rect width="1000" height="600" fill="#dcebf0"/><path d="M94 241 L142 179 L218 159 L278 184 L351 144 L420 162 L477 127 L559 158 L631 145 L701 180 L776 170 L844 206 L817 247 L880 273 L843 315 L882 354 L829 377 L806 425 L757 417 L725 455 L676 448 L647 483 L592 467 L551 442 L489 451 L433 431 L389 452 L343 423 L297 428 L260 399 L208 403 L172 376 L129 367 L151 330 L112 306 L135 275 Z" fill="#f3ead6" stroke="#fff" strokeWidth="8" strokeLinejoin="round"/>{mapPoints.filter((point) => point.latitude != null && point.longitude != null).map((point) => { const x = 94 + (((point.longitude || 0) - 55.5) / 19) * 790; const y = 127 + ((46.5 - (point.latitude || 0)) / 10) * 350; return <g key={point.id} role="button" tabIndex={0} aria-label={`${point.fullName}, ${point.region}`} onClick={() => setSelectedPoint(point)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setSelectedPoint(point) }} className="cursor-pointer"><circle cx={x} cy={y} r="13" fill={selectedPoint?.id === point.id ? '#f59e0b' : '#0875cf'} stroke="#fff" strokeWidth="4"/><title>{point.fullName}</title></g> })}</svg></div>
         <div className="flex min-h-52 flex-col rounded-xl bg-white/[.07] p-4">{selectedPoint ? <><p className="text-xs font-semibold uppercase text-amber-300">Tanlangan mutaxassis</p><h2 className="mt-3 text-lg font-semibold">{selectedPoint.fullName}</h2><p className="mt-1 text-sm text-blue-100/75">{selectedPoint.region}</p><p className="mt-3 text-xs text-blue-100/70">{selectedPoint.address || 'Manzil ko‘rsatilmagan'}</p>{selectedPoint.phone && <a className="mt-2 inline-flex items-center gap-2 text-xs text-amber-200" href={`tel:${selectedPoint.phone}`}><Phone size={13}/>{selectedPoint.phone}</a>}<a className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-amber-300" href={`https://www.openstreetmap.org/?mlat=${selectedPoint.latitude}&mlon=${selectedPoint.longitude}#map=12/${selectedPoint.latitude}/${selectedPoint.longitude}`} target="_blank" rel="noreferrer">Xaritada ochish<ArrowUpRight size={14}/></a></> : <><p className="text-xs font-semibold uppercase text-amber-300">Interaktiv xarita</p><p className="mt-3 text-sm leading-6 text-blue-100/75">{mapPoints.length} ta koordinatali manzil. Belgini tanlab mutaxassis ma’lumotini ko‘ring.</p><p className="mt-3 text-xs text-blue-100/60">Xaritada ko‘rinish uchun reyestr yozuvida koordinatalar bo‘lishi kerak.</p></>}</div>
       </div>}
       {loading ? <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={18}/>Reyestr yuklanmoqda…</div> : mapOpen ? null : <>
         <div className="mt-4 flex items-center justify-between text-xs text-slate-500"><span>{data.pagination.total} ta natija</span><span>Faol reyestr · {typeLabel(selectedType || 'MEDIATOR')}</span></div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.items.map((person) => <article key={person.id} className="rounded-xl border border-slate-200 bg-white p-5"><div className="flex items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900">{person.fullName}</h2><p className="mt-1 text-xs text-slate-500">{person.region}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${person.isSample ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}>{person.isSample ? 'Namuna' : 'Faol'}</span></div><p className="mt-4 min-h-10 text-sm text-slate-700">{person.specialization?.join(', ') || 'Ixtisoslik ko‘rsatilmagan'}</p><p className="mt-3 text-xs text-slate-500">Reyestr raqami: {person.registryNumber || (person.isSample ? 'Namuna yozuvi' : '—')}{person.rating?.score != null ? ` · Reyting ${Number(person.rating.score).toFixed(1)}` : ''}</p><div className="mt-4 flex gap-2 border-t border-slate-100 pt-4"><button onClick={() => setSelected(person)} className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Profil</button><button onClick={() => type === 'MEDIATOR' ? onContact(person.fullName, person.id, person.isSample) : onLogin()} className="flex-1 rounded-lg bg-blue-800 py-2 text-xs font-semibold text-white hover:bg-blue-900">{type === 'MEDIATOR' ? 'Murojaat' : 'Kabinetga kirish'}</button></div></article>)}</div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.items.map((person) => <article key={person.id} className="rounded-xl border border-slate-200 bg-white p-5"><div className="flex items-start justify-between gap-3"><div><h2 className="font-semibold text-slate-900">{person.fullName}</h2><p className="mt-1 text-xs text-slate-500">{person.region}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${person.isSample ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}>{person.isSample ? 'Sinov yozuvi' : 'Faol'}</span></div><p className="mt-4 min-h-10 text-sm text-slate-700">{person.specialization?.join(', ') || 'Ixtisoslik ko‘rsatilmagan'}</p><p className="mt-3 text-xs text-slate-500">Reyestr raqami: {person.registryNumber || '—'}{person.rating?.score != null ? ` · Reyting ${Number(person.rating.score).toFixed(1)}` : ''}</p><div className="mt-4 flex gap-2 border-t border-slate-100 pt-4"><button onClick={() => setSelected(person)} className="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Profil</button><button disabled={type !== 'MEDIATOR' || person.isSample} onClick={() => onContact(person.fullName, person.id, person.isSample)} className="flex-1 rounded-lg bg-blue-800 py-2 text-xs font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-slate-300">{type !== 'MEDIATOR' ? 'Kabinetga kirish' : person.isSample ? 'Akkaunt sinovga ulanmagan' : 'Murojaat'}</button></div></article>)}</div>
         {!data.items.length && !error && <div className="mt-4 rounded-xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Reyestrda mos mutaxassis topilmadi.</div>}
         <div className="mt-5 flex items-center justify-between"><button disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold disabled:opacity-40"><ArrowLeft size={14}/>Oldingi</button><span className="text-xs text-slate-500">{data.pagination.page} / {Math.max(1, data.pagination.totalPages)}</span><button disabled={page >= data.pagination.totalPages} onClick={() => setPage((current) => current + 1)} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold disabled:opacity-40">Keyingi<ArrowRight size={14}/></button></div>
       </>}
@@ -211,7 +141,6 @@ export function BusinessSpecialistDirectory({ onSelectSpecialist, businessMode =
   const [data, setData] = useState<RegistryPage>(emptyPage)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [sampleFallback, setSampleFallback] = useState(false)
 
   useEffect(() => { setPage(1) }, [type, search, region, specialization, language, minimumRating])
   useEffect(() => {
@@ -226,16 +155,12 @@ export function BusinessSpecialistDirectory({ onSelectSpecialist, businessMode =
     apiGetPublic<RegistryPage>(`/public/mediators?${params.toString()}`)
       .then((result) => {
         if (!active) return
-        const useSample = type === 'MEDIATOR' && (!(result?.pagination?.total) || !result?.items?.length)
-        setData(useSample ? sampleRegistryPage({ type, search, region, specialization, language, minimumRating, page, limit: 12 }) : result || emptyPage)
-        setSampleFallback(useSample)
+        setData(result || emptyPage)
         setError('')
       })
       .catch((cause) => {
         if (!active) return
-        const useSample = type === 'MEDIATOR'
-        setData(useSample ? sampleRegistryPage({ type, search, region, specialization, language, minimumRating, page, limit: 12 }) : emptyPage)
-        setSampleFallback(useSample)
+        setData(emptyPage)
         setError(cause instanceof Error ? cause.message : 'Reyestrni yuklab bo‘lmadi.')
       })
       .finally(() => { if (active) setLoading(false) })
@@ -253,8 +178,7 @@ export function BusinessSpecialistDirectory({ onSelectSpecialist, businessMode =
       <label className="text-xs font-semibold text-slate-600">Minimal reyting<select value={minimumRating} onChange={(event) => setMinimumRating(event.target.value)} className="form-control mt-1.5"><option value="">Barcha reytinglar</option><option value="3">3.0 va yuqori</option><option value="4">4.0 va yuqori</option><option value="4.5">4.5 va yuqori</option></select></label>
     </div>
     {error && <div role="alert" className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{error}</div>}
-    {sampleFallback && <div role="status" className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">Rasmiy reyestr ma’lumoti hozircha mavjud emas. Sinov uchun Qashqadaryo mediatorlar ro‘yxati ko‘rsatilmoqda; yozuvlar “Namuna” deb belgilangan.</div>}
-    {loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={17}/>Reyestr yuklanmoqda…</div> : data.items.length ? <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data.items.map((person) => <article key={person.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">{person.fullName}</h3><p className="mt-1 text-xs text-slate-500">{person.region}</p></div><div className="flex items-center gap-2"><span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">★ {person.rating?.score != null ? Number(person.rating.score).toFixed(1) : '—'}</span>{person.isSample && <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-semibold text-orange-800">Namuna</span>}</div></div><p className="mt-3 text-xs leading-5 text-slate-600">{person.specialization?.join(', ') || 'Ixtisoslik ko‘rsatilmagan'}</p><p className="mt-2 text-xs text-slate-500">Tillar: {person.languages?.join(', ') || 'Ko‘rsatilmagan'}</p><button disabled={person.type !== 'MEDIATOR'} onClick={() => onSelectSpecialist({ id: person.id, fullName: person.fullName, type: person.type, isSample: person.isSample })} className="mt-4 h-9 w-full rounded-lg bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300">{person.type === 'MEDIATOR' ? 'Tanlash va mediatsiya boshlash' : 'Hakamlik / arbitraj oqimi ulanmagan'}</button>{person.isSample && <p className="mt-2 text-[11px] leading-4 text-amber-800">Sinov uchun namuna. Haqiqiy mediator hisobi bilan hali bog‘lanmagan.</p>}</article>)}</div> : <div className="mt-4 rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">Tanlangan mezonlarga mos faol mutaxassis topilmadi.</div>}
+    {loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={17}/>Reyestr yuklanmoqda…</div> : data.items.length ? <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data.items.map((person) => <article key={person.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">{person.fullName}</h3><p className="mt-1 text-xs text-slate-500">{person.region}</p></div><div className="flex items-center gap-2"><span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">★ {person.rating?.score != null ? Number(person.rating.score).toFixed(1) : '—'}</span>{person.isSample && <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-semibold text-orange-800">Sinov yozuvi</span>}</div></div><p className="mt-3 text-xs leading-5 text-slate-600">{person.specialization?.join(', ') || 'Ixtisoslik ko‘rsatilmagan'}</p><p className="mt-2 text-xs text-slate-500">Tillar: {person.languages?.join(', ') || 'Ko‘rsatilmagan'}</p><button disabled={person.type !== 'MEDIATOR' || person.isSample} onClick={() => onSelectSpecialist({ id: person.id, fullName: person.fullName, type: person.type, isSample: person.isSample })} className="mt-4 h-9 w-full rounded-lg bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300">{person.type !== 'MEDIATOR' ? 'Hakamlik / arbitraj oqimi ulanmagan' : person.isSample ? 'Akkaunt sinovga ulanmagan' : 'Tanlash va mediatsiya boshlash'}</button>{person.isSample && <p className="mt-2 text-[11px] leading-4 text-amber-800">Bu sinov yozuvi mediator akkauntiga ulanmagan, shuning uchun murojaatni qabul qila olmaydi.</p>}</article>)}</div> : <div className="mt-4 rounded-xl bg-slate-50 p-8 text-center text-sm text-slate-500">Tanlangan mezonlarga mos faol mutaxassis topilmadi.</div>}
     {!loading && data.items.length > 0 && <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500"><span>{data.pagination.total} ta mutaxassis</span><div className="flex items-center gap-3"><button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="disabled:opacity-40">Oldingi</button><span>{page} / {Math.max(1, data.pagination.totalPages)}</span><button disabled={page >= data.pagination.totalPages} onClick={() => setPage((value) => value + 1)} className="disabled:opacity-40">Keyingi</button></div></div>}
     <p className="mt-3 text-[11px] text-slate-400">Reyting reyestrda mavjud bo‘lsa ko‘rsatiladi. Ish yuklamasi bo‘yicha filtr reyestr API’da hozircha mavjud emas.</p>
   </section>
