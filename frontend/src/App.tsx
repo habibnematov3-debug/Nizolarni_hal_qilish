@@ -42,16 +42,19 @@ const previewTestPassword = 'demo1234'
 const previewTestAccounts = [
   { username: 'demo.fuqaro', label: 'Fuqaro', detail: 'Jismoniy shaxs · mediatsiya murojaati' },
   { username: 'demo.yuridik', label: 'Yuridik shaxs', detail: 'Tashkilot nomidan murojaat va xizmatlar' },
-  { username: 'demo.mediator-talabgor', label: 'Mediator talabgori', detail: 'Kurs, ariza va komissiya tasdig‘i' },
   { username: 'demo.mediator', label: 'Mediator', detail: 'Faol reyestr va kelgan murojaatlar' },
   { username: 'demo.komissiya', label: 'Malaka komissiyasi raisi', detail: 'Kurslar, nomzodlar va imtihon' },
   { username: 'demo.hududiy', label: 'Hududiy adliya xodimi', detail: 'Arizani yo‘naltirish va reyestrga kiritish' },
 ]
+const previewMethodExamples: Record<string, { username: string; label: string }> = {
+  OneID: { username: 'demo.fuqaro', label: 'Fuqaro sinov kabineti' },
+  'Elektron raqamli imzo': { username: 'demo.yuridik', label: 'Yuridik shaxs sinov kabineti' },
+  'Mobil ID / Face ID': { username: 'demo.mediator', label: 'Mediator sinov kabineti' },
+}
 
 const roles: Role[] = [
   { key: 'CITIZEN', title: 'Fuqaro', summary: 'JSHSHIR/OneID orqali: nizo arizalari, mediator tanlash va ishlaringiz', icon: UserRound },
   { key: 'BUSINESS', title: 'Tadbirkor / yuridik shaxs', summary: 'STIR/E-IMZO orqali: tashkilot nomidan nizolar va shartnomalar', icon: BriefcaseBusiness },
-  { key: 'APPLICANT', title: 'Mediator talabgori', summary: 'Mediator maqomiga ariza, malaka imtihoni va natijalar', icon: FileCheck2 },
   { key: 'MEDIATOR', title: 'Mediator', summary: 'Malaka, yozishmalar, hisobot, portfolio va mediatsiya', icon: Handshake },
   { key: 'JUDGE', title: 'Hakamlik sudyasi', summary: 'Shaxsiy kabinet va hakamlik muhokamasi shartnomalari', icon: Gavel },
   { key: 'ARBITRATOR', title: 'Arbitr', summary: 'Reyestr, arbitraj shartnomalari va masofaviy xizmatlar', icon: Landmark },
@@ -64,13 +67,15 @@ const roles: Role[] = [
 
 const cabinetGroups: CabinetGroup[] = [
   { title: 'Fuqaro / yuridik shaxs kabineti', summary: 'Jismoniy va yuridik shaxslar uchun umumiy xizmatlar', roles: ['CITIZEN', 'BUSINESS'] },
-  { title: 'Mutaxassislar kabineti', summary: 'Mediatsiya, hakamlik va arbitraj rollari', roles: ['APPLICANT', 'MEDIATOR', 'JUDGE', 'ARBITRATOR'] },
+  { title: 'Mutaxassislar kabineti', summary: 'Mediator, hakamlik sudyasi va arbitr rollari', roles: ['MEDIATOR', 'JUDGE', 'ARBITRATOR'] },
   { title: 'Adliya organlari kabineti', summary: 'Komissiya, hududiy organ va vazirlik vakolatlari', roles: ['COMMISSION', 'REGIONAL', 'MINISTRY'] },
   { title: 'Administrator kabineti', summary: 'Tizim barqarorligi, zaxiralash, huquqlar, audit va konfiguratsiya nazorati', roles: ['ADMIN', 'OPERATOR'] },
 ]
 
 function normalizeRoleKey(value: string | null): RoleKey | null {
   if (value === 'PARTY') return 'CITIZEN'
+  // Legacy candidate accounts now use the shared citizen/business cabinet.
+  if (value === 'APPLICANT') return null
   return roles.some((item) => item.key === value) ? value as RoleKey : null
 }
 
@@ -80,7 +85,7 @@ function cabinetGroupTitle(role: RoleKey | null): string {
 
 const backendRoleToCabinetRole: Record<string, RoleKey> = {
   TALABGOR: 'CITIZEN',
-  MEDIATOR_APPLICANT: 'APPLICANT',
+  MEDIATOR_APPLICANT: 'CITIZEN',
   CITIZEN: 'CITIZEN',
   BUSINESS: 'BUSINESS',
   MEDIATOR: 'MEDIATOR',
@@ -354,7 +359,7 @@ export default function App() {
   const startPublicMediatorApplication = () => {
     setPendingPublicMediation(false)
     if (!getAccessToken()) { setPendingMediatorApplication(true); openLogin(); return }
-    if (assignedRoles.some((item) => ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(item))) setModal('ariza')
+    if (assignedRoles.some((item) => ['CITIZEN', 'BUSINESS'].includes(item))) setModal('ariza')
     else setToast('Mediatorlik arizasini yuborish uchun fuqaro yoki yuridik shaxs kabinetiga kiring.')
   }
   const activateRole = (key: RoleKey) => {
@@ -370,8 +375,8 @@ export default function App() {
     activateRole(defaultRole)
     if (pendingMediatorApplication) {
       setPendingMediatorApplication(false)
-      if (unique.some((key) => ['APPLICANT', 'CITIZEN', 'BUSINESS'].includes(key))) setModal('ariza')
-      else setToast('Mediator maqomiga ariza berish uchun fuqaro, yuridik shaxs yoki mediator talabgori kabinetini tanlang.')
+      if (unique.some((key) => ['CITIZEN', 'BUSINESS'].includes(key))) setModal('ariza')
+      else setToast('Mediatorlik arizasini yuborish uchun fuqaro yoki yuridik shaxs kabinetiga kiring.')
       return
     }
     if (pendingPublicMediation) {
@@ -488,9 +493,6 @@ export default function App() {
         throw error
       }
     } else throw new Error('Mediatorlik arizasini serverga yuborish uchun tizimga kiring.')
-    setAssignedRoles((items) => [...new Set<RoleKey>([...items, 'APPLICANT'])])
-    setRole('APPLICANT')
-    setActivePage(navByRole.APPLICANT[0])
     setModal('')
   }
   const createReport = (title: string, detail = '') => {
