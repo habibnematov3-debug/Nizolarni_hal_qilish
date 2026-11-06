@@ -1,0 +1,1870 @@
+\n=== BET 1 ===\n00015645. “ADR-EP”.B02.01-01
+“TASDIQLAYMAN”
+O‘zbekiston Respublikasi
+adliya vaziri o‘rinbosari
+N. Muxammadiyev
+2026-yil 23-oktabr
+“Nizolarni muqobil hal etish” (adr)
+Yagona elektron platformasi va uning maxsus mobil ilovasini yaratish
+uchun
+TEXNIK TOPSHIRIQ
+(____ varaqda)
+2026-yil _______ “____” dan amal qiladi
+Toshkent — 2026\n=== BET 2 ===\nMUNDARIJA
+MUNDARIJA 2
+1. Umumiy ma’lumotlar 5
+1.1. Tizimning to‘liq nomi va uning shartli belgilanishi 5
+1.2. Shartnoma shifri (raqami) 5
+1.3. Buyurtmachi 5
+1.4. Bajaruvchi 5
+1.5. Ishlab chiqish uchun asos 6
+1.6. Ishlarni boshlash va tugatishning reja bo‘yicha muddatlari 7
+1.7. Moliyalashtirish manbalari 7
+2. Tizimning vazifasi va yaratish maqsadlari 8
+2.1. Tizimning vazifasi 8
+2.2. Tizimni yaratish maqsadlari 8
+3. Axborotlashtirish obyektining xarakteristikasi 9
+3.1. Axborotlashtirish obyekti to‘g‘risida qisqa ma’lumotlar 10
+3.2. Sohaning joriy holatini tavsiflovchi asosiy ko‘rsatkichlar (2025-yil yakuni
+bo‘yicha) 10
+4. Tizimga qo‘yiladigan talablar 11
+4.1. Umuman tizimga qo‘yiladigan talablar 11
+4.1.1. Tizimning strukturasi va ishlashiga qo‘yiladigan talablar 11
+4.1.2. Mobil ilovaga qo‘yiladigan maxsus talablar 15
+4.1.3. Chet axborot tizimlari bilan o‘zaro ishlashga qo‘yiladigan talablar 16
+4.1.4. Foydalanuvchilarning soni va malakasiga qo‘yiladigan talablar 17
+4.1.5. Vazifasi ko‘rsatkichlari 17
+4.1.6. Ishonchliligiga qo‘yiladigan talablar 18
+4.1.7. Xavfsizligiga qo‘yiladigan talablar 20
+4.1.8. Ergonomika va texnik estetikaga qo‘yiladigan talablar 23
+4.1.9. Ko‘chma AT uchun transportda tashish mumkinligiga qo‘yiladigan
+talablar 24
+4.1.10. Tizim komponentlaridan foydalanish, texnik xizmat ko‘rsatish,
+ta’mirlash va saqlashga qo‘yiladigan talablar 24\n=== BET 3 ===\n4.1.11. Patent va litsenziya sofligiga qo‘yiladigan talablar 24
+4.1.12. Standartlashtirish va bir xillashtirish bo‘yicha talablar 24
+4.1.13. Qo‘shimcha talablar 24
+4.2. Tizim tomonidan bajariladigan funksiyalarga qo‘yiladigan talablar 25
+4.2.1. Tizimning umumiy tasniflari va foydalanuvchilarning qisqacha
+faoliyati 26
+4.2.2. “Ma’lumotnomalar va klassifikatorlar” moduli 27
+4.2.3. “Foydalanuvchilarni boshqarish” moduli 28
+4.2.4. “Mediatorlar, hakamlik sudyalari va arbitrlar yagona reestri” moduli
+29
+4.2.5. “Nizo bo‘yicha murojaat (ariza)larni qabul qilish va boshqarish”
+moduli 30
+4.2.6. “Sun’iy intellekt asosida nizo turkumini aniqlash va usul tavsiya qilish”
+moduli 31
+4.2.7. “Mediator, hakamlik sudyasi yoki arbitrni elektron tanlash” moduli32
+4.2.8. “Onlayn muzokara va masofaviy eshituvlar” moduli 33
+4.2.9. “Elektron hujjat aylanishi va elektron raqamli imzo” moduli 34
+4.2.10. “Kelishuv va qarorlarni rasmiylashtirish hamda majburiy ro‘yxatga
+olish” moduli 35
+4.2.11. “Tashqi integratsiya” moduli 35
+4.2.12. “Kelishuvlar ijrosini monitoring qilish” moduli 36
+4.2.13. “Ochiq reyting tizimi” moduli 37
+4.2.14. “Malaka oshirish, sertifikatlash va Oliy malaka komissiyasi” moduli
+37
+4.2.15. “To‘lovlar va davlat boji” moduli 38
+4.2.16. “Statistika va tahliliy hisobotlar” moduli 39
+4.2.17. “Tashqi ma’lumotlar portali” moduli 39
+4.2.18. “Bildirishnoma (xabarnoma)” moduli 40
+4.2.19. “Xavfsizlik va audit” moduli 41
+4.2.20. “Adliya vazirligi roli orqali sun’iy intellekt yordamida tizimga
+o‘zgartirish kiritish bo‘yicha topshiriq berish” moduli 41\n=== BET 4 ===\n4.3. Ta’minot turlariga qo‘yiladigan talablar 43
+4.3.1. Matematik ta’minotga qo‘yiladigan talablar 43
+4.3.2. Axborot ta’minotiga qo‘yiladigan talablar 43
+4.3.3. Lingvistik ta’minotga qo‘yiladigan talablar 43
+4.3.4. Dasturiy ta’minotga qo‘yiladigan talablar 44
+4.3.5. Texnik ta’minotga qo‘yiladigan talablar 44
+4.3.6. Metrologik ta’minotga qo‘yiladigan talablar 45
+4.3.7. Tashkiliy taэminotga qo‘yiladigan talablar 45
+4.3.8. Uslubiy taэminotga qo‘yiladigan talablar 45
+5. Tizimni yaratish bo‘yicha ishlarning tarkibi va mazmuni 46
+6. Tizimni nazorat qilish va qabul qilish tartibi 48
+6.1. Tizimni qabul qilish tartibi 48
+6.2. Tekshirish va sinovlardan o‘tkazish shartlari 48
+6.3. Qabul qilish komissiyasining tuzilishi tartibi, tarkibi va statusi 49
+7. Tizimni ishga tushirishga tayyorlash ishlarining tarkibi va mazmuniga
+qo‘yiladigan talablar 49
+8. Hujjatlashtirishga qo‘yiladigan talablar 50
+9. Ishlanma manbalari 51
+1-ilova 52
+(maэlumot uchun) 52
+Tizimning asosiy foydalanish ssenariylari namunalari 52
+Identifikator: SUBMIT_CASE — Nizo bo‘yicha ariza berish 52
+Identifikator: AUTO_ASSIGN_MEDIATOR — Majburiy mediatsiya
+bo‘yicha mediatorni avtomat tayinlash 53
+Identifikator: ONLINE_SESSION — Onlayn mediatsiya sessiyasini o‘tkazish
+53
+Identifikator: REGISTER_AGREEMENT — Mediativ kelishuvni ro‘yxatga
+olish va sudga yuborish 54
+Identifikator: MONITOR_EXECUTION — Kelishuv ijrosini monitoring
+qilish 55\n=== BET 5 ===\nIdentifikator: AI_CONFIG_REQUEST — Adliya vazirligi xodimi
+tomonidan sunэiy intellekt orqali tizimni sozlash bo‘yicha topshiriq berish56
+2-ilova 57
+(majburiy) 57
+Tizimni yaratish bo‘yicha ishlarning bosqichlari va etaplari ro‘yxati 57
+Oxirgi varaq 57\n=== BET 6 ===\n1. Umumiy ma’lumotlar
+1.1. ATning to‘liq nomi va uning shartli belgilanishi
+Tizimning to‘liq nomi: “Nizolarni muqobil hal etish” (ADR) yagona elektron
+platformasi va uning maxsus mobil ilovasi (e-mediatsiya).
+Tizimning shartli belgilanishi: ADR-EP.
+1.2. Buyurtmachi
+O‘zbekiston Respublikasi Adliya vazirligi.
+Manzili: 100047, Toshkent shahri, Sayilgoh ko‘chasi, 5-uy.
+Telefon raqami: (0-371) 207-51-11.
+Elektron pochta: info@adliya.uz.
+1.3. Bajaruvchi
+“Adliya organlari va muassasalarida axborot-kommunikatsiya texnologiyalarini
+rivojlantirish markazi” davlat muassasasi.
+Manzili: 100047, Toshkent shahri, Sayilgoh ko‘chasi, 5-uy.
+Telefon raqami: (0-371) 207-04-57.
+Elektron pochta: ict@adliya.uz.
+1.4. Ishlab chiqish uchun asos
+Tizim quyidagi hujjatlar asosida ishlab chiqiladi:
+ O‘zbekiston Respublikasi Prezidentining 2026-yil 16-fevraldagi “Mahallani
+rivojlantirish va jamiyatni yuksaltirish yilida ustuvor yo‘nalishlar bo‘yicha
+islohotlar dasturlari va «O‘zbekiston – 2030” strategiyasini amalga oshirish
+bo‘yicha davlat dasturi to‘g‘risida»gi PF–22-son Farmoni;
+ O‘zbekiston Respublikasining “Mediatsiya to‘g‘risida”gi Qonuni (2018-yil
+3-iyuldagi O‘RQ-482-son);
+ O‘zbekiston Respublikasining “Hakamlik sudlari to‘g‘risida”gi Qonuni;
+ O‘zbekiston Respublikasining “Xo‘jalik yurituvchi subyektlar faoliyatining
+shartnomaviy-huquqiy bazasi to‘g‘risida”gi va tijorat arbitraji faoliyatini
+tartibga soluvchi boshqa qonun hujjatlari;\n=== BET 7 ===\n O‘zbekiston Respublikasining “Elektron hukumat to‘g‘risida”gi Qonuni (2015-
+yil 9-dekabrdagi O‘RQ-395-son);
+ O‘zbekiston Respublikasining “Elektron hujjat aylanishi to‘g‘risida”gi Qonuni;
+ O‘zbekiston Respublikasining “Elektron raqamli imzo to‘g‘risida”gi Qonuni;
+ O‘zbekiston Respublikasining “Axborotlashtirish to‘g‘risida”gi Qonuni;
+ O‘zbekiston Respublikasining “Shaxsga doir ma’lumotlar to‘g‘risida”gi
+Qonuni;
+ O‘zbekiston Respublikasi Fuqarolik protsessual va Iqtisodiy protsessual
+kodekslari;
+ O‘zbekiston Respublikasi Prezidentining 2018-yil Mediatsiya natijasida
+erishilgan xalqaro yarashuv bitimlari to‘g‘risidagi BMT konvensiyasiga
+(Singapur konvensiyasi) qo‘shilish bo‘yicha takliflari va tegishli normativ
+hujjatlar;
+ O‘z DSt 1985:2018 “Axborot texnologiyasi. Axborot tizimlarini yaratishda
+hujjatlarning turlari, komplektliligi va belgilanishi” davlat standarti;
+ O‘z DSt 1986:2018 “Axborot texnologiyasi. Axborot tizimlari. Yaratish
+bosqichlari” davlat standarti;
+ O‘z DSt 1987:2018 “Axborot texnologiyasi. Axborot tizimini yaratish uchun
+texnik topshiriq” davlat standarti.
+Izoh – Axborot tizimini ishlab chiqishda O‘zbekiston Respublikasining amaldagi
+boshqa qonun va qonunosti hujjatlariga ham asoslanilishi mumkin.
+1.5. Ishlarni boshlash va tugatishning reja bo‘yicha muddatlari
+Platformani yaratish ishlarini boshlash va tugatishning reja bo‘yicha muddatlari:
+Boshlash: 2026-yil oktabr
+Tugatish: 2027-yil aprel
+Tizimni yaratish bo‘yicha ishlarning tarkibi, mazmuni va oraliq muddatlari
+mazkur texnik topshiriqning 5-bo‘limida keltirilgan.
+1.6. Moliyalashtirish manbalari
+Yagona elektron platformani ishga tushirish, unga texnik xizmat ko‘rsatish va uni
+qo‘llab-quvvatlash bilan bog‘liq xarajatlar Adliya organlari va muassasalarida axborot-
+kommunikatsiya texnologiyalarini rivojlantirish markazi davlat muassasasi
+mablag‘lari, xalqaro va mahalliy grantlar, jismoniy va yuridik shaxslarning homiylik\n=== BET 8 ===\nxayriyalari hamda qonunchilik hujjatlari bilan taqiqlanmagan boshqa manbalar
+hisobidan moliyalashtiriladi. Loyihaning qabul qilinishi O‘zbekiston Respublikasi
+Davlat byudjetidan qo‘shimcha xarajatlar qilinishini talab etmaydi.
+1.7. Ishlar natijalarini rasmiylashtirish va taqdim etish tartibi
+Axborot tizimi hamda uning mobil ilovasini ishlab chiqish va foydalanishga
+topshirish ishlari mazkur texnik topshiriqning oltinchi va yettinchi bo‘limlarida
+keltirilgan talablar asosida buyurtmachi tomonidan qabul qilib olinadi.
+Buyurtmachining xohishiga ko‘ra, o‘z mutaxassislari hamda (yoki) buyurtmachi
+tomonidan jalb etilgan boshqa mutaxassislar ishtirokida axborot tizimini qabul qilib
+olish uchun maxsus ishchi guruh tuzilishi mumkin.
+Buyurtmachi bajaruvchidan axborot tizimini maxsus ishchi guruhi oldida himoya
+qilish va tizimning ishlash tartibini to‘liq tushuntirib berishni talab qilishga haqli.
+Buyurtmachi tomonidan bajarilgan ishlarni topshirish-qabul qilib olish
+to‘g‘risidagi dalolatnoma imzolangan kundan boshlab, axborot tizimi buyurtmachi
+tomonidan foydalanish uchun to‘liq qabul qilib olingan hisoblanadi.
+Ish natijalarini taqdim etish quyidagilardan tashkil topadi:
+ to‘liq ishlab chiqilgan va sinovdan o‘tkazilgan ADR-EP axborot tizimi hamda
+uning iOS va Android mobil ilovalari;
+ buyurtmachining mutaxassislari uchun tizimning barcha modullari bo‘yicha
+administrator panelidan foydalanish tartibi bo‘yicha o‘tkazilgan o‘quv
+mashg‘ulotlari;
+ foydalanuvchilar (murojaatchilar, mediatorlar, hakamlik sudyalari, arbitrlar va
+vakolatli organ xodimlari) uchun elektron shakldagi yo‘riqnomalar.
+Portalni yaratish ishlari bosqichma-bosqich bajariladi va qabul qilinadi. Ishning
+har bir bosqichi tugaganidan keyin ishlab chiquvchi buyurtmachiga bosqich bo‘yicha
+hujjatlarni va ishlab chiquvchi tomonidan imzolangan ishlarni “qabul qilish-
+topshirish” dalolatnomasini taqdim etadi.
+2. ATning vazifasi va yaratish maqsadlari
+2.1. AT vazifasi
+Platformaning vazifalari quyidagilar:\n=== BET 9 ===\nO‘zbekiston Respublikasida nizolarni sudgacha, ya’ni muqobil tartibda hal etish
+sohasidagi barcha jarayonlarni yagona davlat axborot tizimi doirasida
+raqamlashtirishdan iborat. AT shaxsning mediator, hakamlik sudyasi yoki arbitr
+sifatida faoliyat yuritish huquqini olishidan boshlab, nizo yuzasidan yakuniy hujjat
+(mediativ kelishuv, hakamlik sudi qarori yoki arbitraj qarori) chiqarilishi va uning
+ijrosini monitoring qilishgacha bo‘lgan barcha bosqichlarni qamrab oladi.
+AT orqali quyidagi nizolar muqobil tartibda hal etilishi ta’minlanadi: tijorat,
+investitsiya, mexnat, intellektual mulk, sport, raqamli texnologiyalar, fuqarolik,
+iqtisodiy hamda oilaviy nizolar, shuningdek mazkur texnik topshiriqning
+3-ilovasida keltirilgan toifadagi ishlar bo‘yicha sudgacha majburiy mediatsiya tartib-
+taomili.
+Tizimdan foydalanuvchi subyektlar: nizolarni muqobil hal etish sohasida
+akkreditatsiyadan o‘tgan boshqa tuzilmalar, mediatorlar, hakamlik sudyalari va
+arbitrlar va Adliya vazirligi tizimi, shuningdek, jismoniy va yuridik shaxslar (nizo
+taraflari).
+Tizim kelgusida nizolarni muqobil hal etishning yangi shakllari (masalan,
+qurilish, energetika va axborot texnologiyalari sohasida adyudikatsiya mexanizmi)
+joriy etilganda, ularni ham qamrab olish imkoniga ega bo‘lgan tarzda
+kengaytiriluvchan bo‘lishi lozim.
+2.2. ATni yaratish maqsadlari
+Platformani yaratish maqsadida quyidagi yakuniy natijalarga erishilishi ko‘zda
+tutiladi:
+ sudlarning ish yuklamasini kamida 20 foizga qisqartirish;
+ nizolarning mediatsiya, hakamlik sudi va arbitraj orqali hal etilish darajasini
+2025-yilgi 0,6 foizdan boshlab rivojlangan xorijiy davlatlar tajribasiga (40–80
+foiz) yaqinlashtirgan holda bosqichma-bosqich oshirib borish;
+ O‘zbekiston Respublikasi hududida tuziladigan barcha mediativ kelishuvlar,
+chiqarilgan arbitraj va hakamlik sudi qarorlarini 100 foiz elektron shaklda
+majburiy ro‘yxatga olish;
+ sudgacha majburiy mediatsiya tartibi qo‘llaniladigan nizolar bo‘yicha taraflarni
+mediator bilan ta’minlashda elektron (tasodifiy) tanlash tizimini 100 foiz amalga
+oshirish;
+ nizolarni muqobil hal etish tuzilmalari, sudlar, davlat organlari va boshqa
+tashkilotlar o‘rtasida qog‘ozsiz elektron hujjat almashinuvini yo‘lga qo‘yish;\n=== BET 10 ===\n taraflarga masofadan turib, elektron raqamli imzo va Face-id dan foydalangan
+holda onlayn mediatsiya, arbitraj va hakamlik muhokamasida ishtirok etish
+imkoniyatini yaratish;
+ sunʻiy intellekt texnologiyalari yordamida nizo toifasini aniqlash va uni hal
+etishning eng maqbul usulini (mediatsiya, arbitraj yoki hakamlik sudi) taraflarga
+tavsiya etish orqali aholining ADR institutlariga murojaat qilish
+ko‘rsatkichlarini oshirish;
+ mediatorlar, hakamlik sudyalari va arbitrlarning faoliyati samaradorligini aks
+ettiruvchi ochiq reyting tizimini shakllantirish;
+ mediativ kelishuvlar ijrosini monitoring qilish va taraflarni majburiyatlar ijrosi
+muddatlari haqida avtomatik xabardor qilish;
+ nizolarni muqobil hal etish amaliyoti bo‘yicha statistik ma'lumotlarni to‘plash,
+tahlil qilish va davlat organlari uchun hisobotlarni avtomatik shakllantirishni
+ta’minlash;
+ investorlar va xorijiy tadbirkorlar uchun O‘zbekistonda nizolarni tezkor, shaffof
+va ishonchli hal etish imkoniyatlarini yaratish orqali mamlakatning investitsion
+muhitini yaxshilash.
+ATni yaratish maqsadlariga erishish darajasi yuqorida keltirilgan miqdoriy
+ko‘rsatkichlar, shuningdek tizimni foydalanishga qabul qilish jarayonida buyurtmachi
+tomonidan belgilanadigan qo‘shimcha mezonlar asosida baholanadi.
+3. Axborotlashtirish obyektining xarakteristikasi
+Nizolarni muqobil hal etish (“Alternative Dispute Resolution”, ADR) — nizolarni
+davlat sudi tizimidan tashqarida, xususan mediatsiya, hakamlik sudi va xalqaro tijorat
+arbitraji orqali hal etish institutlari majmuidir. O‘zbekiston Respublikasida
+“Mediatsiya to‘g‘risida”gi Qonun 2018-yilda qabul qilingan bo‘lib, uning qabul
+qilinganiga yetti yildan ortiq vaqt o‘tgan.
+Hozirgi kunga qadar professional mediatorlar reestriga 2200 nafardan ortiq
+mediator kiritilgan. 2025-yilda sudlarda 7500 dan ortiq fuqarolik va iqtisodiy ishlar
+mediatorlar ko‘magida mediativ kelishuv tuzish yo‘li bilan yakunlangan. Shu bilan
+birga, ushbu ko‘rsatkich sudda ko‘rilayotgan umumiy ishlar soniga nisbatan atigi 0,6
+foizni tashkil etadi. Xususan, 2025-yilda fuqarolik va iqtisodiy sudlari tomonidan jami
+1 320 029 ta ish ko‘rib chiqilgan bo‘lib, shundan 524 220 tasi (40 foizi) mediativ
+kelishuv tuzish mumkin bo‘lgan toifadagi ishlar hisoblanadi.\n=== BET 11 ===\nQiyoslash uchun, rivojlangan xorijiy davlatlarda, xususan AQSH, Buyuk
+Britaniya, Singapur, Xitoy va Yaponiyada 40 foizdan 80 foizgacha bo‘lgan ishlar
+nizolarni muqobil hal etish institutlari yordamida hal etiladi. Bundan tashqari, Yevropa
+Ittifoqida onlayn nizolarni hal qilish platformasi (ODR Platform), Buyuk Britaniyada
+sudlar bilan integratsiyalashgan Online Civil Resolution tizimi, Singapurda esa xalqaro
+onlayn mediatsiya va raqamli arbitraj xizmatlarini qamrab oluvchi ADR tizimlari
+faoliyat yuritmoqda.
+3.1. Axborotlashtirish obyekti to‘g‘risida qisqa ma'lumotlar
+Hozirgi kunda nizolarni muqobil hal etish sohasida yagona axborot tizimi va
+ma'lumotlar bazasi mavjud emas. Mediatorlar reestri yuritish, nizo bo‘yicha
+murojaatlarni qayd etish, mediativ kelishuvlarni rasmiylashtirish kabi jarayonlar
+asosan qog‘oz shaklida yoki turli idoralarda alohida-alohida yuritiladi. Buning
+oqibatida, sudlar, mediatorlar, hakamlik sudyalari, arbitrlar va taraflar o‘rtasida
+elektron hamkorlik yo‘lga qo‘yilmagan, statistik ma'lumotlar yig‘ish va tahlil qilish
+imkoniyati cheklangan, aholining ADR institutlariga murojaat qilish darajasi past.
+Tizimning yaratilishi mazkur muammolarni bartaraf etish, sohada zamonaviy axborot-
+kommunikatsiya texnologiyalari yutuqlaridan foydalanish va jarayonlarning
+shaffofligini ta’minlashga xizmat qiladi.
+3.2. Sohaning joriy holatini tavsiflovchi asosiy ko‘rsatkichlar (2025-yil yakuni
+bo‘yicha)
+№ Ko‘rsatkich Qiymati
+Professional mediatorlar reestriga kiritilgan
+1 2 200 dan ortiq
+mediatorlar soni
+2025-yilda mediativ kelishuv tuzish yo‘li bilan
+2 7 500 dan ortiq
+yakunlangan ishlar soni
+Mediatsiya orqali hal etilgan ishlarning sudda
+3 ≈ 0,6 foiz
+ko‘rilgan umumiy ishlarga nisbati
+2025-yilda fuqarolik va iqtisodiy sudlarda ko‘rib
+4 1 320 029 ta
+chiqilgan umumiy ishlar soni
+Shundan mediativ kelishuv tuzish mumkin bo‘lgan 524 220 ta (≈ 40
+5
+(potensial) ishlar soni va ulushi foiz)
+Rivojlangan davlatlarda ADR orqali hal etiladigan
+6 40–80 foiz
+ishlar ulushi\n=== BET 12 ===\nYuqoridagi ko‘rsatkichlar nizolarni muqobil hal etish salohiyatidan to‘liq
+foydalanilmayotganini va sohani raqamlashtirish hamda tashkiliy takomillashtirish
+zaruratini ko‘rsatadi.
+4. Tizimga qo‘yiladigan talablar
+4.1. Umuman tizimga qo‘yiladigan talablar
+4.1.1. Tizimning strukturasi va ishlashiga qo‘yiladigan talablar
+Tizim internetda uchinchi darajadagi domen manzilida (masalan, adr.adliya.uz)
+joylashtirilishi va Tizimda mavjud barcha funksiyalarni bajara oladigan maxsus mobil
+ilova ishlab chiqilib, iOS hamda Android operatsion tizimida ishlovchi mobil
+qurilmalar uchun yuklab olish imkoniyati yaratilishi lozim. Tizimdagi barcha
+funksiyalar mobil ilovada ham to‘laqonli aks ettirilishi va ishlashi lozim.
+Ishlab chiqiladigan axborot tizimi quyidagi umumiy xususiyatlarga ega bo‘lishi lozim:
+ texnik topshiriqda ko‘zda tutilgan barcha vazifalarni bajarishi;
+ mijoz-server texnologiyasida, uch bosqichli (veb-interfeys — ilovalar serveri —
+ma'lumotlar bazasi serveri) markazlashgan arxitekturada ishlashi;
+ umumiy ma'lumotlar bazasi bilan ishlaydigan, bir-biridan mustaqil
+takomillashtirilishi mumkin bo‘lgan alohida modullar shaklida yaratilishi;
+ buyurtmachining ehtiyojlariga ko‘ra kiritiladigan o‘zgarishlarga tez va oson
+moslashuvchan bo‘lishi;
+ kelajakda funksional imkoniyatlari kengaytirilib borilishi va boshqa axborot
+tizimlari (jumladan kelgusida joriy etilishi mumkin bo‘lgan adyudikatsiya kabi
+yangi ADR mexanizmlari uchun) bilan integratsiya qilinishi mumkinligini
+ko‘zda tutishi;
+ foydalanuvchilar uchun qulay, zamonaviy va ommabop dasturiy vositalar
+interfeyslariga o‘xshash interfeysga ega bo‘lishi;
+ ma'lumotlarning ishonchli saqlanishi va ulardan foydalanuvchilar uchun
+tushunarli shaklda taqdim etilishini ta’minlashi.
+Tizim uch bosqichli markazlashgan tuzilmaga ega bo‘lib, respublika bo‘yicha yagona
+markaziy ma'lumotlar bazasi serveri, barcha hisob-kitoblar amalga oshiriladigan server
+dasturi va veb-brauzer orqali kiriladigan dasturiy interfeysdan tashkil topishi lozim.
+Veb-brauzer orqali kiriladigan tizim ochiq va yopiq qismlardan iborat bo‘lib, undan
+statsionar kompyuterlar bilan bir qatorda, mobil qurilmalar orqali ham foydalanish
+imkoniyati yaratilishi lozim.\n=== BET 13 ===\nTizimning ochiq qismida axborot tizimiga daxldor bo‘lgan umumfoydalaniladigan
+ma'lumotlar joylashtirilishi lozim.
+Tizimning yopiq qismi turli darajadagi huquqlarga ega bo‘lgan foydalanuvchilarning
+"shaxsiy kabinet"laridan iborat bo‘lib, ular tomonidan tizimning imkoniyatlaridan
+to‘laqonli foydalanish uchun yagona kirish joyiga ega bo‘lishi lozim.
+Tizimning yopiq qismi axborot tizimi doirasida foydalaniladigan axborotlarning
+tartibli saqlanishi, avtomatik tarzda qayta ishlanishi va qulay interaktiv tahliliy
+shakllarda aks ettirilishini ta’minlashi hamda foydalanuvchilarning axborot bilan
+ta’minlanganlik darajasini yaxshilashga xizmat qilishi lozim.
+Axborot tizim quyidagilardan iborat:
+ ma’lumotnomalar va klasifikatorlar moduli;
+ foydalanuvchilarni boshqarish moduli;
+ mediator, hakamlik sudlari va arbitrlar reestri;
+ tashqi integratsiya moduli;
+ mediator, hakamlik sudlari va arbitrlarni avtomat tanlash moduli;
+ hisobotlar moduli;
+ tashqi ma’lumotlar portali.
+Ma'lumotnomalar va klassifikatorlar moduli - barcha turdagi ma'lumotnomalar
+(spravochniklar) va klassifikatorlarni yuritish, bunda yangi qiymatlarni kiritish,
+o‘zgartirish, vaqtincha deaktivatsiya qilish, o‘chirish kabi imkoniyatlarga ega bo‘lishi
+lozim.
+Foydalanuvchilarni boshqarish moduli - yangi foydalanuvchilarni kiritish, ularga
+rollar belgilash, ular to‘g‘risidagi ma'lumotlarni tahrirlash, vaqtincha to‘xtatish va
+o‘chirish kabi amallar bajarilishi lozim.
+Mediator, hakamlik sudlari va arbitrlar reestri – Tizimga kiritilgan advokatlarni
+izlash, ular bo‘yicha ma'lumotlarni ko‘rish, chop qilish funksiyalariga ega bo‘lishi
+lozim.
+Tashqi integratsiya moduli – universal API (veb-servis) ko‘rinishida ishlab chiqilishi
+lozim.
+Mediator, hakamlik sudlari va arbitrlarni avtomat tanlash moduli – Boshqa
+tashkilotlardan kelib tushgan so‘rovni hamda tizim yurituvchisi tomonidan kiritilgan
+so‘rovni qayta ishlashi, avtomat tarzda tanlashi (randomayzer), mediator, hakamlik
+sudlari va arbitrlarga xabar berishi lozim.\n=== BET 14 ===\nHisobotlar moduli – Tizimdagi ma'lumotlar asosida, barcha turdagi hisobotlarni
+tayyorlash, chop qilish, eksport qilish (.xsl, .pdf, .doc) funksiyalariga ega bo‘lishi
+hamda hisobotlarni avtomatik umumlashtirish imkoniyati bo‘lishi lozim.
+Tashqi ma'lumotlar portali – tashqi veb-sayt sifatida foydalanuvchilarni kirishi,
+tegishli ma'lumotlarni olishi, nizolar bo‘yicha murojaat yuborish, sudlar tomonidan
+nizoni mediatsiya orqali hal qilishni bo‘yicha takliflarni qabul qilish yoki rad etish
+hamda video a’loqa orali kelishuvlarda ishtirok etish lozim.
+Tizimning modullari hamda ularning vazifalari mazkur texnik topshiriqning
+3-bo‘limida keltirilgan.
+Modullar ishlashi bo‘yicha ssenariylar texnik topshiriqning 1-ilovasida keltirilgan.
+Tizimning to‘laqonli va optimal ishlashini ta’minlash uchun, uning modullari yagona
+majmua sifatida ishlashi lozim. Asosiy aloqa vositasi sifatida TCP/IP protokoli
+asosidagi himoyalangan VPN yoki korporativ kompyuter tarmog‘idan foydalaniladi.
+Buyurtmachining xohishiga ko‘ra, tizimdan TAS-IX tarmog‘i orqali foydalanilishi
+ham mumkin.
+Tizimning barcha foydalanuvchilari uchun, ularning hududiy va funksional
+farqlanishlaridan qatʻiy nazar dasturiy ta'minot yagona nusxada bo‘lishi lozim.
+Buning uchun dasturiy ta'minotda foydalanuvchilarning guruhlar va rollar bo‘yicha,
+shuningdek hududlari, darajalari va boshqa belgilari bo‘yicha turlarga ajratilgan
+bo‘lishi hamda ularning barchasi yagona tizim doirasida o‘zaro uyg‘unlikda, bir-biriga
+zararli ta'sir ko‘rsatmagan holda, mustaqil ishlash imkoniyatiga ega bo‘lishi lozim.
+Tizim foydalanuvchilari asosan uchta guruhga ajratiladi:
+ 1-guruh — tizimning faol foydalanuvchilari (mediatorlar, hakamlik sudyalari,
+arbitrlar, vazirlik xodimlari, jismoniy va yuridik shaxslar — nizo taraflari);
+ 2-guruh — tizimdagi ochiq ma'lumotlarni faqat ko‘ruvchi foydalanuvchilar
+(jamoatchilik, ommaviy axborot vositalari, tadqiqotchilar, jismoniy va yuridik
+shaxslar);
+ 3-guruh — tizim administratorlari va texnik xizmat ko‘rsatuvchi xodimlar.
+Tizimning barqaror ishlashi uchun talab etilgan barcha shart-sharoitlar yaratib berilgan
+holatda, tizim administratorlar aralashuvisiz 24/7 rejimida doimiy va to‘xtovsiz
+ishlashga mo‘ljallangan bo‘lishi lozim.
+Tizimda dasturiy ta'minotga qo‘shimcha funksional imkoniyatlarning qo‘shilib borishi
+hamda texnik vositalarning kuchaytirib borilishi mumkinligi ko‘zda tutilgan bo‘lishi
+lozim.\n=== BET 15 ===\nTizim foydalanuvchilarining soni yoki foydalanish ko‘lami kengaygan hollarda,
+dasturiy va texnik ta'minotning ishlash tezligini oshirish talab etilishi mumkinligi ham
+ko‘zda tutilgan bo‘lishi lozim.
+Tizimning ishlash rejimlariga qo‘yiladigan talablar:
+Tizim uchun quyidagi ish rejimlari belgilangan:
+- normal ishlash tartibi;
+- xizmat ko‘rsatish tartibi.
+Shtat rejimi – tizim dasturiy ta'minot modullari barcha eʻlon qilingan funksiyalarni
+bajaradigan ish tartibi.
+Xizmat ko‘rsatish (Rejim obslujivaniya). Ushbu rejim modullarning qisman ishlashini
+ta’minlab, tizimga texnik xizmat ko‘rsatish, jihozlarni modernizatsiya qilish va
+favqulodda vaziyatlarni bartaraf etish bilan bog‘liqlik holatlarida ishlashini
+ta’minlaydi.
+Tizimning asosiy ish rejimi bu - shtat rejimidir.
+Tizim shtat rejimida ishlashi:
+ tizim kecha-kunduz 7/24 rejimida ishlashi kerak;
+ server dasturiy ta'minoti va serverlarning texnik vositalari xizmatni to‘xtatishini
+inobatga olgan holda tunu-kun ishlash imkoniyatini ta’minlashi kerak.
+Tizimning normal ishlashini ta’minlash uchun tegishli texnik hujjatlarda (texnik
+hujjatlar, foydalanish bo‘yicha ko‘rsatmalar va boshqalar) ko‘rsatilgan dasturiy
+ta'minot va tizimning texnik vositalarining to‘plamiga qo‘yiladigan talablarga rioya
+qilish va ish sharoitlarini ta’minlash talab etiladi.
+Tizimning favqulodda ishlash tartibi bir yoki bir nechta dasturiy ta'minot va/yoki
+apparat qismlarining ishdan chiqishi bilan tavsiflanadi.
+Tizim favqulodda vaziyatdan oldingi holatiga o‘tganda, ma'lumotlar bazasining zaxira
+nusxasi yaratish zarur. Shundan so‘ng, tizimning favqulodda holatga o‘tish sabablarini
+bartaraf etish uchun bir qator chora-tadbirlarni amalga oshirish kerak.
+Xizmat ko‘rsatish rejimiga o‘tishda, tizimi ma'lumotlarni saqlash vaqtida
+foydalanuvchi seanslari ishini to‘xtatish qobiliyatini ta’minlashi kerak.
+Tizimni rivojlantirish, modernizatsiyalash istiqbollari.\n=== BET 16 ===\nTizimini ishlab chiqishda asosiy prinsip - bu dasturiy ta'minot qismining
+kengaytirilganligi prinsipi, shuning uchun axborot tizimi qo‘shimcha integratsiya
+vositalari va ilovalar yordamida, mijozning talablariga binoan va talablarga muvofiq
+monitoring va hisobotlarni ishlab chiqishi va rivojlantirilishi mumkin.
+Dasturiy ta'minotni yangilash imkoniyati tarkib va miqdorni o‘zgartirishdan (o‘sish
+yoki kamayish) iborat bo‘lishi kerak:
+1) kirish va chiqish shakllari;
+2) hisobot shakllari;
+3) uchinchi tomon axborot tizimlari bilan o‘zaro aloqalar bo‘yicha xizmatlar;
+4) tizimning funksional qismi.
+Uskuna yangilanishi, shuningdek, ishlashni kengaytirish qobiliyatini ham o‘z ichiga
+olishi kerak.
+Tizim va ilovalarning barcha o‘zgarishlari va modernizatsiyalashlar ishlatilgan texnik
+vositalar to‘plamini yangilash orqali uning dasturiy ta'minotini o‘zgartirmasdan
+amalga oshirilishi kerak.
+4.1.2. Mobil ilovaga qo‘yiladigan maxsus talablar
+“Adliya plus” mobil ilovasida Tizimning barcha asosiy funksiyalarini, jumladan nizo
+bo‘yicha ariza berish, mediator/hakam/arbitrlarni random tanlash, ularni reestrini
+ko‘rish, shaxsiy kabinetga kirish, onlayn muzokara sessiyalarida ishtirok etish (video-
+aloqa orqali), elektron hujjatlarni ko‘rish va elektron raqamli imzo hamda Face-Id
+orqali imzolash, bildirishnomalarni (push-xabarnoma) olish imkoniyatlarini to‘liq
+ta’minlashi lozim.
+Mobil ilova offlayn rejimda kiritilgan ma'lumotlarni vaqtincha saqlab, internet aloqasi
+tiklanganda ularni avtomatik tarzda serverga uzatish imkoniyatiga ega bo‘lishi,
+shuningdek biometrik identifikatsiya (barmoq izi, yuz orqali tanilash) vositasida kirish
+imkoniyatini qo‘llab-quvvatlashi tavsiya etiladi.
+4.1.3. Chet axborot tizimlari bilan o‘zaro ishlashga qo‘yiladigan talablar
+Tizimni uchinchi tomon axborot tizimlari bilan birlashtirish uchun interfeyslar (API)
+o‘zDSt 2590:2012 “Axborot texnologiyasi. Milliy axborot tizimini shakllantirish
+doirasida davlat organlari tomonidan foydalaniladigan axborot tizimlari
+integratsiyasiga va o‘zaro faoliyatiga qo‘yiladigan talablar” hamda o‘zDSt 1135:2007
+davlat standartlari talablariga muvofiq ishlab chiqilishi kerak. API bilan ishlash\n=== BET 17 ===\njarayoni avtomatlashtirilgan, barcha funksional usullar avtorizatsiyadan keyin amalga
+oshiriladigan va barcha murojaatlar ro‘yxatga olinadigan bo‘lishi lozim.
+Tizimning ishlashi uchun quyidagi tashqi axborot tizimlari bilan o‘zaro aloqa tashkil
+etilishi lozim:
+ Yagona identifikatsiya tizimi (id.gov.uz) — foydalanuvchilarni avtorizatsiyadan
+o‘tkazish uchun;
+ Oliy sud va tegishli sud tizimlarining elektron sud axborot tizimlari — sudgacha
+majburiy mediatsiya, sud tomonidan mediatsiyaga yo‘naltirish va mediativ
+kelishuvlarni sudga elektron taqdim etish uchun;
+ Bosh prokuratura, Ichki ishlar vazirligi va boshqa huquqni muhofaza qiluvchi
+organlarning tegishli axborot tizimlari;
+ Yagona interaktiv davlat xizmatlari portali (my.gov.uz) va Davlat xizmatlari
+markazlari axborot tizimlari;
+ elektron raqamli imzoni tasdiqlash (E-IMZO) tizimlari;
+ davlat boji va to‘lovlarni amalga oshirish uchun Davlat xazinachiligi hamda
+to‘lov tizimlari (jumladan milliy to‘lov tizimlari);
+ Elektron litsenziyalash va akkreditatsiya tizimlari (masalan license.gov.uz —
+zarurat tug‘ilganda);
+ Adliya vazirligining boshqa axborot tizimlari.
+Axborot tizimida O‘zbekiston Respublikasida qabul qilingan yagona ma'lumotnomalar
+va klassifikatorlardan foydalanish kerak.
+Uchinchi tomon axborot tizimlari bilan integratsiyalashuv jarayonida normativ
+xujjatlar uchun texnologik ko‘rsatmalar ishlab chiqiladi, bunda butun integratsiya
+jarayonini batafsil tavsiflanadi, unda ma'lumotlar almashinuvi formatlari, ro‘yxati va
+protokollari va boshqa kerakli ma'lumotlar ko‘rsatilib o‘tiladi.
+Ishlab chiqiqlgan texnologik ko‘rsatma tomonlar o‘rtasida integratsiya mexanizmlarini
+ishlab chiqish jarayonidan oldindan kelishilgan bo‘lishi kerak.
+4.1.4. Foydalanuvchilarning soni va malakasiga qo‘yiladigan talablar
+Tizimdan foydalanuvchilarning taxminiy soni quyidagicha prognoz qilinadi:
+ mediatorlar, hakamlik sudyalari va arbitrlar — 5 000 tagacha;
+ Adliya vazirligi xodimlari (hududiy tuzilmalar bilan birga) — 500 tagacha;
+ jismoniy va yuridik shaxslar (nizo taraflari, ariza beruvchilar) — cheklanmagan,
+yillik murojaatlar hajmi yuz minglab tartibida;\n=== BET 18 ===\n tizim administratorlari — 20 tagacha.
+Tizmining barkaror ishlashi uchun quyidagilar talab etiladi:
+- serverlar, server dasturiy ta'minotlari va axborot uzatish tarmoqlarining benuqson
+hamda uzluksiz ishlashi ta’minlanishi;
+- administratorlar tomonidan tizimga boshlang‘ich ma'lumotlarning to‘g‘ri kiritilishi
+va maxsus administratorlik dasturi yordamida tizim to‘g‘ri boshqarib borilishi;
+- operatorlarga texnik ko‘mak beruvchi doimiy qo‘llab-quvvatlash xizmatining
+to‘laqonli faoliyat ko‘rsatishi.
+Xodimlarning lozim darajadagi bilim va malakaga ega bo‘lishiga erishish maqsadida,
+tizim operatorlari, administratorlari hamda qo‘llab-quvvatlash xizmati xodimlari
+uchun buyurtmachining mutaxassislari tomonidan tizimdan foydalanish qoidalari
+bo‘yicha oldindan o‘quvlar tashkil etilishi va yuqori saviyada o‘tkazilishi lozim.
+o‘quvlar buyurtmachi tomonidan, tizimni ishlab chiqaruvchi korxona bilan kelishilgan
+holda tashkil etilishi va o‘quvni yuqori saviyada o‘tkazish uchun barcha shart-
+sharoitlar yaratilishi lozim.
+Kadrlarning kasbiy ma'lumotlari, malakalari va malakalariga qo‘yiladigan talablar ish
+tavsiflari va ishlab chiquvchining takliflarini hisobga olgan holda belgilanadi.
+4.1.5. Vazifasi ko‘rsatkichlari
+Tizimga 10 000 tagacha foydalanuvchi bir vaqtning o‘zida ulangan paytda ham,
+tizimning ishlash tezligi quyidagi ko‘rsatkichlardan kamayib ketmasligi lozim:
+ veb-interfeys orqali ma'lumotni saqlash va aks ettirish — ko‘pi bilan 3 soniya;
+ nizo bo‘yicha ariza berishni ro‘yxatga olish va mediator/hakam/arbitrni avtomat
+tarzda tanlash — ko‘pi bilan 10 soniya;
+ batafsil ma'lumotlar (reestr, hisobot)ni shakllantirish — ko‘pi bilan 15 soniya;
+ yirik statistik hisobotlarni shakllantirish — 20 daqiqadan ortmasligi.
+ma'lumotlarning hajmi ko‘payishi bilan bog‘liq bo‘lgan sekinlashishni bartaraf etish
+uchun, server qurilmalari va aloqa tarmoqlarining tezliklarini ortirish yetarli bo‘lishi
+va bunda dasturiy ta'minotga o‘zgarishlar kiritish talab etilmasligi lozim.
+Tizimning tashqi ko‘rinishi va hisobot shakllariga kiritiladigan kichik o‘zgarishlar
+tizimning ishi vaqtincha to‘xtatib qo‘yilishini talab etmasligi, dasturiy taminot ishlab
+turgan vaqtning o‘zida takomillashtirish va ehtiyojlarga moslashtirish imkoniyatlariga
+ega bo‘lishi lozim.\n=== BET 19 ===\nTizim har soatda kamida 20 000 ta murojaatni yuqorida ko‘rsatilgan tezlikda qayta
+ishlay olishi va profilaktik ishlar uchun tizimni to‘xtatib turishlar davomiyligi har oyda
+4 soatdan ortib ketmasligi lozim.
+4.1.6. Ishonchliligiga qo‘yiladigan talablar
+Ishlab chikiladigan axborot tizimi:
+- buyurtmachiga kamida 5 yil davomida xizmat qilish imkoniyatiga ega bo‘lishi hamda
+xizmat qilish muddati davomida o‘zining tezlik va barqarorlik ko‘rsatkichlarini
+yo‘qotmasligi;
+- dasturiy ta'minotning noto‘g‘ri ishlashi bilan bog‘liq holatlarda ma'lumotlarning
+yo‘qolib ketishiga yo‘l qo‘ymasligi;
+- tizimdan foydalanish qoidalariga to‘liq rioya qilingan hollarda, to‘xtovsiz va barqaror
+ishlashi;
+- dasturiy ta'minotdagi xatolik sababli tizimning ishi to‘xtab qolgan holatlarda, mazkur
+texnik topshiriqda belgilangan yoki buyurtmachi va ishlab chiqaruvchi o‘rtasida
+kelishilgan muddatlarda tizimning ishini to‘liq qayta tiklash imkoniyatlari mavjud
+bo‘lishi lozim.
+Tizimning ishonchli va uzluksiz ishlashiga quyidagi tashkiliy va texnik amallar
+kompleksi yordamida erishiladi:
+- dasturiy ta'minotdagi buzilishlar. Dasturiy ta'minot ishdan chiqqan holatda,
+ma'lumotlar banki va dasturiy ta'minotning eng oxirgi olingan rezerv nusxasi serverda
+qayta tiklanadi. Bunday holatda dasturiy ta'minot faoliyatini qayta tiklash ishlari uch
+soatdan ortmasligi lozim (texnik vositalar, operatsion tizim va boshqa yordamchi
+dasturlarning ishi qayta tiklanishi uchun sarflanadigan vaqt bunga qo‘shilmaydi);
+- texnik vositalarning ishdan chiqishi. Texnik vositalar va aloqa kanallarining barqaror
+ishlashi, zarur hollarda zudlik bilan ta'mirlanishi, rezerv aloqa kanallarini tashkil qilish
+va ma'lumotlardan rezerv nusxa olib turish buyurtmachining mutaxassislari tomonidan
+ta’minlanadi. Texnik vositalar yoki aloqa kanallarida nosozlik yuzaga kelganida,
+dasturiy mahsulot o‘zini va o‘z ma'lumotlar bankini ishlashdan chiqib qolishiga o‘zi
+sababchi bo‘lmasligi lozim;
+- elektr energiyasi ta'minotidagi uzilish yoki impulsli nosozliklarda ham dasturiy
+mahsulot o‘zini va o‘z ma'lumotlar bankini ishlashdan chiqib qolishiga o‘zi sababchi
+bo‘lmasligi lozim. Elektr energiyasi ta'minotida 15 daqiqagacha bo‘ladigan uzilishlar
+kompyuterlar va serverlarning o‘chishiga hamda tizimning to‘xtab qolishiga olib
+kelmasligi choralari buyurtmachi tomonidan ko‘rilgan bo‘lishi lozim.\n=== BET 20 ===\nTizimning barqaror ishlashiga erishishi maqsadida buyurtmachi tomonidan
+qo‘shimcha serverlar va qo‘shimcha aloqa kanallari tashkil etilib, dasturiy mahsulot va
+ma'lumotlar banklarining rezerv nusxalari ushbu serverlarga avtomatik tarzda
+ko‘chirib borilishi yo‘lga qo‘yilishi lozim.
+ma'lumotlar banki va dasturiy mahsulotdan rezerv nusxa olish va zarur hollarda rezerv
+nusxadan ularni qayta tiklash tartib-qoidalari ishlab chiqaruvchi tomonidan, tizimni
+foydalanishga topshirish jarayonida, buyurtmachining administratorlariga o‘rgatilishi
+va keyinchalik bu amallar buyurtmachining administratorlari tomonidan mustaqil
+ravishda bajarilishi lozim.
+Tizmining ishlashi uchun foydalaniladigan texnik va dasturiy vositalar, tizimning eng
+yuqori yuklama bilan ishlash holatlari uchun ham yetarli bo‘lishi bilan bir qatorda,
+tizim foydalanuvchilari hamda bajaradigan vazifalarining ortishi mumkinligini
+inobatga olgan holda kamida 20 foizlik foydalanilmagan rezervlarga ham ega bo‘lishi
+lozim.
+Serverlarda foydalaniladigan operatsion tizim, ma'lumotlar bankini boshqarish tizimi
+va boshqa yordamchi dasturiy vositalar turli nosozliklarga bardoshli va avariya
+holatlarida tez qayta tiklash imkoniyatlariga ega bo‘lishi lozim.
+Texnik vositalar barqaror elektr toki bilan ta’minlovchi qurilma (UPS), qo‘shimcha
+ta'minot bloki (dubliruyuщiy blok pitaniya), yuqori malakali texnik, qo‘llab-
+quvvatlash xizmati va zarur butlovchi qismlar zaxirasiga ega bo‘lishi lozim.
+Texnik va dasturiy vositalarda yuzaga kelgan nosozliklar hamda ularni bartaraf etish
+uchun ko‘rilgan choralar buyurtmachining administratorlari tomonidan batafsil qayd
+etib borilishi va bunday nosozliklarni kamaytirish choralari o‘z vaqtida ko‘rilishi
+lozim.
+Mediatsiya, hakamlik sudi va arbitraj jarayonlarining maxfiylik talabiga ko‘ra, tizimda
+saqlanadigan va uzatiladigan axborotning yaxlitligi va yo‘qolmasligi alohida ustuvor
+ahamiyatga ega bo‘lib, bunday axborotning yo‘qolishi yoki buzilishi tizimning
+ishonchliligini baholashda eng og‘ir avariyaviy holat sifatida qaraladi.
+4.1.7. Xavfsizligiga qo‘yiladigan talablar
+Elektr tarmog‘iga ulangan barcha texnik vositalar tasodifiy tashqi ta’sirlardan lozim
+darajada himoyalangan bo‘lishi hamda GOST 12.1.030-81 standarti talablariga asosan
+elektr nosozliklaridan himoyalangan bo‘lishi lozim.\n=== BET 21 ===\nElektr ta’minoti tizimi yuklamaning me’yoridan ortib ketish yoki qisqa tutashuv
+holatlarida avtomatik o‘chish, shuningdek avariya holatlarida qo‘lda o‘chirish
+imkoniyatlariga ega bo‘lishi lozim.
+Tizimning texnik vositalaridan foydalanishda mehnat xavfsizligi va muhofazasining
+amaldagi qoidalariga amal qilinishi lozim.
+Tizimning ishlashi uchun foydalaniladigan barcha texnik vositalar seriyali ishlab
+chiqarilgan bo‘lishi hamda muvofiqlik sertifikatiga ega bo‘lishi lozim.
+Texnik vositalar joylashtiriladigan binolar, ularni saqlash, xizmat ko‘rsatish va
+xavfsizligini ta’minlash sharoitlari O‘zbekiston Respublikasining amaldagi davlat
+standartlari, shuningdek qonun va qonunosti hujjatlari talablariga javob berishi
+buyurtmachi tomonidan ta’minlanishi lozim.
+Ma’lumotlarni faqat ko‘rish huquqiga ega bo‘lgan oddiy foydalanuvchilar uchun
+texnika xavfsizligi bo‘yicha qo‘shimcha o‘quvlar o‘tkazish yoki maxsus
+tayyorgarlikka ega bo‘lish talab etmasligi va ular tomonidan tizimdan foydalanishda
+yo‘lga qo‘yilishi mumkin bo‘lgan xatoliklar tizim ishining to‘xtab qolishi,
+ma’lumotlarning yo‘qolishi yoki o‘zgarib ketishiga sabab bo‘lmasligi lozim.
+Axborotlar xavfsizligini ta’minlash uchun:
+- foydalanuvchilarning tizim ma’lumotlari va funksional imkoniyatlariga bo‘lgan
+huquqlari rol asosida (rolli model) turli darajada chegaralangan bo‘lishi;
+- axborotlarning butunligi va to‘liqligi ta’minlanishi;
+- tizim ruxsatsiz kirish harakatlaridan himoyalangan bo‘lishi;
+- tizim foydalanuvchilarining aniq identifikatsiyalanishi;
+- nizo taraflari, mediator, hakamlik sudyasi yoki arbitr tomonidan taqdim etilgan
+hujjatlar va ma'lumotlar, shuningdek mediatsiya jarayonida bildirilgan fikr-
+mulohazalar va takliflarning maxfiyligi kriptografik himoya vositalari yordamida
+ta’minlanishi va ularga faqat jarayon taraflari hamda vakolatli shaxslarning kirish
+huquqi bo‘lishi;
+- mediatsiya jarayonida taraflar tomonidan taqdim etilgan hujjatlar va ma'lumotlarning
+sud, tergov hamda boshqa ish yuritish jarayonlarida dalil sifatida foydalanilishiga yo‘l
+qo‘ymaydigan texnik cheklovlarning mavjud bo‘lishi (qonunchilikdagi mazkur talabni
+texnik jihatdan ta’minlash);\n=== BET 22 ===\n- tizimda ro‘y berayotgan barcha o‘zgarishlar va voqealar avtomatik tarzda audit
+jurnallarida qayd etilishi, audit jurnali yozuvlarini hech bir xodim (shu jumladan
+administrator) o‘chira yoki o‘zgartira olmasligi;
+- tizimga ruxsatsiz kirishning oldini olish maqsadida ikki bosqichli autentifikatsiya
+(masalan, SMS yoki push-kod orqali tasdiqlash) imkoniyati joriy etilishi;
+- ma'lumotlar uzatilishi TLS/SSL shifrlash protokollari orqali amalga oshirilishi;
+- jismoniy shaxslarning shaxsiy ma'lumotlari “Shaxsga doir ma'lumotlar to‘g‘risida”gi
+qonun hujjatlari talablariga muvofiq qayta ishlanishi va saqlanishi.
+Axborotni ruxsatsiz foydalanishdan muhofaza qilishga qo‘yiladigan talablar bo‘yicha:
+Axborotlar xavfsizligini ta’minlash maqsadida tizimning barcha tarkibiy qismlari va
+ishlash bosqichlarida zaruriy himoya choralari ko‘rilishi lozim.
+Tizimni ishlab chiqish va joriy etishda axborotlar xavfsizligini ta’minlashning quyidagi
+ustuvor jihatlari hisobga olinishi lozim:
+- tizimdan legal ravishda foydalanuvchilar uchun real vaqt rejimida kerakli
+axborotlarni olish imkoniyatining mavjud bo‘lishi;
+- axborotlarning yaxlitligi, ishonchliligi, aktualligi, zararli tashqi ta’sirlardan
+himoyalanganligi va noqonuniy yo‘l bilan kirib, o‘zgartirib qo‘yishdan
+himoyalanganligi;
+- axborotlarning noqonuniy yo‘l bilan kirib, ko‘chirib oluvchilar ta’siridan
+himoyalanganligi.
+Tizimga kirish id.gov.uz tizimi zarur hollarda elektron kalit yoki elektron raqamli imzo
+bilan himoyalanib, buyurtmachining administratori tizimga ulanuvchi har bir
+foydalanuvchiga berilgan huquqlarni istalgan vaqtda o‘zgartirish imkoniyatiga ega
+bo‘lishi lozim.
+Axborot tizimiga davlat organlarining maxfiy axborotlari kiritilmaydi va ularni
+kriptografik himoya vositalari yordamida shifrlab saqlash talab etilmaydi.
+Tizim serverlari va tarmoq qurilmalari joylashtirilgan binoning noqonuniy tashqi
+ta’sirlardan himoyalanishi, tizimda axborot xavfsizligini ta’minlashning muhim
+shartlaridan biri hisoblanadi va buyurtmachi tomonidan amalga oshiriladi.
+Audit jurnalida yoziladigan har bir hodisa albatta foydalanuvchi nomiga aniq
+bog‘langan holda vaqti va sanasi bilan qayd etiladi. Audit jurnali ma’lumotlariga tizim
+administratori uchungina kirish imkoniyati ko‘zda tutilishi kerak. Audit jurnalidagi
+yozuvlarni har qanday xodim (hatto administrator) tomonidan o‘chirish yoki
+o‘zgartirish qat’iyan man etilishi va bunga tizim texnik jihatidan yo‘l ko‘ymasligi shart.
+Avariyalarda axborotning saqlanganligi bo‘yicha talablar bo‘yicha:\n=== BET 23 ===\nTizimning ma’lumotlar banki va dasturiy ta’minotini avtomatik tarzda yoki qo‘lda
+rezerv nusxalab turish imkoniyatlari mavjud bo‘lishi va bu amallarni bajarish tartibi
+tizimni foydalanishga topshirish jarayonida buyurtmachining administratorlariga
+o‘rgatilgan bo‘lishi lozim.
+Tizim ishlashida avariya holatlari yuzaga kelganida, rezerv nusxalarda saqlangan
+ma’lumotlar buyurtmachining administratorlari tomonidan mustaqil ravishda qayta
+tiklanishi yoki bu masalada tizimning ishlab chiqaruvchisi yordamidan foydalanilishi
+mumkin.
+Axborot tizimi o‘rnatilgan serverlar elektr tarmog‘idagi nosozliklardan to‘liq
+himoyalovchi va elektr ta’minotidagi uzilishlardan kamida 15 daqiqa davomida
+muqobil elektr ta’minoti yordamida saqlab turuvchi qurilmalar bilan ta’minlangan
+bo‘lishi lozim.
+Quyidagi holatlar uchun axborotlarning saqlanganligi muhim ahamiyatga ega:
+- elektr ta’minotidagi nosozliklar, uzilishlar yoki boshqa tashqi ta’sir natijasida
+operatsion tizim yoki dasturiy ta’minotning ishdan chiqish holatlarida;
+- texnik vositalarda nosozlik yoki ishdan chiqish holatlari yuzaga kelishi natijasida
+operatsion tizim yoki dasturiy ta’minotning ishdan chiqish holatlarida;
+- administratorning noto‘g‘ri xatti-harakatlari natijasida tizimning ishdan chiqishi,
+dasturiy ta’minot yoki ma’lumotlarning yo‘qotib yuborilishi holatlarida.
+Tizimning oddiy foydalanuvchilari tomonidan amalga oshiriladigan har qanday
+harakatlar, tizimning ishdan chiqishiga yoki ma’lumotlarning yo‘qotib yuborilishi
+sababchi bo‘lishi mumkin emas.
+Tashqi ta’sirdan muhofaza qilishga qo‘yiladigan talablar bo‘yicha:
+Axborot tizimidan buyurtmachining himoyalangan korporativ kompyuter tarmog‘i
+orqali yoki “O‘zbektelekom” AK tizimiga kiruvchi provayderlarning VPN tarmoqlari
+orqali foydalanilishi lozim. Idoralararo hamkorlik “Elektron hukumat” tizimining
+idoralararo ma’lumotlarni uzatish tarmog‘i orqali amalga oshiriladi. Buyurtmachining
+xohishiga ko‘ra, axborotlar xavfsizligini ta’minlash hamda nazorat qilishning
+kuchaytirilgan tartibini joriy qilgan holda, tizimdan TAS-IX tarmog‘i orqali
+foydalanilishi ham yo‘lga qo‘yilishi mumkin.
+Axborot tizimi serverlarining xalqaro Internet tarmog‘iga ulanishiga yo‘l qo‘yilmaydi.
+Tizimning serverlari va aloqa vositalari joylashtirilgan xonadagi shart-sharoitlar ushbu
+texnik vositalarning ishlab chiqaruvchisi tomonidan ekspluatatsiya qilish uchun
+qo‘yilgan iqlim, muhit, texnik va boshqa talablarga to‘liq javob berishi lozim.\n=== BET 24 ===\n4.1.8. Ergonomika va texnik estetikaga qo‘yiladigan talablar
+Tizimning foydalanuvchi bilan muloqoti qulay va tushunarli vizual grafik interfeys
+(GUI) orqali tashkil etilishi lozim.
+Barcha modullar bir xil dizayn andozasiga ega bo‘lishi, navigatsiya elementlari optimal
+joylashtirilgan bo‘lishi lozim.
+Interfeys asosan “sichqoncha” turidagi manipulyatordan foydalanishga mo‘ljallangan
+bo‘lib, ma'lumotlarni kiritish va tahrirlashda klaviaturadan foydalaniladi. Tizimning
+veb va mobil interfeyslari turli o‘lchamdagi ekranlarda (responsive dizayn) benuqson
+ishlashi ta’minlanishi lozim.
+Ko‘rma yoki eshitish qobiliyati cheklangan foydalanuvchilar uchun interfeysning
+asosiy elementlari (shrift o‘lchami, kontrast, ovozli yordamchi vositalar bilan mosligi)
+xalqaro tavsiyalarga (masalan, WCAG) muvofiqlashtirilishi tavsiya etiladi, zero Tizim
+oilaviy va ijtimoiy ahamiyatga molik nizolar (jumladan nochor guruhlar ishtirokidagi
+ishlar) bo‘yicha xizmatlar ko‘rsatadi.
+4.1.9. Ko‘chma AT uchun transportda tashish mumkinligiga qo‘yiladigan
+talablar
+Tizimning server va administratorlik qismlari muhim bo‘lib, transportda tashib
+yurilishi ko‘zda tutilmagan. Tizimga mobil qurilmalar (smartfon, planshet) orqali ham
+foydalanilishi mumkin, biroq bunda foydalaniladigan qurilmalarning konstruktiv
+xususiyatlari yoki tashuvchi transport vositalari bo‘yicha alohida talablar qo‘yilmaydi.
+4.1.10. Tizim komponentlaridan foydalanish, texnik xizmat ko‘rsatish, ta'mirlash
+va saqlashga qo‘yiladigan talablar
+Tizimning texnik va dasturiy vositalariga buyurtmachining maxsus texnik
+tayyorgarlikka ega administratorlar guruhi tomonidan xizmat ko‘rsatiladi. Zaruratga
+ko‘ra, tizimga texnik xizmat ko‘rsatish vazifasi alohida shartnoma asosida ishlab
+chiqaruvchiga yoki ixtisoslashtirilgan tashkilotga yuklatilishi mumkin. Xizmat
+ko‘rsatuvchi xodimlar uchun ekspluatatsiya yo‘riqnomasi ishlab chiqilishi va ko‘p
+uchraydigan nosozliklarni bartaraf etish usullari unda aks ettirilishi lozim.
+4.1.11. Patent va litsenziya sofligiga qo‘yiladigan talablar
+Tizim doirasida foydalaniladigan operatsion tizimlar, ma'lumotlar bazasini boshqarish
+tizimi va boshqa dasturiy ta'minotning patent va litsenziya sofligi ta’minlanishi,
+uchinchi shaxslarning mutlaq huquqlari (patentlar, litsenziya kelishuvlari) buzilishiga
+yo‘l qo‘yilmasligi lozim.\n=== BET 25 ===\n4.1.12. Standartlashtirish va bir xillashtirish bo‘yicha talablar
+Tizimning funksional modullarini ishlab chiqish jarayonida foydalanuvchi
+interfeysining yagona uslubga egaligi, o‘xshash vazifalarning dasturiy-texnik
+yechimlari bir xillashtirilishi, keng tarqalgan dasturlash tillari, vositalari va
+texnologiyalaridan foydalanilishi, shuningdek kirish va chiqish ma'lumotlarining
+standart formatlari qo‘llanilishi lozim. Tizimda O‘zbekiston Respublikasida qabul
+qilingan yagona ma'lumotnomalar va klassifikatorlardan foydalanilishi kerak.
+4.1.13. Qo‘shimcha talablar
+Tizimga quyidagi qo‘shimcha talablar qo‘yiladi:
+ tizim interfeysi va hujjat shablonlari o‘zbek tilining lotin va kirill alifbosida,
+shuningdek rus va ingliz tillarida (xususan xalqaro arbitraj va xorijiy investorlar
+ishtirokidagi ishlar uchun) taqdim etilishi;
+ tizim tomonidan chiqarilgan elektron hujjatlarning Singapur konvensiyasi va
+YUNSITRALning mediatsiya to‘g‘risidagi namunaviy qonuni kabi xalqaro
+hujjatlar talablariga mosligi (transchegaraviy tan olinishi uchun) ta’minlanishi;
+ tizimning buyurtmachi yoki boshqa davlat axborot tizimlari (jumladan “Elektron
+hukumat” yaxlit infratuzilmasi) bilan integratsiyalashuviga qo‘yiladigan
+qo‘shimcha talablar loyihalashtirish bosqichida aniqlashtirilishi;
+ chet ellik mediatorlar, hakamlik sudyalari va arbitrlarning tizimda faoliyat
+yuritishi uchun ularga nisbatan O‘zbekiston Respublikasi fuqarolariga
+qo‘yiladigan ba'zi talablar (masalan advokatlik litsenziyasi) qo‘llanilmasligini
+tizim darajasida ta’minlash.
+Shuningde, Ахборот тизимини ишлаб чиқиш, фодаланишга топшириш ва техник
+қўллабқувватлаш бўйича қўшимча талаблар буюртмачи ҳамда ишлаб чиқарувчи
+ўртасида тузиладиган шартномада ва бошқа ҳужжатларда кўзда тутилиши
+мумкин.
+4.2. Tizim tomonidan bajariladigan funksiyalarga qo‘yiladigan talablar
+ADR-EP tizimi quyidagi asosiy dasturiy modullardan tashkil topadi:
+ “Ma'lumotnomalar va klassifikatorlar” moduli;
+ “Foydalanuvchilarni boshqarish” moduli;
+ “Mediatorlar, hakamlik sudyalari va arbitrlar yagona reestri” moduli;
+ “Nizo bo‘yicha murojaat (ariza)larni qabul qilish va boshqarish” moduli;\n=== BET 26 ===\n “Sunʻiy intellekt asosida nizo turkumini aniqlash va usul tavsiya qilish”
+moduli;
+ “Mediator, hakamlik sudyasi yoki arbitrni elektron tanlash” moduli;
+ “Onlayn muzokara va masofaviy eshituvlar” moduli;
+ “Elektron hujjat aylanishi va elektron raqamli imzo” moduli;
+ “Kelishuv va qarorlarni rasmiylashtirish hamda majburiy ro‘yxatga olish”
+moduli;
+ “Sudlar va davlat organlari bilan tashqi integratsiya” moduli;
+ “Kelishuvlar ijrosini monitoring qilish” moduli;
+ “Ochiq reyting tizimi” moduli;
+ “Malaka oshirish, sertifikatlash va Oliy malaka komissiyasi” moduli;
+ “To‘lovlar va davlat boji” moduli;
+ “Statistika va tahliliy hisobotlar” moduli;
+ “Tashqi ma'lumotlar portali”;
+ “Bildirishnoma (xabarnoma)” moduli;
+ “Xavfsizlik va audit” moduli;
+ “Adliya vazirligi roli orqali sunʻiy intellekt yordamida tizimga o‘zgartirish
+kiritish bo‘yicha topshiriq berish” moduli.
+Har bir modulning ishlash tartibi va vazifalari quyida keltirilgan bo‘lib, modullar
+ishlashi bo‘yicha namunaviy ssenariylar mazkur texnik topshiriqning 1-ilovasida
+berilgan.
+4.2.1. Tizimning umumiy tasniflari va foydalanuvchilarning qisqacha faoliyati
+Tizimning asosiy foydalanuvchilari va ularning qisqacha faoliyati quyidagicha:
+ jismoniy va yuridik shaxslar (nizo taraflari):
+- shaxsiy kabinet orqali nizo yuzasidan ariza beradi;
+- mediator/hakam/arbitr tanlaydi yoki tizim tavsiyasidan foydalanadi;
+- onlayn jarayonlarda ishtirok etadi;
+- elektron raqamli imzo orqali hujjatlarni imzolaydi.
+ mediatorlar, hakamlik sudyalari va arbitrlar:
+- shaxsiy kabinet orqali o‘ziga yuborilgan murojaatlarni ko‘radi, ishni qabul
+qiladi yoki rad etadi;
+- jarayonni onlayn yoki anʻanaviy tartibda olib boradi;\n=== BET 27 ===\n- video aloqa sessiyalarini rejalashtiradi va tashkil etadi;
+- nizo yakuniy hujjatni tizimga kiritadi;
+ Adliya vazirligi xodimlari:
+- tizimni umumiy monitoring qiladi;
+- mediatorlar, hakamlik sudyalari va arbitrlar reestrini yuritadi;
+- reestrga kiritish bo‘yicha arizalarni ko‘rib chiqadi va qaror qabul qiladi;
+- arizalarni nazorat qiladi;
+- malaka komissiyasi faoliyatini ta’minlaydi;
+- statistika va hisobotlarni shakllantiradi;
+- davlat siyosatini amalga oshirish yuzasidan tahliliy ma'lumotlar oladi;
+- foydalanuvchilarga rollar beradi;
+- shuningdek sunʻiy intellekt yordamchisi orqali tizim sozlamalari va
+ma'lumotnomalariga o‘zgartirish kiritish bo‘yicha topshiriq berish (4.2.21-band)
+imkoniyatiga ega bo‘ladi.
+ texnik xodimlar (administratorlar):
+- tizimning barqaror ishlashini ta’minlaydi;
+- foydalanuvchilarga rollar beradi;
+- ma'lumotnomalarni yuritadi.
+Tegishli idoralarning (sud, prokuratura, huquqni muhofaza qilish organlari) ichki
+axborot tizimlari mavjud bo‘lsa, ular bilan elektron integratsiya yo‘lga qo‘yilishi,
+integratsiya imkoni bo‘lmagan taqdirda esa xodimlar Yagona identifikatsiya tizimi
+orqali tashqi portal vositasida tizimga kiritilishi ta’minlanadi. Tizimda jismoniy
+shaxslar JSHSHIR, yuridik shaxslar esa STIR raqamlari bilan identifikatsiyalanadi.
+Ishlash tartibi (bosqichma-bosqich):
+1. Foydalanuvchi Yagona identifikatsiya tizimi (id.gov.uz) yoki tegishli idoraning
+ichki axborot tizimi bilan integratsiya orqali tizimga kiradi, shaxsi JSHSHIR
+yoki STIR raqami bo‘yicha tasdiqlanadi;
+2. administrator (yoki Adliya vazirligi xodimi — tegishli toifadagi
+foydalanuvchilar uchun) foydalanuvchiga mos rol (masalan, “Mediator” yoki
+“Adliya vazirligi hodimi” va h.k.) belgilaydi;
+3. tizim foydalanuvchining roliga mos funksiyalar ro‘yxatini (menyu, bo‘lim va
+amallarni) shaxsiy kabinetida ko‘rsatadi, boshqa rollarga tegishli funksiyalar
+yashirin bo‘lib qoladi;\n=== BET 28 ===\n4. foydalanuvchi faoliyati davomida amalga oshirgan har bir muhim amal (kirish,
+ma'lumot kiritish, hujjat imzolash) “Xavfsizlik va audit” moduli (4.2.20-band)
+orqali avtomatik qayd etiladi;
+5. foydalanuvchining roli yoki vakolati o‘zgartirilganda (masalan, mediator
+guvohnomasi bekor qilinganda), tizim unga tegishli huquqlarni avtomatik
+yangilaydi yoki bekor qiladi.
+4.2.2. “Ma'lumotnomalar va klassifikatorlar” moduli
+Ushbu modul tizimning barcha boshqa modullarida foydalaniladigan normativ-
+ma'lumot bazasini — spravochnik va klassifikatorlarni — markazlashgan tarzda
+yuritish, ularni dolzarb holatda saqlash va ularga nisbatan nazoratli o‘zgartirish kiritish
+imkoniyatini ta’minlaydi. Modul ma'lumotlar yaxlitligini ta’minlash maqsadida
+yagona manba (single source of truth) vazifasini bajaradi.
+Asosiy funksional talablar:
+ Hududlar (Qoraqalpog‘iston Respublikasi, viloyatlar, tumanlar/shaharlar)
+klassifikatori — Davlat hudud boshqaruv obʻektlari tasniflagichi (MHOBT)
+bilan muvofiqlashtirilgan holda yuritiladi;
+ nizo turlari klassifikatori (tijorat, investitsiya, mehnat, intellektual mulk, sport,
+raqamli texnologiyalar, fuqarolik, iqtisodiy, oilaviy va boshqalar) — har bir toifa
+uchun o‘ziga xos ariza maydonlari va marshrutlash qoidalari belgilanadi;
+ sudgacha majburiy mediatsiya qo‘llaniladigan ishlar toifalari ro‘yxati (texnik
+topshiriqning 3-ilovasiga muvofiq, amaldagi qonunchilik o‘zgarishiga qarab
+yangilanib borilishi mumkin) — har bir yangilanish sanasi va asosi (qonun
+hujjati) tizimda qayd etiladi;
+ mediator, hakamlik sudyasi va arbitrlarning ixtisoslashuvi klassifikatori —
+elektron tanlash (4.2.8-band) va sunʻiy intellekt tavsiyasi (4.2.7-band)
+modullarida filtr mezoni sifatida ishlatiladi;
+ ish yuritish tili, hujjat turlari va boshqa tizim uchun zarur ma'lumotnomalar
+(valyuta, o‘lchov birliklari, bildirishnoma shablonlari kabi).
+Ishlash tartibi (bosqichma-bosqich):
+1. vakolatli foydalanuvchi (administrator yoki tegishli huquqqa ega xodim)
+ma'lumotnoma bo‘limiga kiradi va yangi qiymat kiritish, mavjudini tahrirlash
+yoki vaqtincha deaktivatsiya qilish amalini tanlaydi;
+2. tizim kiritilayotgan qiymatning boshqa yozuvlar bilan takrorlanmasligini va
+formatining to‘g‘riligini avtomatik tekshiradi;\n=== BET 29 ===\n3. o‘zgartirish saqlangandan so‘ng, tizim uni darhol barcha bog‘liq modullarda
+(ariza shakllari, filtrlar, hisobotlar) qo‘llaydi — qayta ishga tushirishni talab
+qilmaydi;
+4. har bir o‘zgartirish kim, qachon va qanday asosda amalga oshirgani ko‘rsatilgan
+holda audit jurnaliga yoziladi (4.2.20-band);
+5. eskirgan yoki endi qo‘llanilmaydigan qiymatlar o‘chirilmaydi, balki “nofaol”
+holatiga o‘tkaziladi — bu orqali tarixiy ma'lumotlar (masalan, yopilgan ishlar)
+o‘zgarishsiz saqlanib qoladi.
+4.2.3. “Foydalanuvchilarni boshqarish” moduli
+Ushbu modul tizimning barcha foydalanuvchilari hayot siklini — ro‘yxatga olishdan
+tortib, rol berish, huquqlarni o‘zgartirish va faoliyatini to‘xtatishgacha —
+markazlashgan tarzda boshqarish imkoniyatini yaratadi.
+Asosiy funksional talablar:
+ foydalanuvchilarni identifikatsiya qilish Yagona identifikatsiya tizimi
+(id.gov.uz) orqali amalga oshiriladi, qo‘shimcha ravishda ikki bosqichli
+autentifikatsiya (SMS/push-kod) qo‘llab-quvvatlanadi;
+ administrator istagan vaqtda foydalanuvchiga berilgan huquqlarni o‘zgartirish,
+vaqtincha cheklash yoki butunlay bekor qilish imkoniga ega bo‘ladi;
+ rollarning to‘liq ro‘yxati (masalan: “Mediator”, “Hakamlik sudyasi”, “Arbitr”,
+“Adliya vazirligi hodimi”, “Hududiy Adliya boshqarmasi hodimi”,
+“Administrator”) dasturiy ta'minot yaratilishi jarayonida aniqlashtiriladi va har
+biriga mos huquqlar matritsasi shakllantiriladi;
+ bitta foydalanuvchiga bir vaqtning o‘zida bir nechta rol biriktirilishi mumkin
+(masalan, mediator ayni paytda “Mediator” va “Hakamlik sudyasi” rollariga ega
+bo‘lishi), bunda tizim rollar o‘rtasida ziddiyat yo‘qligini tekshiradi.
+Ishlash tartibi (bosqichma-bosqich):
+1. yangi foydalanuvchi tizimga Yagona identifikatsiya tizimi orqali birinchi marta
+kirgach, shaxsiy kabineti avtomatik yaratiladi;
+2. administrator (yoki tegishli vakolatli xodim) foydalanuvchiga mos rol(lar)ni
+biriktiradi, zarur bo‘lsa qo‘shimcha cheklovlar (masalan, faqat ma'lum hudud
+bo‘yicha ishlash) belgilaydi;
+3. foydalanuvchi tizimga kirganda, unga faqat biriktirilgan roliga mos funksiyalar
+taqdim etiladi;\n=== BET 30 ===\n4. foydalanuvchi ma'lumotlarini (aloqa raqami, elektron pochta) o‘zi yoki
+administrator tahrirlashi mumkin, bunda o‘zgarishlar audit jurnaliga yoziladi;
+5. foydalanuvchi faoliyati to‘xtatilganda (masalan, ishdan bo‘shaganda),
+administrator uning hisobini bloklaydi, biroq uning tarixiy ma'lumotlari (ko‘rib
+chiqqan ishlari) tizimda saqlanib qoladi.
+4.2.4. “Mediatorlar, hakamlik sudyalari va arbitrlar yagona reestri” moduli
+Ushbu modul mediator, hakamlik sudyasi yoki arbitr guvohnomasiga (sertifikatiga)
+ega barcha shaxslar to‘g‘risidagi ma'lumotlarni qamrab oluvchi ochiq elektron reestr
+va har bir mutaxassis uchun shaxsiy elektron kabinetni shakllantiradi. Reestr
+ma'lumotlarining ishonchliligi tizimning butun ADR jarayoni — elektron tanlashdan
+(4.2.8-band) tortib reytinggacha (4.2.14-band) — uchun hal qiluvchi ahamiyatga ega.
+Reestrga quyidagi ma'lumotlar kiritiladi: tartib raqami, reyestrga kiritilgan sana,
+F.I.Sh., telefon raqami, elektron pochta manzili, pasport ma'lumotlari va JSHSHIR,
+tug‘ilgan sana, malaka guvohnomasi (sertifikati) to‘g‘risidagi ma'lumot (seriyasi,
+berilgan sanasi, amal qilish muddati), ixtisoslashuvi (tegishli klassifikatordan
+foydalanilgan holda), faoliyat yuritayotgan hududi, ta'limi, ish yuritiladigan tili,
+shuningdek reyting ko‘rsatkichi va statistik ma'lumotlari (ko‘rib chiqqan ishlar soni,
+muvaffaqiyatli yakunlangan ishlar ulushi).
+Asosiy funksional talablar:
+ reestr ochiq bo‘lib, jismoniy va yuridik shaxslar istalgan mediator/hakam/arbitr
+to‘g‘risida ochiq ma'lumotlarni (F.I.Sh., ixtisoslashuvi, reytingi, til, hududi va
+h.k.) ko‘rish imkoniga ega bo‘ladi, shaxsiy ma'lumotlar esa faqat vakolatli
+shaxslarga ko‘rinadi;
+ shaxsiy elektron kabinet orqali mutaxassis o‘ziga yuborilgan murojaatlarni
+boshqarishi, malaka oshirishni tashkil etishi, guvohnomasini elektron shaklda
+olishi mumkin;
+ reestr Adliya vazirligi tomonidan yuritiladi hamda veb-saytda ochiq shaklda
+chop etilib boriladi;
+ malaka guvohnomasi to‘xtatilgan yoki bekor qilingan mutaxassis tizimda
+avtomatik tarzda nofaol holatga o‘tkaziladi va unga yangi murojaatlar
+yo‘naltirilmaydi.
+Ishlash tartibi (bosqichma-bosqich):
+1. nomzod reestrga kiritilish uchun ariza va malaka guvohnomasi nusxasini
+elektron shaklda taqdim etadi;\n=== BET 31 ===\n2. Adliya vazirligi xodimi (4.2.1-band) arizani va hujjatlarning haqiqiyligini ko‘rib
+chiqadi, tasdiqlagan taqdirda nomzod reestrga kiritiladi hamda unga shaxsiy
+kabinet ochiladi;
+3. reestrga kiritilgan mutaxassis haqidagi ochiq ma'lumotlar avtomatik tarzda
+“Tashqi ma'lumotlar portali” (4.2.18-band) orqali jamoatchilikka taqdim etiladi;
+4. mutaxassis faoliyati davomida to‘plagan statistikasi (ko‘rib chiqqan ishlar,
+reytingi) tizim tomonidan avtomatik yangilanib boriladi;
+5. malaka guvohnomasining amal qilish muddati tugashiga oz qolganda, tizim
+mutaxassisga va Adliya vazirligi xodimiga oldindan ogohlantiruvchi xabarnoma
+yuboradi; muddat o‘tib ketgan taqdirda mutaxassis avtomatik nofaol holatga
+o‘tkaziladi.
+4.2.5. “Nizo bo‘yicha murojaat (ariza)larni qabul qilish va boshqarish” moduli
+Ushbu modul orqali jismoniy va yuridik shaxslar nizo yuzasidan ADR tuzilmalariga
+murojaat qilish imkoniga ega bo‘ladi. Modul ikkita asosiy oqimni qamrab oladi:
+ixtiyoriy tartibda murojaat qilish va sud tomonidan sudgacha majburiy mediatsiya yoki
+axborot sessiyasiga yo‘naltirilgan ishlar bo‘yicha murojaat.
+Jismoniy va yuridik shaxs tomonidan sudga da'vo arizasi berilayotganda, tizim orqali
+(sud axborot tizimi bilan integratsiya asosida) nizoni mediatsiya orqali hal etish
+imkoniyati va afzalliklari haqida avtomatik ravishda xabardor qilinishi hamda
+taraflarga bir vaqtning o‘zida “Onlayn mediatsiyani boshlash” tugmasini taklif etilishi
+ta’minlanadi.
+Asosiy funksional talablar:
+ ariza shakli nizo toifasiga qarab dinamik ravishda shakllantiriladi (masalan
+oilaviy, tijorat, mehnat nizolari uchun turli maydonlar);
+ arizaga hujjatlar (shartnoma, hisob-kitoblar va boshqalar) elektron shaklda ilova
+qilinishi;
+ arizaning holati (yangi, ko‘rib chiqilmoqda, mediatorga yo‘naltirildi, jarayonda,
+yakunlandi) real vaqt rejimida kuzatilib borilishi;
+ sudgacha majburiy mediatsiya tartibi qo‘llaniladigan ishlar (texnik topshiriqning
+3-ilovasidagi ro‘yxat bo‘yicha) avtomatik aniqlanib, tegishli jarayon
+boshlanishi.
+Ishlash tartibi (bosqichma-bosqich):
+1. foydalanuvchi shaxsiy kabinet orqali nizo toifasini tanlaydi, ariza shaklini
+to‘ldiradi va zarur hujjatlarni ilova qiladi;\n=== BET 32 ===\n2. tizim arizani avtomatik ro‘yxatga oladi, unga noyob raqam beradi va uni
+“Sunʻiy intellekt asosida nizo turkumini aniqlash” moduliga (4.2.7-band)
+yo‘naltiradi;
+3. agar ariza sudgacha majburiy mediatsiya toifasiga kirsa, tizim bu holatni
+avtomatik aniqlaydi va taraflarni tegishli tartib-taomil haqida xabardor qiladi;
+4. ariza holati har bir bosqichda (ko‘rib chiqilmoqda, mediatorga yo‘naltirildi,
+jarayonda, yakunlandi) real vaqt rejimida yangilanib, taraflarga ko‘rinadigan
+qilib ko‘rsatiladi;
+5. ariza yakunlangandan so‘ng (kelishuv tuzilgan yoki rad etilgan holatda), u
+tizimning statistika moduliga (4.2.17-band) uzatiladi.
+4.2.6. “Sunʼiy intellekt asosida nizo turkumini aniqlash va usul tavsiya qilish”
+moduli
+Ushbu modul sunʻiy intellekt (tabiiy tilni qayta ishlash va mashinali o‘rganish)
+texnologiyalari yordamida kiritilgan ariza matni va ilova qilingan hujjatlar asosida nizo
+toifasini avtomat tarzda aniqlaydi hamda uni hal etishning eng maqbul muqobil usulini
+(mediatsiya, arbitraj yoki hakamlik sudi) taraflarga tavsiya etadi.
+Asosiy funksional talablar:
+ tavsiya natijalari asoslanishi (nizo toifasi, o‘xshash ishlarning statistik natijalari)
+bilan birga taqdim etilishi;
+ tavsiya yakuniy xususiyatga ega bo‘lmay, taraflar o‘z xohishlariga ko‘ra boshqa
+usulni tanlash huquqiga ega bo‘lishi;
+ model vaqt o‘tishi bilan to‘plangan statistik ma'lumotlar asosida o‘z aniqligini
+oshiruvchi (o‘z-o‘zini o‘rgatuvchi) mexanizmga ega bo‘lishi tavsiya etiladi.
+Ishlash tartibi (bosqichma-bosqich):
+1. foydalanuvchi ariza topshirgandan so‘ng, modul ariza matni va ilova hujjatlarni
+avtomatik tahlil qiladi;
+2. model nizo toifasini (klassifikatorga, 4.2.2-band, muvofiq) aniqlaydi va
+o‘xshash yakunlangan ishlar statistikasiga tayanib eng maqbul hal etish usulini
+hisoblaydi;
+3. tavsiya, uning asosi (ishonchlilik darajasi, o‘xshash ishlar soni) bilan birga
+foydalanuvchiga taqdim etiladi;
+4. foydalanuvchi tavsiyani tasdiqlaydi yoki boshqa usulni tanlaydi — har ikkala
+holatda ham tanlov statistikaga yoziladi va modelni keyingi o‘qitish uchun
+ma'lumot sifatida ishlatiladi;\n=== BET 33 ===\n5. tanlangan usulga qarab, ariza tegishli modulga (4.2.8 — elektron tanlash)
+yo‘naltiriladi.
+4.2.7. “Mediator, hakamlik sudyasi yoki arbitrni elektron tanlash” moduli
+Ushbu modul taraflarga reestrdan xohlagan mutaxassisni tanlash (ixtiyoriy tanlov) yoki
+sudgacha majburiy mediatsiya qo‘llaniladigan ishlar bo‘yicha tizim tomonidan
+avtomat tarzda (randomayzer orqali) mediator tayinlash imkoniyatlarini taqdim etadi.
+Asosiy funksional talablar:
+ ixtiyoriy tanlovda taraflar ixtisoslashuvi, hududi, tili, reytingi va ish yuklamasi
+bo‘yicha filtr asosida mutaxassisni tanlashi mumkin;
+ majburiy mediatsiya ishlari bo‘yicha tizim taraflar hududi va nizo ixtisosligini
+hisobga olgan holda mavjud, yuklamasi nisbatan kam bo‘lgan mediatorlar
+orasidan shaffof va tasodifiy tarzda tanlov o‘tkazadi;
+ tanlangan mutaxassisga va taraflarga shaxsiy kabinet hamda SMS/push-
+xabarnoma orqali taklif yuboriladi, u ma'lum muddat ichida ishni qabul qilish
+yoki asosli ravishda rad etish huquqiga ega;
+ rad etilgan holda tizim avtomatik tarzda navbatdagi nomzodni tanlaydi.
+Ishlash tartibi (bosqichma-bosqich):
+1. ariza turiga qarab (ixtiyoriy yoki majburiy) tizim mos tanlov mexanizmini ishga
+tushiradi;
+2. ixtiyoriy tanlovda taraflarga filtrlash imkoniyatlari bilan reestr taqdim etiladi;
+majburiy tartibda esa tizim randomayzer orqali nomzodni avtomatik belgilaydi;
+3. tanlangan mutaxassisga taklif yuboriladi hamda unga javob berish uchun
+belgilangan muddat beriladi;
+4. mutaxassis ishni qabul qilsa, ish unga biriktiriladi va “Onlayn muzokara”
+moduliga (4.2.9-band) o‘tish uchun sana belgilanadi; rad etsa, tizim navbatdagi
+nomzodni avtomatik tanlaydi;
+5. barcha tanlov amallari (kim tanlangani, qachon, qaysi mezon asosida) audit
+jurnaliga yoziladi, bu orqali jarayonning shaffofligi ta’minlanadi.
+4.2.8. “Onlayn muzokara va masofaviy eshituvlar” moduli
+Ushbu modul taraflar va mediator/hakamlik sudyasi/arbitr o‘rtasida video-aloqa orqali
+masofadan turib axborot sessiyasi, muzokara uchrashuvlari hamda hakamlik/arbitraj
+eshituvlarini o‘tkazish imkoniyatini ta’minlaydi.
+Asosiy funksional talablar:\n=== BET 34 ===\n video-konferensiya sanasi va vaqti tug‘risida ikkala tomonga SMS/push-
+xabarnoma yuborish imkoniyati;
+ video-konferensiya, ekranni namoyish qilish, chat orqali xabar almashish va
+hujjat ulashish funksiyalari;
+ sessiyalarni (taraflarning roziligi bilan) yozib olish va ularni himoyalangan
+holda saqlash imkoniyati;
+ sessiya jarayonida elektron raqamli imzo orqali joyidayoq bitim (shartnoma)
+tuzish imkoniyati;
+ past tezlikdagi internet aloqa sharoitida ham minimal sifatda ishlashni
+ta’minlovchi moslashuvchan video-oqim texnologiyasi.
+Ishlash tartibi (bosqichma-bosqich):
+1. mutaxassis ishni qabul qilgandan so‘ng, tizim sessiya uchun sana va vaqtni
+belgilaydi hamda barcha ishtirokchilarga xabarnoma yuboradi;
+2. belgilangan vaqtda ishtirokchilar shaxsiy kabinet orqali video-sessiyaga
+qo‘shiladi;
+3. sessiya davomida ekranni namoyish qilish, hujjat ulashish va chat orqali muloqot
+qilish imkoniyatlari taqdim etiladi; taraflar roziligi bilan sessiya yozib olinadi;
+4. taraflar kelishuvga erishsa, hujjat loyihasi joyidayoq tayyorlanib, elektron
+raqamli imzo orqali imzolanishi mumkin;
+5. sessiya yakunida uning natijasi (kelishuv tuzildi / tuzilmadi / keyingi sessiya
+belgilandi) tizimga qayd etiladi va tegishli modulga (4.2.10 yoki 4.2.6) uzatiladi.
+4.2.9. “Elektron hujjat aylanishi va elektron raqamli imzo” moduli
+Ushbu modul nizo jarayonida yaratiladigan barcha hujjatlar (ariza, kelishuv,
+xabarnoma, qaror va boshqalar)ning elektron shaklda shakllantirilishi, saqlanishi va
+imzolanishini ta’minlaydi.
+Asosiy funksional talablar:
+ barcha tomonlar va mutaxassislar elektron raqamli imzo (E-IMZO), Face_ID
+yoki bir martalik SMS-kod orqali tasdiqlanadigan soddalashtirilgan elektron
+imzodan foydalanish imkoniga ega bo‘lishi;
+ hujjatlar versiyalari va ularga kiritilgan o‘zgarishlar tarixi (audit izi) saqlanib
+borilishi;
+ hujjatlarni PDF formatida yuklab olish va QR-kod orqali haqiqiyligini tekshirish
+imkoniyati.
+Ishlash tartibi (bosqichma-bosqich):\n=== BET 35 ===\n1. tizim jarayon bosqichiga mos hujjat loyihasini (shablon asosida) avtomatik
+shakllantiradi va/yoki mediator/hakamlik sudyasi/arbitr tomonidan hujjat
+tayyorlanadi;
+2. hujjat imzolanishi lozim bo‘lgan tomonlarga shaxsiy kabinetga xabarnoma
+yuboriladi;
+3. har bir tomon hujjatni E-IMZO, Face_ID yoki SMS-kod orqali imzolaydi;
+imzolash fakti va vaqti hujjatga va audit jurnaliga yoziladi;
+4. barcha tomonlar imzolagandan so‘ng, hujjat yakuniy holatga o‘tadi va unga
+noyob QR-kod beriladi, bu orqali hujjat haqiqiyligi istalgan vaqtda tekshirilishi
+mumkin;
+5. yakuniy hujjat tegishli modulga (masalan, “Kelishuv va qarorlarni
+rasmiylashtirish”, 4.2.11-band) avtomatik uzatiladi.
+4.2.10. “Kelishuv va qarorlarni rasmiylashtirish hamda majburiy ro‘yxatga
+olish” moduli
+Ushbu modul mediatsiya natijasida tuzilgan mediativ kelishuvlar, shuningdek Xalqaro
+arbitraj sudi va Hakamlik sudi tomonidan chiqarilgan qarorlarni rasmiylashtirish va
+ularni O‘zbekiston Respublikasi hududida majburiy tartibda ro‘yxatga olishni
+ta’minlaydi.
+Sud ish yurituvida bo‘lgan davrda tuzilgan mediativ kelishuv, yakunlanganidan so‘ng
+tizim orqali tegishli sudga (sud axborot tizimiga) elektron shaklda yuboriladi.
+Asosiy funksional talablar:
+ ro‘yxatga olingan har bir hujjatga noyob raqam va QR-kod berilishi;
+ ro‘yxatdan o‘tkazilgan mediativ kelishuvlar, arbitraj va hakamlik sudi qarorlari
+reestrini yuritish;
+ ijro hujjati (ijro varaqasi) berish to‘g‘risidagi arizalarni elektron shaklda sud
+ijrochilari tizimiga yo‘naltirish imkoniyati.
+Ishlash tartibi (bosqichma-bosqich):
+1. imzolangan mediativ kelishuv yoki arbitraj/hakamlik sudi qarori tizimga
+avtomatik tushadi;
+2. agar ish sud ish yurituvida bo‘lsa, tizim hujjatni elektron shaklda tegishli sudga
+(sud axborot tizimiga) yuboradi;
+3. tasdiqlangan hujjat noyob raqam va QR-kod bilan ro‘yxatga olinadi hamda
+tegishli reestrga kiritiladi;\n=== BET 36 ===\n4. hujjat “Kelishuvlar ijrosini monitoring qilish” moduliga (4.2.13-band) uzatiladi,
+ixtiyoriy ijro etilmagan taqdirda esa ijro varaqasi berish to‘g‘risidagi ariza sud
+ijrochilari tizimiga elektron yo‘naltiriladi.
+4.2.11. “Sudlar va davlat organlari bilan tashqi integratsiya” moduli
+Ushbu modul universal API (veb-servis) ko‘rinishida ishlab chiqilib, Oliy sud tizimi,
+Bosh prokuratura, Ichki ishlar vazirligi va boshqa davlat organlaridan yuborilayotgan
+so‘rovlarni qabul qilish, qayta ishlash va javob qaytarishni ta’minlaydi.
+Asosiy funksional talablar:
+ sudlardan sudgacha majburiy mediatsiya yoki axborot sessiyasiga yo‘naltirilgan
+ishlar to‘g‘risidagi ma'lumotlarni qabul qilish;
+ mediativ kelishuvlar va arbitraj/hakamlik sudi qarorlarini tegishli sudlarga
+elektron yuborish;
+ davlat organlari bilan nizolar statistikasi va tahliliy ma'lumotlar almashinuvi.
+Ishlash tartibi (bosqichma-bosqich):
+1. tashqi tizim (masalan, sud axborot tizimi) API orqali tizimga so‘rov yuboradi
+(masalan, ishni mediatsiyaga yo‘naltirish to‘g‘risida);
+2. tizim so‘rovni avtomatik qabul qiladi, uni autentifikatsiya va avtorizatsiyadan
+o‘tkazadi hamda tegishli ichki modulga (masalan, 4.2.6-band) yo‘naltiradi;
+3. ichki jarayon natijasi (masalan, tayinlangan mediator yoki tuzilgan kelishuv)
+shakllantiriladi;
+4. natija standart formatda (masalan, JSON/XML) tashqi tizimga qaytariladi;
+5. barcha so‘rov-javob almashinuvlari jurnalga yoziladi, bu orqali idoralararo
+integratsiyaning ishonchliligi va kuzatiluvchanligi ta’minlanadi.
+4.2.12. “Kelishuvlar ijrosini monitoring qilish” moduli
+Ushbu modul tuzilgan mediativ kelishuvlar, chiqarilgan arbitraj va hakamlik sudi
+qarorlarining ixtiyoriy ijro etilishi jarayonini kuzatib boradi hamda taraflarni
+majburiyatlar ijrosi muddatlari haqida avtomatik xabardor qiladi.
+Asosiy funksional talablar:
+ ijro muddatlari yaqinlashganda yoki o‘tib ketganda taraflarga va zarur hollarda
+mediatorga avtomatik xabarnoma yuborilishi;
+ ixtiyoriy ijro etilmagan hollarda, ijro varag‘i berish to‘g‘risida arizani elektron
+shaklda taqdim etish imkoniyati;\n=== BET 37 ===\n ijro darajasi bo‘yicha statistik ma'lumotlarning “Statistika va tahliliy hisobotlar”
+moduliga (4.2.17-band) uzatilishi.
+Ishlash tartibi (bosqichma-bosqich):
+1. kelishuv ro‘yxatga olingandan so‘ng, tizim unda belgilangan ijro muddatini
+avtomatik kuzatuvga oladi;
+2. muddat yaqinlashganda, tizim majburiyat oluvchi tarafga eslatma xabarnoma
+yuboradi;
+3. belgilangan muddatda taraf ijro holatini (ijro etildi / etilmadi) tizimga kiritadi;
+4. ijro etilmagan taqdirda, tizim manfaatdor tarafga ijro varag‘i berish to‘g‘risida
+ariza berishni taklif qiladi va bu arizani elektron shaklda rasmiylashtiradi;
+5. ijro natijalari (o‘z vaqtida / kechiktirib / ijro etilmagan) umumlashtirilgan holda
+statistika moduliga uzatiladi.
+4.2.13. “Ochiq reyting tizimi” moduli
+Ushbu modul mediatorlar, hakamlik sudyalari va arbitrlarning faoliyati
+samaradorligini aks ettiruvchi ochiq reyting tizimini shakllantiradi va mezonlarini
+belgilaydi.
+Asosiy funksional talablar:
+ reyting ko‘rib chiqilgan ishlar soni, muvaffaqiyatli yakunlangan mediativ
+kelishuvlar ulushi, ijro etilgan kelishuvlar foizi, taraflarning qoniqish darajasi
+(so‘rovnoma orqali) kabi mezonlar asosida avtomatik tarzda hisoblanib
+borilishi;
+ reyting ma'lumotlari davriy ravishda (masalan har chorakda) avtomatik
+yangilanib turilishi va reestrda ochiq ko‘rinishda aks ettirilishi.
+Ishlash tartibi (bosqichma-bosqich):
+1. har bir yakunlangan ish bo‘yicha tizim avtomatik ravishda mutaxassisning
+ko‘rsatkichlarini (ish holati, ijro foizi) qayd etadi;
+2. ish yakunlangandan so‘ng, taraflarga qisqa qoniqish so‘rovnomasi (reyting
+ballari) yuboriladi;
+3. to‘plangan ma'lumotlar belgilangan formula bo‘yicha umumlashtiriladi va
+mutaxassisning yangilangan reytingi hisoblanadi;
+4. yangilangan reyting ko‘rsatkichlari davriy ravishda (har chorakda) reestrda va
+tashqi ma'lumotlar portalida (4.2.18-band) eʻlon qilinadi.\n=== BET 38 ===\n4.2.14. “Malaka oshirish, sertifikatlash va Oliy malaka komissiyasi” moduli
+Ushbu modul mediatorlar, hakamlik sudyalari va arbitrlarning onlayn malaka
+oshirishini tashkil etish, malaka imtihonlarini elektron shaklda o‘tkazish va malaka
+oshirganligini tasdiqlovchi hujjatlarni elektron shaklda berish tartibini ta’minlaydi.
+Asosiy funksional talablar:
+ onlayn o‘quv kurslari va vebinarlarni joylashtirish hamda ularda ishtirokni qayd
+etish;
+ malaka imtihonlari natijalarini elektron shaklda kiritish va Oliy malaka
+komissiyasi hamda hududiy malaka komissiyalari faoliyatini yuritish;
+ malaka guvohnomasini elektron shaklda, QR-kod orqali tasdiqlanadigan tarzda
+berish va reestrga avtomatik kiritish.
+Ishlash tartibi (bosqichma-bosqich):
+1. mutaxassis yoki nomzod onlayn o‘quv kursi yoxud vebinarga ro‘yxatdan o‘tadi
+va unda ishtiroki tizimda qayd etiladi;
+2. kurs yakunida nomzod malaka imtihoniga yo‘naltiriladi, imtihon elektron
+shaklda o‘tkaziladi;
+3. Oliy malaka komissiyasi (yoki hududiy komissiya) imtihon natijalarini tizim
+orqali ko‘rib chiqadi va yakuniy qarorni qabul qiladi;
+4. ijobiy qaror qabul qilingan taqdirda, nomzodga QR-kod bilan tasdiqlangan
+elektron malaka guvohnomasi beriladi;
+5. guvohnoma ma'lumotlari “Mediatorlar, hakamlik sudyalari va arbitrlar yagona
+reestri” moduliga (4.2.4-band) avtomatik uzatiladi va mutaxassis holati
+yangilanadi.
+4.2.15. “To‘lovlar va davlat boji” moduli
+Ushbu modul mediator, hakamlik sudyasi yoki arbitr xizmatlari uchun to‘lovlarni
+amalga oshirish, shuningdek nizo mediatsiya tartibida hal qilingan taqdirda to‘langan
+davlat bojini qaytarish jarayonini elektron shaklda ta’minlaydi.
+Asosiy funksional talablar:
+ milliy to‘lov tizimlari (Payme, Click va boshqalar) hamda Davlat xazinachiligi
+tizimlari bilan integratsiya;
+ nizo birinchi instansiya sudida mediatsiya tartibida hal qilingan taqdirda davlat
+bojining to‘liq miqdorda, keyingi instansiyalarda esa tegishli miqdorda
+avtomatik hisoblab qaytarilishi uchun zarur ma'lumotlarni shakllantirish;\n=== BET 39 ===\n mehnat, tadbirkorlik va majburiy sug‘urta nizolari bo‘yicha qonunchilikda
+belgilangan toifadagi shaxslarning davlat bojidan ozod etilishini hisobga oluvchi
+avtomatik tekshiruv.
+Ishlash tartibi (bosqichma-bosqich):
+1. foydalanuvchi xizmat (masalan, mediatsiya) uchun to‘lov miqdorini tizimdan
+ko‘radi va shakillangan invoys raqamiga to‘lov tizimlari orqali to‘lovni amalga
+oshiradi;
+2. to‘lov Davlat xazinachiligi tizimi bilan integratsiya orqali tasdiqlanadi va
+arizaga biriktiriladi;
+3. barcha moliyaviy amallar statistika va audit modullariga (4.2.17, 4.2.20-band)
+uzatiladi.
+4.2.16. “Statistika va tahliliy hisobotlar” moduli
+Ushbu modul tizimdagi ma'lumotlar asosida barcha turdagi statistik va tahliliy
+hisobotlarni tayyorlash, chop etish hamda eksport qilish (.xlsx, .pdf, .docx
+formatlarida) imkoniyatlarini ta’minlaydi.
+Asosiy funksional talablar:
+ nizolar toifasi, hududi, hal etilish usuli (mediatsiya/arbitraj/hakamlik sudi) va
+natijasi bo‘yicha kesimlarda hisobotlar shakllantirish;
+ davlat organlari uchun KPI ko‘rsatkichlari (jumladan sudlar ish yuklamasining
+qisqarishi, mediatsiya orqali hal etilgan ishlar ulushi) bo‘yicha interaktiv
+dashbord;
+ hisobotlarni avtomatik umumlashtirish va belgilangan davriylikda (oylik,
+choraklik, yillik) olish imkoniyatlari mavjud.
+Ishlash tartibi (bosqichma-bosqich):
+1. tizimning barcha modullaridan (ariza, kelishuv, ijro, to‘lov va h.k.) kelib
+tushayotgan ma'lumotlar markazlashgan tahliliy bazaga avtomatik yig‘iladi;
+2. foydalanuvchi (Adliya vazirligi hamda hududiy adliya organi xodimi) kerakli
+kesim va davr bo‘yicha hisobot so‘rovini shakllantiradi;
+3. tizim so‘rov bo‘yicha ma'lumotlarni qayta ishlab, interaktiv dashbord yoki
+tayyor hisobot ko‘rinishida taqdim etadi;
+4. foydalanuvchi hisobotni .xlsx, .pdf yoki .docx formatida yuklab olishi mumkin;\n=== BET 40 ===\n5. belgilangan davriylikda (oylik, choraklik, yillik) tizim standart hisobotlarni
+avtomatik shakllantirib boradi.
+4.2.17. “Tashqi ma'lumotlar portali” moduli
+Tashqi ma'lumotlar portali internet tarmog‘ida ichki tizim bilan bog‘langan maxsus
+veb-sayt ko‘rinishida ishlab chiqiladi va jamoatchilik uchun ochiq ma'lumotlarni
+taqdim etadi.
+Asosiy funksional talablar:
+ mediatorlar, hakamlik sudyalari va arbitrlar reestri (ochiq ma'lumotlar qismi)
+hamda ularning reytingi;
+ ADR sohasidagi umumiy statistika (anonim va umumlashtirilgan ko‘rinishda);
+ nizoni muqobil hal etish tartib-taomillari, sudgacha majburiy mediatsiya
+toifalari va foydalanish bo‘yicha yo‘riqnomalar, yangiliklar;
+ foydalanuvchilarning shaxsiy kabinetiga (Yagona identifikatsiya tizimi orqali
+avtorizatsiyadan o‘tgan holda) kirishni ta’minlovchi kirish nuqtasi.
+Ishlash tartibi (bosqichma-bosqich):
+1. ichki tizimdagi ochiq ma'lumotlar (reestr, statistika, yangiliklar) belgilangan
+davriylikda tashqi portalga avtomatik sinxronlanadi;
+2. jamoatchilik vakili portalga kirib, mediator/hakam/arbitr qidiruvi, statistik
+ma'lumotlar yoki yo‘riqnomalar bilan tanishishi mumkin;
+3. shaxsiy ma'lumotlarga ega bo‘lmagan foydalanuvchi faqat ochiq ma'lumotlarni
+ko‘radi, shaxsiy kabinetga kirish uchun esa Yagona identifikatsiya tizimi orqali
+avtorizatsiyadan o‘tishi talab qilinadi;
+4. portal kontenti (yo‘riqnomalar, yangiliklar) Adliya vazirligi xodimi tomonidan
+boshqariladi va yangilanadi.
+4.2.18. “Bildirishnoma (xabarnoma)” moduli
+Ushbu modul tizimdagi barcha muhim voqealar (yangi murojaat, mediator tayinlanishi,
+sessiya vaqti, ijro muddati va boshqalar) yuzasidan foydalanuvchilarni SMS, push-
+xabarnoma va elektron pochta hamda mobil ilova orqali avtomatik xabardor qilib
+boradi.
+Asosiy funksional talablar:
+ xabarnoma turlari va shablonlari “Ma'lumotnomalar va klassifikatorlar” moduli
+(4.2.2-band) orqali markazlashgan tarzda boshqariladi;\n=== BET 41 ===\n foydalanuvchi qaysi kanal (SMS, push, email va mobil ilova) orqali xabar
+olishni shaxsiy kabinetida sozlashi mumkin;
+ yetkazib berilmagan xabarnomalar bo‘yicha avtomatik qayta yuborish
+mexanizmi mavjud bo‘lishi.
+Ishlash tartibi (bosqichma-bosqich):
+1. tizimning istalgan moduli (masalan, ariza qabul qilish yoki ijro muddati
+yaqinlashishi) muayyan voqea yuz berganda bildirishnoma moduliga so‘rov
+yuboradi;
+2. modul voqea turiga mos shablonni tanlaydi va foydalanuvchining tanlagan
+kanali (SMS/push/email/mobil ilova) orqali xabarnomani shakllantiradi;
+3. xabarnoma darhol yuboriladi va uning yetkazilgan holati (yuborildi / o‘qildi /
+yetkazilmadi) kuzatib boriladi;
+4. yetkazilmagan xabarnomalar belgilangan muddatdan so‘ng avtomatik qayta
+yuboriladi yoki muqobil kanal orqali yetkaziladi.
+4.2.19. “Xavfsizlik va audit” moduli
+Ushbu modul tizimda ro‘y beradigan barcha foydalanuvchi harakatlarini (kirish,
+ma'lumot kiritish/o‘zgartirish/o‘chirish, hujjat imzolash) avtomatik tarzda qayd etuvchi
+audit jurnalini yuritadi hamda faqat tizim administratoriga va zarur hollarda vakolatli
+nazorat organlariga ushbu jurnalga kirish huquqini taqdim etadi.
+Asosiy funksional talablar:
+ har bir yozuv kim (foydalanuvchi), qachon, qaysi amalni (IP-manzil va qurilma
+ma'lumotlari bilan birga) bajarganini o‘zida aks ettirishi;
+ audit jurnali yozuvlarini o‘zgartirib yoki o‘chirib bo‘lmasligi (immutability)
+ta’minlanishi;
+ shubhali faoliyat (masalan, bir necha marta muvaffaqiyatsiz kirish urinishi)
+aniqlanganda administratorga avtomatik ogohlantirish yuborilishi.
+Ishlash tartibi (bosqichma-bosqich):
+1. foydalanuvchi tizimda istalgan amalni (kirish, ma'lumot kiritish, hujjat
+imzolash) bajarganda, tegishli voqea avtomatik ravishda audit jurnaliga
+yoziladi;
+2. yozuv o‘zgarmas (immutable) shaklda, kriptografik himoya bilan saqlanadi;
+3. administrator yoki vakolatli nazorat organi zarur holatda jurnaldan qidiruv va
+filtrlash orqali kerakli davr yoki foydalanuvchi bo‘yicha ma'lumot oladi;\n=== BET 42 ===\n4. g‘ayritabiiy faoliyat (masalan, qisqa vaqt ichida ko‘plab muvaffaqiyatsiz kirish
+urinishi) aniqlanganda, tizim administratorga avtomatik ogohlantirish yuboradi
+va zarur bo‘lsa hisobni vaqtincha bloklaydi.
+4.2.20. “Adliya vazirligi roli orqali sunʼiy intellekt yordamida tizimga
+o‘zgartirish kiritish bo‘yicha topshiriq berish” moduli
+Ushbu modul Adliya vazirligi xodimi (vakolatli foydalanuvchi) shaxsiy kabineti orqali
+tizim sozlamalari, ma'lumotnomalari, hisobot shakllari yoki bildirishnoma matnlariga
+o‘zgartirish kiritish bo‘yicha topshiriqni oddiy (tabiiy) til orqali sunʻiy intellekt
+yordamchisiga yuborishi va sunʻiy intellekt ushbu topshiriq asosida tizimga tegishli
+o‘zgartirish loyihasini tayyorlashi imkoniyatini ta’minlaydi.
+Asosiy funksional talablar:
+ Adliya vazirligi xodimi topshiriqni erkin matn ko‘rinishida kiritadi (masalan,
+“mediatorlar reestridagi hudud klassifikatoriga yangi tuman qo‘shish” yoki “ish
+yuklamasi hisobotiga yangi ustun qo‘shish”);
+ sunʻiy intellekt topshiriq matnini tahlil qiladi, uning qaysi modul,
+ma'lumotnoma yoki sozlamaga tegishli ekanligini aniqlaydi va amalga
+oshirilishi lozim bo‘lgan o‘zgartirishning loyihasini (joriy holat va taklif
+etilayotgan holat solishtirmasi ko‘rinishida) shakllantiradi;
+ taklif etilgan o‘zgartirish avtomatik tarzda kuchga kirmaydi — u faqat vakolatli
+shaxs (tizim administratori va/yoki Adliya vazirligining masʻul rahbari)
+tomonidan ko‘rib chiqilgandan va tasdiqlangandan keyin tizimga qo‘llaniladi;
+ topshiriqning amalga oshirilishi texnik jihatdan mumkin bo‘lmagan yoxud
+foydalanuvchining vakolat doirasidan tashqarida bo‘lgan hollarda, modul bu
+haqda asoslantirilgan rad javobini taqdim etadi;
+ sunʻiy intellekt orqali amalga oshiriladigan o‘zgartirishlar doirasi
+ma'lumotnomalar va klassifikatorlar (4.2.2-band), hisobot va statistika shakllari
+(4.2.17-band), bildirishnoma shablonlari (4.2.19-band) kabi administrativ-
+konfiguratsion parametrlar bilan cheklanadi; tizim xavfsizligi, foydalanuvchi
+huquqlari va shaxsiy ma'lumotlarga to‘g‘ridan-to‘g‘ri ta'sir ko‘rsatuvchi
+o‘zgartirishlar ushbu modul orqali amalga oshirilmaydi;
+ har bir topshiriq, sunʻiy intellektning tavsiyasi, tasdiqlash yoki rad etish qarori
+va amalga oshirilgan o‘zgartirish to‘liq holda “Xavfsizlik va audit” moduli
+(4.2.20-band) orqali qayd etiladi;\n=== BET 43 ===\n Adliya vazirligi xodimi o‘zi yuborgan barcha topshiriqlar tarixini va ularning
+bajarilish statusini (ko‘rib chiqilmoqda / tasdiqlandi / rad etildi / bajarildi)
+shaxsiy kabinetida kuzatib borish imkoniyatiga ega bo‘ladi.
+Ishlash tartibi (bosqichma-bosqich):
+1. Adliya vazirligi xodimi shaxsiy kabinetidagi SI yordamchisi bo‘limiga kirib,
+topshiriqni erkin matn ko‘rinishida kiritadi;
+2. sunʻiy intellekt topshiriqni tahlil qiladi, tegishli modul yoki ma'lumotnomani
+aniqlaydi va “joriy holat → taklif etilayotgan holat” ko‘rinishida o‘zgartirish
+loyihasini shakllantiradi;
+3. tizim loyihani vakolatli tasdiqlovchi shaxsga ko‘rib chiqish uchun yuboradi;
+4. vakolatli shaxs loyihani tasdiqlaydi yoki asoslantirilgan holda rad etadi;
+5. tasdiqlangan o‘zgartirish tizimga qo‘llaniladi, so‘ng bu haqda Adliya vazirligi
+xodimiga xabar beriladi va jarayonning barcha bosqichlari audit jurnaliga
+yoziladi.
+4.3. Ta'minot turlariga qo‘yiladigan talablar
+4.3.1. Matematik ta'minotga qo‘yiladigan talablar
+Tizimning asosiy funksiyalari uchun matematik ta'minotga alohida maxsus talablar
+qo‘yilmaydi. “Sunʻiy intellekt asosida nizo turkumini aniqlash va usul tavsiya qilish”
+hamda “Mediator, hakamlik sudyasi yoki arbitrni elektron tanlash” (tasodifiy tanlov —
+randomayzer) modullari uchun foydalaniladigan algoritmlar shaffof, obyektiv va
+kamsitmaslik prinsipiga asoslangan, natijalarini tekshirish va audit qilish imkonini
+beruvchi bo‘lishi lozim.
+4.3.2. Axborot ta'minotiga qo‘yiladigan talablar
+Tizimga kiritiladigan ma'lumotlar zamonaviy relyatsion ma'lumotlar bazasini
+boshqarish tizimida, normalizatsiya qoidalariga muvofiq saqlanishi va boshqarilishi
+lozim. Tizim modullari o‘rtasidagi axborot almashinuvi umumfoydalaniladigan
+ma'lumotlar bazasi orqali amalga oshiriladi.
+Tizim “mijoz-server” texnologiyasi asosida tashkil etilib, bunda mijoz (foydalanuvchi)
+dasturi zamonaviy veb-brauzerlar (Google Chrome, Mozilla Firefox, Safari, Microsoft
+Edge) orqali ishlaydigan veb-ilova hamda iOS/Android mobil ilova shaklida, server
+dasturiy ta'minoti esa dasturlar va ma'lumotlar bazasi serverlarida joylashtirilishi
+lozim.
+Boshqa axborot tizimlari bilan muvofiqligini ta’minlash uchun tizimda ma'lumotlarni
+eksport va import qilish, veb-servis texnologiyasi orqali bog‘lanish imkoniyatlari\n=== BET 44 ===\nko‘zda tutilishi hamda bunda o‘zDSt 2590:2012 davlat standarti talablariga rioya
+etilishi lozim. Mediatsiya jarayoniga oid maxfiy ma'lumotlar alohida himoyalangan
+ma'lumotlar omborida, cheklangan kirish huquqi bilan saqlanishi lozim.
+ma'lumotlar bazasini boshqarish tizimi relyatsion tartibda saqlash va SQL tilidagi
+so‘rovlar asosida ishlashi, tranzaksiyalar jurnalini yuritishi, ma'lumotlar butunligini va
+xavfsizligini ta’minlovchi ichki mexanizmlarga ega bo‘lishi, shuningdek o‘zDSt
+1135:2007 davlat standarti talablariga javob berishi lozim.
+4.3.3. Lingvistik ta'minotga qo‘yiladigan talablar
+Tizimni ishlab chiqishda mijoz-server texnologiyasidagi veb-ilovalar yaratishda keng
+qo‘llaniladigan zamonaviy dasturlash tillaridan (masalan Java, PHP, Python,
+JavaScript va boshqalar) foydalaniladi, aniq tanlov ishlab chiqish jarayonida
+belgilanadi. ma'lumotlarni boshqarish tili sifatida SQL so‘rovlar tilidan foydalaniladi.
+Tizimning interfeysi o‘zbek tilining lotin alifbosida asosiy tilda, shuningdek zarur
+hollarda rus va ingliz tillarida ham taqdim etilgan bo‘lishi lozim (xususan xalqaro
+arbitraj jarayonlari va xorijiy investorlar ishtirokidagi ishlar uchun).
+4.3.4. Dasturiy ta'minotga qo‘yiladigan talablar
+Tizimning dasturiy ta'minoti funksional to‘liqlik, ishonchlilik va barqarorlik,
+moslashuvchanlik, tushunib olish uchun soddalik va foydalanishga qulaylik
+xususiyatlariga ega bo‘lishi lozim. Dasturiy ta'minotni ishlab chiqishda keng
+qo‘llaniladigan va umumiy foydalanish imkoniyatiga ega dasturiy modullar va
+kutubxonalardan foydalanilishi, ishlab chiqilgan mahsulot imkon darajasida muayyan
+operatsion tizim yoki hisoblash texnikasi turiga bog‘lanib qolmasligi lozim.
+Onlayn muzokara va masofaviy eshituvlar moduli uchun ishonchli va keng tarqalgan
+video-konferensiya texnologiyalari (WebRTC kabi ochiq standartlar asosida)
+qo‘llanilishi, elektron raqamli imzo moduli esa E-IMZO dasturiy vositalari bilan to‘liq
+muvofiq ishlashi lozim. Sunʻiy intellekt moduli uchun foydalaniladigan modellar
+o‘zbek tilidagi matnlarni qayta ishlashga moslashtirilgan bo‘lishi kerak.
+4.3.5. Texnik ta'minotga qo‘yiladigan talablar
+Tizimning ishlashi uchun foydalaniladigan barcha texnik vositalar ishonchlilik,
+xavfsizlik va texnik xususiyatlari bo‘yicha zamonaviy kompyuter texnikasiga
+qo‘yiladigan talablarga hamda xalqaro muvofiqlik sertifikatlariga mos bo‘lishi lozim.
+Foydalaniladigan texnik vositalar eng kamida quyidagi xususiyatlarga ega bo‘lishi
+lozim:\n=== BET 45 ===\nQurilma Asosiy xususiyatlari bo‘yicha minimal talablar
+Mikroprotsessor — kamida 2 ta, har birida 8 yadro, chastotasi
+3,0 GHz dan kam emas; tezkor xotira — kamida 256 GB; doimiy
+ma'lumotlar bazasi
+xotira — kamida 2 ta 480 GB SSD va 4 ta 1,2 TB SAS disk
+serveri
+(RAID tizimi); kamida 2 ta 10 Gb/s Ethernet port; ikkilangan
+elektr ta'minoti bloklari.
+Mikroprotsessor — kamida 2 ta, har birida 8 yadro, chastotasi
+Ilovalar (application) 2,8 GHz dan kam emas; tezkor xotira — kamida 128 GB; doimiy
+serveri xotira — kamida 960 GB SSD; gorizontal masshtablash
+(klasterlash) imkoniyati.
+Tezkor xotira — kamida 64 GB; doimiy xotira — kamida 4 TB
+Video-konferensiya
+(kengaytirish imkoni bilan); yuqori tezlikdagi tarmoq porti (10
+va fayl saqlash serveri
+Gb/s).
+Chastotasi 2,8 GHz dan kam bo‘lmagan 4 yadroli
+Administratorlarning
+mikroprotsessor; kamida 16 GB tezkor xotira; kamida 512 GB
+ish stansiyalari
+SSD disk; 24 dyuymdan kichik bo‘lmagan monitor.
+Chastotasi 2,5 GHz dan kam bo‘lmagan 4 yadroli
+Foydalanuvchilarnin mikroprotsessor; kamida 8 GB tezkor xotira; zamonaviy veb-
+g ish stansiyalari brauzer o‘rnatilgan bo‘lishi; veb-kamera va mikrofon (video-
+sessiyalarda ishtirok etish uchun).
+Yuklama taqsimlovchi (load balancer), tarmoqlararo ekran
+Tarmoq va xavfsizlik
+(firewall), IDS/IPS tizimlari, kamida 2 ta 10 Gb/s Ethernet porti
+uskunalari
+bilan kommutatorlar.
+Elektr ta'minoti butunlay uzilgan taqdirda barcha qurilmalarni
+Uzluksiz elektr
+kamida 30 daqiqa davomida ta’minlash, nosozlik haqida
+ta'minoti qurilmasi
+administratorga avtomatik xabar yuborish imkoniyatiga ega
+(UPS)
+bo‘lishi.
+Tizimning serverlari va tarmoq uskunalari sertifikatlangan ma'lumotlar markazida
+(data-sentr) joylashtirilishi, geografik jihatdan bir-biridan uzoqda joylashgan asosiy va
+zaxira maydonchalar (disaster recovery) orqali ikkilangan (dublirlangan) tarzda
+ishlashi tavsiya etiladi.
+4.3.6. Metrologik ta'minotga qo‘yiladigan talablar
+Tizim faoliyatining o‘ziga xos xususiyatlarini hisobga olgan holda, metrologik
+ta'minotga alohida talablar qo‘yilmaydi.\n=== BET 46 ===\n4.3.7. Tashkiliy ta'minotga qo‘yiladigan talablar
+Tizimning barqaror va to‘laqonli ishlashi uchun talab etiladigan tashkiliy ishlar
+ro‘yxati (Adliya vazirligi, masʻul bo‘linma va mansabdor shaxslarni belgilash,
+tizimga xizmat ko‘rsatish va foydalanuvchilarni o‘qitish tartibini tashkil etish) ishlab
+chiqaruvchi tomonidan tayyorlanib, buyurtmachiga taqdim etiladi.
+4.3.8. Uslubiy ta'minotga qo‘yiladigan talablar
+Tizimning ishlash uslublari, jumladan mediator/hakam/arbitrni elektron tanlash
+algoritmi, sunʻiy intellekt tavsiya tizimi va reyting hisoblash metodologiyasi mazkur
+texnik topshiriqda belgilangan talablar asosida ishlab chiquvchi tomonidan
+tayyorlanib, buyurtmachi (Adliya vazirligi bilan kelishilgan holda) tomonidan
+tasdiqlanadi.
+5. Tizimni yaratish bo‘yicha ishlarning tarkibi va mazmuni
+Tizimni ishlab chiqish va joriy etish o‘z DSt 1986:2018 davlat standartiga muvofiq
+quyidagi bosqichlar bo‘yicha, bosqichma-bosqich amalga oshiriladi:
+1) axborotlashtirish obyektini tadqiq qilish;
+2) texnik topshiriq;
+3) texnik topshiriqqa asosan axborot tizimini ishlab chiqish;
+4) axborot tizimini ishlashini tekshirish va qo‘shimcha ishlov berish;
+5) tizimdan foydalanuvchi va unga xizmat ko‘rsatuvchi xodimlar uchun maxsus
+o‘quvlar o‘tkazish;
+6) tizimni sinov tariqasida foydalanishga topshirish;
+7) axborot tizimini foydalanishga topshirish.
+Har bir bosqich va etap yakunida o‘z DSt 1985:2018 davlat standartiga muvofiq
+tegishli hujjatlar tayyorlanadi hamda buyurtmachiga taqdim etiladi. Ishlar jadvali
+quyida keltirilgan bo‘lib, aniq muddatlar shartnoma imzolangan sanadan kelib chiqqan
+holda belgilanadi va 2027-yil 1-aprel muddatidan kechiktirilmasligi lozim:
+№ Bosqich nomi va Bajarish muddatlari Bosqich
+ishlarning yakunida
+Boshi Yakuni Bajaruvchi
+qisqacha mazmuni tayyorlana\n=== BET 47 ===\ndigan
+hujjat
+1 Axborotlashtirish 2026 yil 2026 yil AKTRM, Tadqiqot
+obyektini tadqiq avgust sentabr Adliya hisoboti
+vazirligi
+qilish: sohaning
+joriy holati, mavjud
+jarayonlar va
+muammolarni
+oʻrganish,
+manfaatdor
+tomonlar (Adliya
+vazirligi) bilan
+talablarni
+aniqlashtirish
+2 Texnik topshiriqni 2026 yil 2026 yil Adliya Tasdiqlanga
+ishlab chiqish va sentabr sentabr vazirligi, n texnik
+tasdiqlash (mazkur manfaatdor topshiriq
+hujjat) idoralar
+3 Texnik topshiriqqa 2026 yil 2026 yil AKTRM Tizimni test
+asosan axborot sentabr noyabr sinov
+tizimini ishlab rjimida
+chiqish va test sinov ishga
+rjimida ishga tushirish va
+tushirish sinov
+natijalari
+hisobotlari
+4 Axborot tizimini 2026 yil 2027 yil AKTRM Qo‘shimcha
+ishlashini tekshirish dekabr yanvar ishlov
+va qo‘shimcha hisobotlari
+ishlov berish
+5 Tizimdan 2026 yil 2027 yil AKTRM Foydalanuv
+foydalanuvchi va dekabr yanvar chi
+unga xizmat qo‘llanmasi
+ko‘rsatuvchi
+xodimlar uchun
+maxsus o‘quvlar
+o‘tkazish
+6 Oʻzbekiston 2027 yil 2027 yil AKTRM Ekrpertizad
+Respublikasi fevral mart an o‘tkazish
+Prezidentining\n=== BET 48 ===\n2020-yil 15-
+iyundagi PQ-4751-
+sonli qaroriga
+asosan axborot
+tizimi texnik
+topshiriq hamda
+axborot va
+kiberxavfsizlik
+talablariga
+muvofiqligi
+Yuzasidan
+Kiberxavfsizlik
+markazidan
+ekspertizadan
+oʻtkazish
+7 Tizimni sinov 2026 yil 2027 yil AKTRM Ishchi
+tariqasida dekabr yanvar hujjatlar,
+foydalanishga sinovdan
+topshirish oʻtgan
+dasturiy
+taʻminot
+8 Axborot tizimini 2027 yil 2027 yil AKTRM, Qabul qilish
+foydalanishga yanvar mart Adliya dalolatnoma
+topshirish vazirligi si, sinov
+natijalari
+hisoboti
+Izoh – Buyurtmachi va bajaruvchining kelishuviga ko‘ra, ayrim bosqichlar va etaplar
+parallel ravishda amalga oshirilishi yoki ularning tarkibiga qo‘shimcha ustunlar
+(masalan “Eslatma”, “Masʻul shaxs”) kiritilishi mumkin.
+Tizimning oraliq versiyalarini taqdim etish davriyligi (iteratsiya)
+o‘zDSt1986:2018 talablariga muvofiq uch haftadan ortiq bo‘lmasligi lozim.
+6. Tizimni nazorat qilish va qabul qilish tartibi
+6.1. Tizimni qabul qilish tartibi
+o‘z DSt 1986:2018 davlat standartiga asosan axborot tizimini tekshirish, sinovdan
+o‘tkazish va qabul qilish ishlari quyidagilardan tashkil topadi:
+ dastlabki tekshirishlardan o‘tkazish;
+ tizimdan sinov tariqasida foydalanish;\n=== BET 49 ===\n qabul qilish sinovidan o‘tkazish.
+Dastlabki tekshirish ishlari ijobiy yakunlangach, tizimdan sinov tariqasida foydalanish
+boshlanadi. Sinov tariqasida foydalanish ishlari 10 ish kunidan kam va 30 ish kunidan
+ko‘p bo‘lmasligi, shu davr mobaynida tizimning barcha modullari, shu jumladan sudlar
+va boshqa davlat organlari bilan integratsiya kanallari amalda sinovdan o‘tkazilishi
+lozim.
+Tizimdan sinov tariqasida foydalanish ishlari ijobiy yakunlangach, tizim qabul qilish
+sinovidan o‘tkaziladi. Qabul qilish sinovida quyidagilar ko‘rib chiqilishi lozim:
+ axborot tizimining barcha modullari va mazkur texnik topshiriqda belgilangan
+funksional talablarga muvofiqligi;
+ tizimning tashqi axborot tizimlari (sud, prokuratura, id.gov.uz, to‘lov tizimlari
+va boshqalar) bilan integratsiyasining amalda ishlashi;
+ axborot xavfsizligi va ma'lumotlar maxfiyligini ta’minlash talablarining
+bajarilishi (Kiberxavfsizlik markazi ekspertiza xulosasi asosida);
+ foydalanish hujjatlarining to‘liqligi va tushunarliligi;
+ xodimlarning tizimdan mustaqil foydalanishga tayyorlik darajasi.
+Axborot tizimining foydalanishga topshirilganligi va qabul qilib olinganligi
+shartnomaga asosan bajarilgan ishlar to‘g‘risidagi dalolatnoma bilan
+rasmiylashtiriladi.
+6.2. Tekshirish va sinovlardan o‘tkazish shartlari
+Dastlabki tekshirish va sinov tariqasida foydalanish natijalariga ko‘ra, axborot tizimini
+qabul qilish sinovlaridan o‘tkazish vaqti, joyi hamda unda qatnashuvchilarning tarkibi
+buyurtmachi tomonidan belgilanib, ishlab chiqaruvchi bilan kelishiladi. o‘z DSt
+1987:2018 davlat standarti talablariga ko‘ra, tizimni tekshirish va sinovdan o‘tkazish
+ishlari, qoida tariqasida, buyurtmachining obyektlarida olib boriladi.
+O‘zbekiston Respublikasi Prezidentining tegishli qaroriga asosan, davlat organlari
+axborot tizimlarini yaratishda amaldagi tartibga muvofiq, tizim foydalanishga
+topshirilishidan oldin Kiberxavfsizlik markazi tomonidan texnik topshiriq hamda
+axborot va kiberxavfsizlik talablariga muvofiqligi yuzasidan ekspertizadan o‘tkazilishi
+shart.
+6.3. Qabul qilish komissiyasining tuzilishi tartibi, tarkibi va statusi
+Ахборот тизимини фойдаланишга қабул қилиб олиш учун, заруратга кўра,
+буюртмачи махсус қабул қилиш комиссияси тузиши, унинг раҳбари ва\n=== BET 50 ===\nаъзоларини тайинлаши ҳамда ахборот тизимини ишлаб чиқарувчининг
+вакиллари иштирокида фойдаланишга қабул қилиб олиш мумкин.
+Ахборот тизимидан фойдаланувчи объектнинг раҳбари, қабул қилиш
+комиссиясининг раҳбари бўлиши ёки комиссия таркибига киритилишига йўл
+қўйилади.
+Қабул қилиш комиссияси тузилганда, унинг таркибида буюртмачи ва ишлаб
+чиқарувчининг камида биттадан вакиллари бўлиши шарт.
+Қабул қилиш комиссиясининг статуси – идоравий.
+Қабул қилиш комиссияси ўз фаолиятининг якунига кўра тизимни фойдаланишга
+қабул қилиш тўғрисида далолатнома тузиб, уни тасдиқлаш учун буюртмачига
+тақдим этади. Тизимни фойдаланишга қабул қилиш тўғрисида далолатнома
+қабул қилиш комиссиясининг барча аъзолари томонидан имзоланган бўлиши
+лозим. Ушбу далолатнома ишлаб чиқарувчи томонидан тасдиқланиши талаб
+этилмайди.
+7. Tizimni ishga tushirishga tayyorlash ishlarining tarkibi va mazmuniga
+qo‘yiladigan talablar
+Tizimni foydalanishga topshirish jarayonida quyidagilarning bajarilishi buyurtmachi
+tomonidan ta’minlanishi lozim:
+ tizimni joriy etish va sinovdan o‘tkazish uchun Adliya vazirligi tarkibida
+masʻul bo‘linma hamda mansabdor shaxslarni tayinlash;
+ ishlab chiqaruvchi tomonidan o‘tkaziladigan o‘quvlarda tizimdan foydalanuvchi
+hamda unga xizmat ko‘rsatuvchi barcha xodimlarning ishtirok etishini
+ta’minlash;
+ tizim joriy etiladigan bino va inshootlardagi ish sharoitlarini mazkur texnik
+topshiriqda belgilangan shartlar asosida tayyorlash;
+ tizimni joriy etish uchun lozim bo‘lgan texnik va dasturiy vositalarning to‘liqligi
+hamda ishchi holatda bo‘lishini ta’minlash;
+ mediatorlar, hakamlik sudyalari va arbitrlar to‘g‘risidagi mavjud (qog‘oz
+shaklidagi yoki turli elektron manbalardagi) ma'lumotlarni Tizimga ko‘chirib
+o‘tkazish (migratsiya qilish) ishlarini tashkil etish;
+ tizimni sinovdan o‘tkazish va qabul qilib olish.
+Buyurtmachining xodimlari quyidagi yo‘nalishlar bo‘yicha o‘qitiladi:\n=== BET 51 ===\n1) tizimga xizmat ko‘rsatuvchi mutaxassislar (administratorlar);
+2) tizimdan foydalanuvchi xodimlar.
+Тизимга хизмат кўрсатувчи мутахассислар учун ўқувлар ишлаб чиқарувчи
+томонидан, тизимдан фойдаланувчи ходимлар учун ўқувлар эса буюртмачининг
+мутахассислари томонидан ўтказилади. Заруратга кўра, томонларнинг
+келишувига мувофиқ, тизимдан фойдаланувчи ходимларни дастлабки ўқитиш
+ишлари ҳам ишлаб чиқарувчи томонидан ўтказилиши мумкин.
+8. Hujjatlashtirishga qo‘yiladigan talablar
+Tizim bilan birgalikda taqdim etiladigan foydalanish hujjatlari buyurtmachining
+axborot tizimidan mustaqil ravishda foydalanishi va unga xizmat ko‘rsatishi uchun
+to‘liq va yetarli darajada bo‘lishi lozim.
+Tizimni ishlab chiqish va foydalanishga topshirish jarayonida, o‘z DSt 1985:2018
+davlat standartiga muvofiq, eng kamida quyidagi hujjatlar ishlab chiqilgan bo‘lishi
+lozim:
+ texnik topshiriq (mazkur hujjat);
+ dasturiy ta'minotning foydalanuvchi qo‘llanmalari (har bir foydalanuvchi toifasi
+— ariza beruvchi, mediator/hakam/arbitr, vakolatli organ xodimi, administrator
+— uchun alohida);
+ tizim administratori uchun ekspluatatsiya yo‘riqnomasi;
+ ma'lumotlar bazasi tuzilmasi tavsifi;
+ tashqi tizimlar bilan integratsiya bo‘yicha texnologik ko‘rsatmalar;
+ qabul qilish va sinov natijalari bo‘yicha bayonnoma va dalolatnomalar.
+Foydalanish hujjatlarining elektron yoki qog‘oz shaklida bo‘lishi hamda necha
+nusxada taqdim etilishi tizimni ishlab chiqish bo‘yicha shartnomada ko‘zda tutiladi.
+9. Ishlanma manbalari
+ o‘z DSt 1135:2007 Axborot texnologiyasi. ma'lumotlar bazalari va joylardagi
+davlat boshqaruvi hamda davlat hokimiyati organlari o‘rtasida axborot
+almashishiga qo‘yiladigan talablar.
+ o‘z DSt 1985:2018 Axborot texnologiyasi. Axborot tizimlarini yaratishda
+hujjatlarning turlari, komplektliligi va belgilanishi.\n=== BET 52 ===\n o‘z DSt 1986:2018 Axborot texnologiyasi. Axborot tizimlari. Yaratish
+bosqichlari.
+ o‘z DSt 1987:2018 Axborot texnologiyasi. Axborot tizimini yaratish uchun
+texnik topshiriq.
+ o‘z DSt 2590:2012 Axborot texnologiyasi. Milliy axborot tizimini shakllantirish
+doirasida davlat organlari tomonidan foydalaniladigan axborot tizimlari
+integratsiyasiga va o‘zaro faoliyatiga qo‘yiladigan talablar.
+ o‘z DSt 2864:2014 Axborot texnologiyasi. Idoralararo integratsiya platformasi.
+Umumiy texnik talablar.
+ o‘z DSt ISO/IEC/IEEE 12207:2018 Axborot texnologiyasi. Dasturiy ta'minot
+hayotiy siklining jarayonlari.
+ o‘z DSt ISO/IEC 27001:2020 Axborot texnologiyalari. Xavfsizlikni ta’minlash
+usullari. Axborot xavfsizligini boshqarish tizimlari. Talablar.
+ o‘z DSt ISO/IEC 27002:2016 Axborot texnologiyasi. Xavfsizlikni ta’minlash
+usullari. Axborot xavfsizligini boshqarishning amaliy qoidalari.
+ o‘z DSt ISO/IEC 25051:2018 Dasturiy ta'minotni ishlab chiqish. Tizim va
+dasturiy mahsulot sifatiga qo‘yiladigan talablar va uni baholash (SQuaRE).
+ o‘z DSt 1204:2009 Axborot texnologiyasi. Axborotning kriptografik
+muhofazasi. Kriptografik modullarga xavfsizlik talablari.
+ O‘zbekiston Respublikasining “Mediatsiya to‘g‘risida”gi Qonuni (2018-yil 3-
+iyuldagi o‘RQ-482-son).
+ Mediatsiya natijasida erishilgan xalqaro yarashuv bitimlari to‘g‘risidagi
+Birlashgan Millatlar Tashkiloti konvensiyasi (Singapur konvensiyasi, 2018-yil).
+ YUNSITRALning xalqaro tijorat mediatsiyasi va mediatsiya natijasida tuzilgan
+xalqaro bitimlar to‘g‘risidagi namunaviy qonuni (UNCITRAL Model Law on
+International Commercial Mediation).
+ Tizimdan foydalanuvchilarning tezkor va statistik hisobot shakllari.\n=== BET 53 ===\n1-ilova
+(ma'lumot uchun)
+Tizimning asosiy foydalanish ssenariylari namunalari
+Identifikator: SUBMIT_CASE — Nizo bo‘yicha ariza berish
+Jismoniy yoki yuridik shaxs nizo yuzasidan Tizim orqali
+Qisqacha tavsifi
+ariza berish imkoniga ega bo‘lishi kerak
+Maqsadi Nizo bo‘yicha murojaatni muvaffaqiyatli ro‘yxatga olish
+Amalga oshiruvchi Jismoniy/yuridik shaxs (nizo tarafi)
+Foydalanuvchi Yagona identifikatsiya tizimi orqali tizimga
+Dastlabki shartlar
+kirgan
+Chiqish ma'lumotlari Ro‘yxatga olingan ariza va uning identifikatsiya raqami
+Qadam Qadam tavsifi Qo‘shimcha ma'lumotlar
+Foydalanuvchi ariza turini (nizo toifasi)
+1 tanlaydi va zarur ma'lumotlarni (taraflar,
+nizo mazmuni, ilova hujjatlar) kiritadi
+Kengaytma: 2.a Majburiy
+2 Tizim kiritilgan ma'lumotlarni tekshiradi
+maydonlar to‘liq kiritilmagan
+Sunʻiy intellekt moduli nizo toifasini
+aniqlaydi va hal etish usulini Vaqt reglamenti: 5 s dan
+3
+(mediatsiya/arbitraj/hakamlik sudi) oshmasligi kerak
+tavsiya etadi
+Foydalanuvchi tavsiya etilgan usulni
+4
+tasdiqlaydi yoki boshqa usulni tanlaydi
+Tizim arizani ro‘yxatga oladi va
+5 “Mediator/hakam/arbitrni elektron
+tanlash” moduliga yo‘naltiradi\n=== BET 54 ===\nIdentifikator: AUTO_ASSIGN_MEDIATOR — Majburiy mediatsiya bo‘yicha
+mediatorni avtomat tayinlash
+Sudgacha majburiy mediatsiya tartibi qo‘llaniladigan ishlar
+Qisqacha tavsifi bo‘yicha Tizim taraflarga mediatorni avtomat tarzda
+tayinlashi kerak
+Maqsadi Shaffof va tasodifiy tarzda mediator tayinlash
+Amalga oshiruvchi Tizim (avtomat rejimda)
+Dastlabki shartlar Ariza majburiy mediatsiya toifasiga kiritilgan
+Chiqish ma'lumotlari Tayinlangan mediator to‘g‘risida xabarnoma
+Qadam Qadam tavsifi Qo‘shimcha ma'lumotlar
+Tizim nizo hududi va ixtisosligiga mos,
+1 yuklamasi nisbatan kam bo‘lgan faol
+mediatorlar ro‘yxatini shakllantiradi
+Tizim randomayzer orqali mediatorni Vaqt reglamenti: 10 s dan
+2
+tasodifiy tarzda tanlaydi oshmasligi kerak
+Tanlangan mediatorga va taraflarga Kengaytma: 3.a Mediator
+3 shaxsiy kabinet hamda SMS orqali belgilangan muddatda javob
+xabarnoma yuboriladi bermaydi — 1-bosqichga qaytish
+Kengaytma: 4.a Mediator ishni
+4 Mediator ishni qabul qiladi asosli ravishda rad etadi — 1-
+bosqichga qaytish
+Tizim axborot sessiyasi sanasini
+5
+belgilaydi va taraflarni xabardor qiladi
+Identifikator: ONLINE_SESSION — Onlayn mediatsiya sessiyasini o‘tkazish
+Mediator va taraflar masofadan turib video-aloqa orqali
+Qisqacha tavsifi
+mediatsiya uchrashuvini o‘tkazishi mumkin bo‘lishi kerak
+Maqsadi Onlayn mediatsiya sessiyasini muvaffaqiyatli o‘tkazish
+Amalga oshiruvchi Mediator, taraflar
+Dastlabki shartlar Ishga mediator tayinlangan, sessiya sanasi belgilangan
+Chiqish ma'lumotlari Sessiya bayonnomasi, zarur holda mediativ kelishuv loyihasi\n=== BET 55 ===\nQadam Qadam tavsifi Qo‘shimcha ma'lumotlar
+Taraflar va mediator belgilangan vaqtda
+1 shaxsiy kabinet orqali video-sessiyaga
+kiradi
+Tizim sessiya davomida xujjat almashish
+2
+va chat imkoniyatlarini taqdim etadi
+Kengaytma: 3.a Taraflar
+Taraflar kelishuvga erishganda, mediator
+3 kelishuvga erishmaydi — jarayon
+kelishuv loyihasini tizimda shakllantiradi
+yakunlanadi, natija qayd etiladi
+Taraflar va mediator hujjatni elektron
+4
+raqamli imzo orqali imzolaydi
+Tizim imzolangan kelishuvni “Kelishuv
+5 va qarorlarni rasmiylashtirish” moduliga
+yuboradi
+Identifikator: REGISTER_AGREEMENT — Mediativ kelishuvni ro‘yxatga
+olish va sudga yuborish
+Tuzilgan mediativ kelishuv majburiy tartibda ro‘yxatga
+Qisqacha tavsifi olinishi va, zarur holda, tegishli sudga elektron yuborilishi
+kerak
+Maqsadi Kelishuvni rasmiylashtirish va huquqiy kuchga kiritish
+Amalga oshiruvchi Tizim, mediator
+Mediativ kelishuv barcha taraflar tomonidan elektron raqamli
+Dastlabki shartlar
+imzo orqali imzolangan
+Chiqish ma'lumotlari Reestrdagi yozuv, sud tomonidan chiqarilgan ajrim
+Qadam Qadam tavsifi Qo‘shimcha ma'lumotlar
+Tizim kelishuvga noyob raqam va QR-
+1
+kod beradi hamda reestrga kiritadi\n=== BET 56 ===\nAgar ish sud ish yurituvida bo‘lsa, tizim
+2 kelishuvni elektron shaklda tegishli
+sudga yuboradi
+Sud kelishuvni olgandan keyin uch ish
+Kengaytma: 3.a Sud kelishuvda
+kunidan kechiktirmasdan uni tasdiqlash
+3 nomuvofiqlik aniqlaydi va uni
+va ish yuritishni tugatish to‘g‘risida ajrim
+qaytaradi
+chiqaradi
+Tizim ijro monitoringi uchun kelishuvni
+4 “Ijroni monitoring qilish” moduliga
+uzatadi
+Identifikator: MONITOR_EXECUTION — Kelishuv ijrosini monitoring qilish
+Tizim tuzilgan kelishuvning ixtiyoriy ijro etilishini kuzatib
+Qisqacha tavsifi
+borishi va taraflarni xabardor qilishi kerak
+Maqsadi Kelishuv majburiyatlari ijrosini nazorat qilish
+Amalga oshiruvchi Tizim (avtomat rejimda)
+Dastlabki shartlar Kelishuv ro‘yxatga olingan, ijro muddati belgilangan
+Chiqish ma'lumotlari Ijro holati to‘g‘risida xabarnoma, statistik ma'lumot
+Qadam Qadam tavsifi Qo‘shimcha ma'lumotlar
+Tizim ijro muddati yaqinlashganda
+1
+taraflarga eslatma xabarnoma yuboradi
+Kengaytma: 2.a Taraf ma'lumot
+Belgilangan muddatda taraf ijro holatini
+2 kiritmaydi — tizim qayta eslatma
+tizimga kiritadi (ijro etildi / etilmadi)
+yuboradi
+Ijro etilmagan holda, tizim ijro varag‘i
+3 berish to‘g‘risida ariza berishni taklif
+etadi
+Tizim ijro natijasini statistika moduliga
+4
+uzatadi\n=== BET 57 ===\nIdentifikator: AI_CONFIG_REQUEST — Adliya vazirligi xodimi tomonidan
+sunʼiy intellekt orqali tizimni sozlash bo‘yicha topshiriq berish
+Adliya vazirligi xodimi tizim sozlamalari yoki
+ma'lumotnomalariga o‘zgartirish kiritish bo‘yicha topshiriqni
+Qisqacha tavsifi
+sunʻiy intellekt yordamchisiga tabiiy til orqali yuborishi
+imkoniga ega bo‘lishi kerak
+Administrativ-konfiguratsion o‘zgartirishlarni tezkor va
+Maqsadi
+nazorat qilinadigan tartibda amalga oshirish
+Adliya vazirligi xodimi, sunʻiy intellekt yordamchisi,
+Amalga oshiruvchi
+vakolatli tasdiqlovchi shaxs
+Foydalanuvchi Yagona identifikatsiya tizimi orqali tizimga
+Dastlabki shartlar
+kirgan va unga Adliya vazirligi roli berilgan
+Chiqish ma'lumotlari Tizimga qo‘llangan o‘zgartirish va unga oid audit yozuvi
+Qadam Qadam tavsifi Qo‘shimcha ma'lumotlar
+Adliya vazirligi xodimi shaxsiy
+kabinetidagi "SI yordamchisi" bo‘limida
+1
+topshiriqni erkin matn ko‘rinishida
+kiritadi
+Sunʻiy intellekt topshiriqni tahlil qiladi,
+tegishli modul yoki ma'lumotnomani
+Vaqt reglamenti: 15 s dan
+2 aniqlaydi va o‘zgartirish loyihasini (joriy
+oshmasligi kerak
+va taklif etilayotgan holat solishtirmasi
+ko‘rinishida) shakllantiradi
+Kengaytma: 3.a Loyiha
+Tizim tayyorlangan loyihani vakolatli
+foydalanuvchi vakolati doirasidan
+3 tasdiqlovchi shaxsga ko‘rib chiqish
+tashqarida — asoslangan rad
+uchun yuboradi
+javobi qaytariladi
+Kengaytma: 4.a Loyiha rad etiladi
+Vakolatli shaxs taqdim etilgan loyihani — Adliya vazirligi xodimiga
+4
+tasdiqlaydi yoki rad etadi sabab bilan birga xabar beriladi —
+1-bosqichga qaytish\n=== BET 58 ===\nTizim tasdiqlangan o‘zgartirishni
+qo‘laydi va topshiriqning barcha
+5
+bosqichlarini "Xavfsizlik va audit"
+moduliga uzatadi\n=== BET 59 ===\n2-ilova
+(majburiy)
+Tizimni yaratish bo‘yicha ishlarning bosqichlari va etaplari ro‘yxati
+Ushbu ilova o‘z DSt 1987:2018 davlat standarti 2 ilovasiga muvofiq rasmiylashtirilgan
+bo‘lib, unda mazkur texnik topshiriqning 5-bo‘limida keltirilgan ishlar jadvali asosida
+har bir bosqich doirasidagi aniq etaplar aks ettiriladi. Buyurtmachi va bajaruvchi
+o‘rtasida shartnoma imzolanganidan so‘ng, ushbu ro‘yxat aniq taqvim sanasi va
+masʻul ijrochilar ko‘rsatilgan holda tomonlar tomonidan birgalikda to‘ldiriladi va
+shartnomaga ilova qilinadi.
+№ Bosqich nomi va Bajarish muddatlari Bosqich
+ishlarning yakunida
+Bajaruvchi
+Boshi Yakuni
+qisqacha mazmuni tayyorlana
+digan
+hujjat
+1 Axborotlashtirish 2026 yil 2026 yil AKTRM, Tadqiqot
+obyektini tadqiq avgust sentabr Adliya hisoboti
+vazirligi
+qilish: sohaning
+joriy holati, mavjud
+jarayonlar va
+muammolarni
+oʻrganish,
+manfaatdor
+tomonlar (Adliya
+vazirligi) bilan
+talablarni
+aniqlashtirish
+2 Texnik topshiriqni 2026 yil 2026 yil Adliya Tasdiqlanga
+ishlab chiqish va sentabr sentabr vazirligi, n texnik
+tasdiqlash (mazkur manfaatdor topshiriq
+hujjat) idoralar
+3 Texnik topshiriqqa 2026 yil 2026 yil AKTRM Tizimni test
+asosan axborot sentabr noyabr sinov
+tizimini ishlab rjimida
+chiqish va test sinov ishga
+rjimida ishga tushirish va
+tushirish sinov\n=== BET 60 ===\nnatijalari
+hisobotlari
+4 Axborot tizimini 2026 yil 2027 yil AKTRM Qo‘shimcha
+ishlashini tekshirish dekabr yanvar ishlov
+va qo‘shimcha hisobotlari
+ishlov berish
+5 Tizimdan 2026 yil 2027 yil AKTRM Foydalanuv
+foydalanuvchi va dekabr yanvar chi
+unga xizmat qo‘llanmasi
+ko‘rsatuvchi
+xodimlar uchun
+maxsus o‘quvlar
+o‘tkazish
+6 Oʻzbekiston 2027 yil 2027 yil AKTRM Ekrpertizad
+Respublikasi fevral mart an o‘tkazish
+Prezidentining
+2020-yil 15-
+iyundagi PQ-4751-
+sonli qaroriga
+asosan axborot
+tizimi texnik
+topshiriq hamda
+axborot va
+kiberxavfsizlik
+talablariga
+muvofiqligi
+Yuzasidan
+Kiberxavfsizlik
+markazidan
+ekspertizadan
+oʻtkazish
+7 Tizimni sinov 2026 yil 2027 yil AKTRM Ishchi
+tariqasida dekabr yanvar hujjatlar,
+foydalanishga sinovdan
+topshirish oʻtgan
+dasturiy
+taʻminot
+8 Axborot tizimini 2027 yil 2027 yil AKTRM, Qabul qilish
+foydalanishga yanvar mart Adliya dalolatnoma
+topshirish vazirligi si, sinov
+natijalari
+hisoboti\n=== BET 61 ===\nIzoh – Buyurtmachi va ishlab chiquvchining xohishiga ko‘ra jadvalga qo‘shimcha
+ustunlar (“Eslatma” va boshqalar) kiritilishi mumkin.
