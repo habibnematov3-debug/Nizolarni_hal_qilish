@@ -7,7 +7,7 @@ export interface CabinetResolutionResult {
 }
 
 const AUTHORITY_ROLES = ['MINISTRY_STAFF', 'REGIONAL_STAFF', 'COMMISSION'];
-const SPECIALIST_ROLES = ['MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR', 'MEDIATOR_APPLICANT'];
+const SPECIALIST_ROLES = ['MEDIATOR', 'ARBITRATION_JUDGE', 'ARBITRATOR'];
 
 export function resolveUserCabinetAndRoles(
   userRoles: string[],
