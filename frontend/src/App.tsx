@@ -38,6 +38,14 @@ type Role = { key: RoleKey; title: string; summary: string; icon: typeof UserRou
 type Metric = [string, number | string, string, typeof UserRound]
 type CabinetGroup = { title: string; summary: string; roles: RoleKey[] }
 const demoModeEnabled = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true'
+const previewTestPassword = 'demo1234'
+const previewTestAccounts = [
+  { username: 'demo.fuqaro', label: 'Fuqaro', detail: 'Jismoniy shaxs · mediatsiya murojaati' },
+  { username: 'demo.mediator-talabgor', label: 'Mediator talabgori', detail: 'Kurs, ariza va komissiya tasdig‘i' },
+  { username: 'demo.mediator', label: 'Mediator', detail: 'Faol reyestr va kelgan murojaatlar' },
+  { username: 'demo.komissiya', label: 'Malaka komissiyasi raisi', detail: 'Kurslar, nomzodlar va imtihon' },
+  { username: 'demo.hududiy', label: 'Hududiy adliya xodimi', detail: 'Arizani yo‘naltirish va reyestrga kiritish' },
+]
 
 const roles: Role[] = [
   { key: 'CITIZEN', title: 'Fuqaro', summary: 'JSHSHIR/OneID orqali: nizo arizalari, mediator tanlash va ishlaringiz', icon: UserRound },
@@ -318,6 +326,17 @@ export default function App() {
       setPreviewLoginLoading(false)
     }
   }
+  const loginAsPreviewAccount = async (username: string) => {
+    setPreviewLoginError('')
+    setPreviewLoginLoading(true)
+    try {
+      await apiLogin(username, previewTestPassword)
+      window.location.reload()
+    } catch (cause) {
+      setPreviewLoginError(cause instanceof Error ? cause.message : 'Kirish amalga oshmadi.')
+      setPreviewLoginLoading(false)
+    }
+  }
   const startPublicMediation = (mediatorName: string, registryId?: string, isSample = false) => {
     setPendingMediatorApplication(false)
     setSelectedMediator(mediatorName)
@@ -511,13 +530,21 @@ export default function App() {
       {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
       {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} integratsiyasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Bu kirish usuli uchun vakolatli tizim bilan rasmiy ulanish sozlamalari hali taqdim etilmagan.</p>{demoModeEnabled && <button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo ko‘rinishida davom etish<ArrowRight size={15} /></button>}</div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
-      {import.meta.env.VITE_ENABLE_PREVIEW_TEST_LOGIN === 'true' && <form onSubmit={(event) => void submitPreviewLogin(event)} className="mt-5 space-y-3 border-t border-slate-200 pt-5">
-        <div><p className="text-sm font-semibold text-slate-900">Preview sinov kabineti</p><p className="mt-1 text-xs leading-5 text-slate-500">Faqat sinov muhiti uchun. Test foydalanuvchisi login va parolini kiriting.</p></div>
-        <TextInput label="Login" autoComplete="username" value={previewUsername} onChange={(event) => setPreviewUsername(event.currentTarget.value)} required />
-        <TextInput label="Parol" type="password" autoComplete="current-password" value={previewPassword} onChange={(event) => setPreviewPassword(event.currentTarget.value)} required />
+      {import.meta.env.VITE_ENABLE_PREVIEW_TEST_LOGIN === 'true' && <section className="mt-5 space-y-3 border-t border-slate-200 pt-5" aria-label="Preview sinov akkauntlari">
+        <div><p className="text-sm font-semibold text-slate-900">Sinov uchun tezkor kirish</p><p className="mt-1 text-xs leading-5 text-slate-500">Preview muhiti · barcha sinov akkauntlari uchun parol: <strong className="font-semibold text-slate-700">{previewTestPassword}</strong></p></div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {previewTestAccounts.map((account) => <article key={account.username} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{account.label}</p><p className="mt-0.5 truncate text-[11px] text-slate-500">{account.detail}</p><p className="mt-1 font-mono text-[11px] text-slate-600">{account.username}</p></div>
+            <Button size="xs" color="dark" loading={previewLoginLoading} disabled={previewLoginLoading} onClick={() => void loginAsPreviewAccount(account.username)}>Kirish</Button>
+          </article>)}
+        </div>
         {previewLoginError && <p role="alert" className="text-xs font-medium text-red-700">{previewLoginError}</p>}
-        <Button type="submit" loading={previewLoginLoading} fullWidth color="dark">Test kabinetiga kirish</Button>
-      </form>}
+        <details className="text-xs text-slate-500"><summary className="cursor-pointer font-medium">Login-parolni qo‘lda kiritish</summary><form onSubmit={(event) => void submitPreviewLogin(event)} className="mt-3 space-y-3">
+          <TextInput label="Login" autoComplete="username" value={previewUsername} onChange={(event) => setPreviewUsername(event.currentTarget.value)} required />
+          <TextInput label="Parol" type="password" autoComplete="current-password" value={previewPassword} onChange={(event) => setPreviewPassword(event.currentTarget.value)} required />
+          <Button type="submit" loading={previewLoginLoading} fullWidth color="dark">Test kabinetiga kirish</Button>
+        </form></details>
+      </section>}
     </div></ModalShell>}
     {chooseRole && demoModeEnabled && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }} onChoose={startRoles} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialMediatorRegistryId={selectedMediatorRegistryId} initialMediatorIsSample={selectedMediatorIsSample} onClose={() => { setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId(''); setSelectedMediatorIsSample(false) }} onSubmit={submitMediation} />}
