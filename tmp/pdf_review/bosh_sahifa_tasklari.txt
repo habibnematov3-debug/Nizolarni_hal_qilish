@@ -1,0 +1,299 @@
+EPIC / ADR PLATFORMA
+ADR platformasining bosh sahifasini yaratish
+Maqsad: foydalanuvchiga platforma xizmatlarini tushuntirish, kerakli mutaxassisni topish va tegishli xizmatga
+o‘tishni osonlashtirish.
+Qamrov: ommaviy bosh sahifa, menyu, qidiruv, xizmatlarga yo‘naltirish, mutaxassislar, statistika va aloqa
+ma’lumotlari.
+Alohida Epiclarga ajratiladi: shaxsiy kabinetlar, murojaat yuborish jarayoni, haqiqiy OneID/ERI/Face ID
+integratsiyasi, to‘lov va videomuloqot.
+Ustuvorlik: High - birinchi reliz uchun zarur; Medium - asosiy funksiyalardan keyin bajariladi.
+Vazifalar ro‘yxati
+ №
+Vazifa
+Ustuvorlik
+Sahifa
+01
+Bosh sahifa dizayni va kontentini tayyorlash
+High
+2
+02
+Header va navigatsiyani yaratish
+High
+2
+03
+“Tizimga kirish” oynasini yaratish
+High
+3
+04
+Asosiy banner va slayderni yaratish
+High
+4
+05
+Mutaxassis qidiruvini yaratish va natijalar sahifasiga ulash
+High
+5
+06
+“Xizmatlar” kartochkalarini yaratish
+High
+6
+07
+Mutaxassislar reyestrining qisqa ko‘rinishini yaratish
+High
+7
+08
+Statistika blokini yaratish
+Medium
+8
+09
+“Mediatsiya qanday o‘tadi?” blokini yaratish
+Medium
+8
+10
+Footerni yaratish
+Medium
+9
+11
+Bosh sahifani haqiqiy ma’lumotlar manbasiga ulash
+High - jonli reliz
+uchun
+9
+12
+Mobil moslashuv va klaviatura bilan foydalanishni yakunlash
+High
+10
+13
+Qidiruv tizimlari uchun ma’lumotlar va yuklanishni optimallashtirish
+Medium
+10
+14
+Bosh sahifani yakuniy sinovdan o‘tkazish va qabul qilish
+High
+11
+Jira uchun vazifalar va qabul qilish mezonlari
+1 / 11
+
+
+01. Bosh sahifa dizayni va kontentini tayyorlash
+Issue type: Task | Mas’ul: Dizayner + PM | Priority: High
+Tavsif: bosh sahifaning bloklari, matnlari va foydalanuvchi harakatlarini kelishib, desktop va mobil maketlarni
+tayyorlash.
+Qabul qilish mezonlari:
+ Maketda header, banner, qidiruv, xizmatlar, mutaxassislar, statistika, mediatsiya bosqichlari va footer
+mavjud.
+ Ranglar, shriftlar, tugmalar va kartochkalar yagona uslubda belgilangan.
+ Har bir tugma va havolaning qayerga olib borishi yozilgan.
+ Matnlar, logotiplar va aloqa ma’lumotlari PM tomonidan tasdiqlangan.
+ Birinchi reliz tili: o‘zbek lotin; kirill va lotin yozuvi aralashmagan.
+02. Header va navigatsiyani yaratish
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: logotip, asosiy menyu va “Tizimga kirish” tugmasini joylashtirish.
+Qabul qilish mezonlari:
+ Logotip bosilganda bosh sahifa ochiladi.
+ Menyuda Bosh sahifa, Mediatorlar reyestri, Hakamlik va arbitraj, AI tavsiya, Reyting, Statistika, Hududlar
+va Qonunchilik bo‘limlari mavjud.
+ Faol sahifa menyuda ajratib ko‘rsatiladi.
+ Mobil qurilmada menyu ochiladi, yopiladi va bo‘lim tanlanganda berkitiladi.
+ Header sahifa kontentini to‘sib qolmaydi.
+Bog‘liqlik: 01.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+2 / 11
+
+
+03. “Tizimga kirish” oynasini yaratish
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: foydalanuvchiga kirish usulini tanlash imkonini beruvchi oynani yaratish.
+Qabul qilish mezonlari:
+ “Tizimga kirish” tugmasi orqali oyna ochiladi.
+ OneID, elektron raqamli imzo va Face ID variantlari ko‘rsatiladi.
+ Har bir variant tegishli kirish jarayoniga yo‘naltiradi; ishlamaydigan variant vaqtincha o‘chirilgan holatda
+tushuntiriladi.
+ Oyna yopish tugmasi va Esc orqali yopiladi.
+ Oyna ochilganda klaviatura fokusi uning ichiga o‘tadi, yopilganda kirish tugmasiga qaytadi.
+Chegara: autentifikatsiya xizmatlarini ishlab chiqish ushbu taskka kirmaydi.
+Bog‘liqlik: 02; kirish modulining tayyor yo‘nalishlari.
+03-task uchun rasm - tizimga kirish usulini tanlash oynasi.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+3 / 11
+
+
+04. Asosiy banner va slayderni yaratish
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: platformaning asosiy imkoniyatlarini tushuntiruvchi beshta slaydni yaratish.
+Slaydlar: Mediatsiya, Hakamlik sudi, Xalqaro arbitraj, E-imzo, Mediator bo‘lish.
+Qabul qilish mezonlari:
+ Har bir slaydda sarlavha, qisqa tavsif, asosiy tugma va tasvir mavjud.
+ Slaydlar 7 soniyada avtomatik almashadi.
+ Oldingi/keyingi tugmalar, slayd indikatorlari va avtomatik aylanishni to‘xtatish imkoniyati ishlaydi.
+ Har bir tugma tegishli xizmatni ochadi; hakamlik va arbitraj uchun to‘g‘ri yo‘nalish tanlanadi.
+ Namuna ish raqamlari va hujjatlar haqiqiy foydalanuvchi ishi sifatida ko‘rsatilmaydi.
+Bog‘liqlik: 01-02.
+04-task uchun rasm - asosiy banner va slayder.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+4 / 11
+
+
+05. Mutaxassis qidiruvini yaratish va natijalar sahifasiga ulash
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: foydalanuvchiga yo‘nalish, hudud va ixtisoslik orqali qidirish imkonini berish.
+Qabul qilish mezonlari:
+ Mediator, Hakamlik sudi va Arbitr yo‘nalishlari mavjud.
+ Yo‘nalishga mos ixtisosliklar hamda hududlar ro‘yxati ko‘rsatiladi.
+ “Qidirish” tugmasi va Enter bir xil natija beradi.
+ Natijalar sahifasiga o‘tilganda tanlangan yo‘nalish, hudud va ixtisoslik saqlanadi hamda natijalarga
+qo‘llanadi.
+ Filtrlar tanlanmasa, tegishli yo‘nalishdagi barcha natijalar ochiladi.
+ Natija topilmasa, tushunarli xabar va filtrlarni tozalash imkoniyati chiqadi.
+Chegara: natijalar sahifasida bosh sahifadan kelgan filtrlarni qabul qilish ham ushbu taskka kiradi.
+Bog‘liqlik: 01, 11.
+05-task uchun rasm - yo‘nalish, ixtisoslik va hudud bo‘yicha qidiruv.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+5 / 11
+
+
+06. “Xizmatlar” kartochkalarini yaratish
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: asosiy xizmatlarga tezkor o‘tish blokini yaratish.
+Kartochkalar:
+1. Murojaat yuborish.
+2. Mediatorlar reyestri.
+3. Mediator bo‘lish.
+4. Hakamlik va arbitraj.
+5. AI tavsiya.
+6. Qonunchilik.
+7. Statistika.
+8. Hududlar.
+Qabul qilish mezonlari:
+ Har bir kartochkada ikonka, nom va qisqa tushuntirish mavjud.
+ Kartochkaning butun yuzasi bosiladi va tegishli sahifaga olib boradi.
+ Sichqoncha va klaviatura bilan tanlanganda holati ko‘rinadi.
+ Uzun sarlavhalar kartochka chegarasidan chiqmaydi.
+Bog‘liqlik: 01-02.
+06-task uchun rasm - xizmatlar kartochkalari.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+6 / 11
+
+
+07. Mutaxassislar reyestrining qisqa ko‘rinishini yaratish
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: bosh sahifada mediatorlar, hakamlik sudyalari va arbitrlar haqida qisqa ma’lumot chiqarish.
+Qabul qilish mezonlari:
+ Uchta alohida guruh ko‘rsatiladi.
+ Har bir guruhda jami faol mutaxassislar soni va ko‘pi bilan 3 ta mutaxassis chiqadi.
+ Ism, ixtisoslik va mavjud bo‘lsa hudud yoki xizmat tillari ko‘rsatiladi.
+ Reyting va muvaffaqiyat foizi o‘z nomi bilan ko‘rsatiladi; ma’lumot yo‘q bo‘lsa, sun’iy qiymat chiqarilmaydi.
+ “Reyestrga o‘tish” havolasi tegishli guruhni ochadi.
+ Namoyish qilinadigan mutaxassislarni tanlash tartibi kelishilgan va barqaror.
+Bog‘liqlik: 01, 11.
+07-task uchun rasm - mutaxassislar reyestrining qisqa ko‘rinishi.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+7 / 11
+
+
+08. Statistika blokini yaratish
+Issue type: Task | Mas’ul: Frontend + Backend | Priority: Medium
+Tavsif: mediatsiya, hakamlik sudi va xalqaro arbitraj bo‘yicha umumiy ko‘rsatkichlarni chiqarish.
+Qabul qilish mezonlari:
+ Har bir yo‘nalish uchun alohida statistik kartochka mavjud.
+ Ko‘rsatkich nomi, qiymati va tegishli hisobot davri ko‘rsatiladi.
+ Bir xil ko‘rsatkich bosh sahifaning turli joylarida bir xil qiymatga ega.
+ “Kelishuv bilan tugagan ishlar foizi” kabi ko‘rsatkichlarning hisoblash qoidasi hujjatlashtirilgan.
+ Ma’lumot mavjud bo‘lmasa, “Ma’lumot mavjud emas” yozuvi chiqadi; bu holat haqiqiy 0 qiymatidan
+farqlanadi.
+Bog‘liqlik: 01, 11.
+09. “Mediatsiya qanday o‘tadi?” blokini yaratish
+Issue type: Task | Mas’ul: Frontend + PM | Priority: Medium
+Tavsif: mediatsiya jarayonini foydalanuvchiga olti bosqich orqali tushuntirish.
+Bosqichlar: Murojaat → Qabul → Shartnoma → Mediatsiya → Kelishuv → Ijro nazorati.
+Qabul qilish mezonlari:
+ Har bir bosqichda tartib raqami, nomi va qisqa izoh mavjud.
+ Bosqichlar ketma-ketligi barcha ekranlarda saqlanadi.
+ Javob berish muddatlari va imzolash tartibi haqidagi matnlar mas’ul mutaxassis bilan kelishilgan.
+ Matnlar sodda va foydalanuvchiga tushunarli yozilgan.
+Bog‘liqlik: 01.
+08 va 09-tasklar uchun umumiy rasm: yuqorida statistika, pastda mediatsiya bosqichlari.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+8 / 11
+
+
+10. Footerni yaratish
+Issue type: Task | Mas’ul: Frontend | Priority: Medium
+Tavsif: sahifa pastida tashkilot ma’lumotlari, foydali havolalar va aloqa ma’lumotlarini joylashtirish.
+Qabul qilish mezonlari:
+ Tasdiqlangan logotip va tashkilot nomi mavjud.
+ Mediatorlar reyestri, Hududlar va Qonunchilik havolalari ishlaydi.
+ Tasdiqlangan aloqa raqami telefonda bosilganda qo‘ng‘iroq qilishni taklif etadi.
+ Mualliflik huquqi va ishlab chiquvchi ma’lumotlari ko‘rsatiladi.
+ Footer mobil ekranda o‘qilishi qulay joylashadi.
+Bog‘liqlik: 01.
+11. Bosh sahifani haqiqiy ma’lumotlar manbasiga ulash
+Issue type: Task | Mas’ul: Backend + Frontend | Priority: High - jonli reliz uchun
+Tavsif: prototipdagi namuna ma’lumotlari o‘rniga bosh sahifa uchun zarur ochiq ma’lumotlarni API orqali
+olish.
+Qabul qilish mezonlari:
+ Hududlar, ixtisosliklar, mutaxassislar va statistika uchun ma’lumot tarkibi kelishilgan.
+ Zarur o‘qish API’lari yaratilgan va frontendga ulangan.
+ Ochiq javoblarda faqat ommaga ko‘rsatishga ruxsat etilgan ma’lumotlar bor.
+ Yuklanish, bo‘sh natija va xatolik holatlari ko‘rsatiladi.
+ Xatolikda qayta urinish mumkin; bitta blokdagi xatolik qolgan sahifani ishlashdan to‘xtatmaydi.
+ Namuna ma’lumotlari jonli muhitda haqiqiy ko‘rsatkich sifatida chiqmaydi.
+Bog‘liqlik: 01; ma’lumotlar manbasi va hisoblash qoidalarining kelishilishi.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+9 / 11
+
+
+12. Mobil moslashuv va klaviatura bilan foydalanishni yakunlash
+Issue type: Task | Mas’ul: Frontend | Priority: High
+Tavsif: barcha bloklarni turli ekranlar va klaviatura orqali foydalanish uchun moslashtirish.
+Qabul qilish mezonlari:
+ Sahifa 360, 768, 1024 va 1440 px kengliklarda tekshirilgan.
+ Gorizontal siljish, kesilgan matn va ustma-ust elementlar yo‘q.
+ Menyu, qidiruv, slayder va kirish oynasi klaviatura bilan boshqariladi.
+ Fokus holati ko‘rinadi; maydonlar va ikonka tugmalarining tushunarli nomlari bor.
+ Matn kattalashtirilganda asosiy harakatlar ishlashda davom etadi.
+ Animatsiyani kamaytirish sozlamasi hisobga olinadi.
+Bog‘liqlik: 02-10.
+13. Qidiruv tizimlari uchun ma’lumotlar va yuklanishni
+optimallashtirish
+Issue type: Task | Mas’ul: Frontend | Priority: Medium
+Tavsif: bosh sahifaning qidiruvda va havola ulashilganda to‘g‘ri ko‘rinishini ta’minlash, yuklanishni
+yengillashtirish.
+Qabul qilish mezonlari:
+ Sahifa nomi, qisqa tavsifi va asosiy manzili belgilangan.
+ Havola ulashilganda tasdiqlangan sarlavha, tavsif va rasm ko‘rsatiladi.
+ Sarlavhalar mantiqiy tartibda joylashgan.
+ Rasmlar optimallashtirilgan va ularning o‘lchamlari belgilangan.
+ Pastdagi rasmlar zaruratga ko‘ra yuklanadi; asosiy banner kechiktirilmaydi.
+ Yuklanish bo‘yicha o‘lchov natijalari taskka biriktirilgan, topilgan jiddiy muammolar bartaraf etilgan.
+Bog‘liqlik: 02-10.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+10 / 11
+
+
+14. Bosh sahifani yakuniy sinovdan o‘tkazish va qabul qilish
+Issue type: Task | Mas’ul: QA + PM | Priority: High
+Tavsif: tayyor sahifani dizayn, funksiyalar va foydalanuvchi ssenariylari bo‘yicha tekshirish.
+Qabul qilish mezonlari:
+ Menyu, banner tugmalari, xizmat kartochkalari va footer havolalari tekshirilgan.
+ Qidiruv uchala yo‘nalishda, filtrlar bilan va filtrlarsiz ishlaydi.
+ Yuklanish, bo‘sh natija, server xatosi va uzun matn holatlari tekshirilgan.
+ Desktop hamda Android/iOS mobil brauzerlarida asosiy ssenariylar bajarilgan.
+ Tayyor sahifa tasdiqlangan maket bilan solishtirilgan.
+ Bloklovchi va yuqori darajadagi xatolar yopilgan.
+ Sinov natijalari va PM qabul qarori Jira’ga biriktirilgan.
+Bog‘liqlik: barcha relizga kiritilgan tasklar.
+Bajarish tartibi: avval 01; keyin sahifa bloklari va 11 parallel bajariladi. So‘ng ma’lumotlar ulanishi, mobil moslashuv
+va optimallashtirish yakunlanib, 14 orqali reliz qabul qilinadi.
+Barcha tasklar uchun Done mezoni: qabul qilish mezonlari bajarilgan, o‘zgarish ko‘rib chiqilgan, sinov muhitida
+tekshirish mumkin va natija Jira’ga biriktirilgan.
+ADR PLATFORMA / BOSH SAHIFA TASKLARI
+Jira uchun vazifalar va qabul qilish mezonlari
+11 / 11

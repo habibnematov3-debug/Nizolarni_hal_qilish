@@ -1,0 +1,1092 @@
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq
+Versiya 1.1 | 10 noyabr 2026 | ADR platformasi
+1 Maqsad va yangilangan qamrov
+TZ Vazirlar Mahkamasining 2026-yil 1-apreldagi 140-son qarori, unga ilova qilingan Reglament va
+1-3-ilovalar asosida yangilandi. Foydalanuvchi taqdim etgan matn LexUZdagi rasmiy matn bilan solishtirildi.
+Qonunning 12-moddasidagi talablar ham tekshirildi. Manbalar 22-bo‘limda berilgan.
+Joriy muddatdagi natija: mediatorlikka so‘rovnomani qabul qilish, tekshirish, qonuniy asosni qayd etish,
+mediatorlar reyestriga kiritish va rasmiy ochiq reyestrni yuritish. Faqat mediatorlar reyestri qamrab olinadi.
+Oldingi TZdan asosiy o‘zgarishlar
+ Davlat xizmati uchun to‘lov undirilmaydi; billing va imtihon to‘lovi talab qilinmaydi.
+ Rasmiy murojaat kanallari DXM va YIDXP. ADRning ichki shakli o‘zidan o‘zi uchinchi rasmiy kanal
+hisoblanmaydi.
+ YIDXP orqali yuborilgan so‘rovnomaga alohida ERI majburiy emas. DXM kanalida talabgorning tegishli
+identifikatsiya vositasi bilan tasdig‘i qayd etiladi.
+ So‘rovnoma maydonlari 2-ilovadagi 16 bandga moslandi. Yulduzcha bilan belgilangan ma’lumotlar
+idoralararo almashinuvdan olinadi.
+ Oddiy talabgor uchun rasmiy imtihon natijasi kerak. Advokat yoki notarius maqomi tasdiqlansa, imtihon
+talab qilinmaydi.
+ Besh ish kunlik tuzatish, qonunda belgilangan rad etish asoslari, xizmatdan voz kechish va rasmiy
+xabarnomalar qo‘shildi.
+ Reyestrga 3-ilovadagi barcha ustunlar, ma’lumot o‘zgarishi haqidagi xabarnoma va chiqarish tartibi
+kiritildi.
+Deadline uchun imtihonning minimal hajmi
+To‘liq test tizimi, elektron ovoz berish va video yozish qurilmaydi. Mas’ul kotib imtihon tayinlangan sana,
+vaqt, joy yoki tashqi videohavolani hamda vakolatli komissiyaning rasmiy natijasini qayd etadi. Natija tashqi
+tizimdan ham olinishi mumkin. Rasmiy asos yoki tasdiqlangan istisnosiz yangi talabgor reyestrga
+kiritilmaydi.
+Qamrovdan tashqari: hakamlik va arbitraj reyestrlari, nizolarni ko‘rib chiqish, AI tavsiya, reyting, imtihonni
+onlayn o‘tkazish, komissiya ovozlarini hisoblash, to‘lov va yangi videokonferensiya xizmati. Qo‘lda kiritish
+va import mavjud rasmiy reyestrni ko‘chirish uchun ishlatiladi; ular yangi talabgorning tartibini chetlab
+o‘tmaydi.
+Talablar turi: Reglament bandiga bog‘langan qoidalar majburiy jarayon talablaridir. Fayl hajmi, API nomi
+va yuklama mezoni kabi texnik qiymatlar ushbu loyihaning amalga oshirish talablaridir. Aniqlashtiriladigan
+boshlanish sanalari va integratsiya rekvizitlari 22-bo‘limda alohida berilgan.
+ADR platformasi  |  VM 140-son qaror asosida
+1 / 22
+
+
+2 Murojaat kanallari va vakolatlar
+AR-01: talabgor istalgan DXMga eksterritorial tamoyil asosida murojaat qiladi yoki YIDXPdan foydalanadi.
+DXM joylashgan hudud talabgorni boshqa hududga yuborib xizmatni rad etish uchun asos bo‘lmaydi. Qaysi
+hududiy adliya organi ishni yuritishi kelishilgan yo‘naltirish qoidasi bilan aniqlanadi; tizim uni taxmin
+qilmaydi. Asos: 4, 5 va 9-bandlar.
+Ishtirokchi
+Amallar
+Chegara
+Talabgor
+O‘z so‘rovnomasi, tasdiq, tuzatish, voz kechish va
+xabarlar
+Begona ma’lumotni ko‘rmaydi
+Vakil
+Tasdiqlangan vakolat doirasida talabgor nomidan
+harakat
+Vakil va ariza egasi alohida shaxslar
+DXM xodimi
+Talabgor nomidan shakl to‘ldirish va tasdiqdan
+keyin yuborish
+Talabgor tasdig‘ini o‘zi bilan
+almashtirmaydi
+Hududiy adliya xodimi
+Qabul, tekshirish, tuzatish, tegishli rad etish va
+komissiyaga taqdim qilish
+Biriktirilgan organ doirasida
+Komissiya mas’ul kotibi
+Imtihon tayinlash va rasmiy natija; tegishli
+xabarnomalar
+Namuna baho yoki avtomatik ovoz
+natijasi yo‘q
+Reyestr yurituvchisi
+Asos bo‘yicha kiritish, yangilash, migratsiya va
+holatlarni yuritish
+Chiqarish vakolati kiritgan hududiy
+organga bog‘langan
+Administrator
+Hisoblar, rollar, taqvim va ma’lumotnomalar
+Texnik rol qonuniy qaror vakolatini
+bermaydi
+Bir xodimga bir nechta vakolat berilishi mumkin; har bir so‘rovda amal va organ bo‘yicha ruxsat serverda
+tekshiriladi. Respublika darajasidagi ko‘rish huquqi boshqa hududiy organ o‘rniga chiqarish qarorini berish
+huquqiga teng emas.
+ADR platformasining vazifasi
+Platforma DXM va YIDXPdan kelgan so‘rovnomalarni qabul qiladigan hamda reyestrni yuritadigan tizim
+sifatida ishlaydi. Agar ariza shakli ADRda ko‘rsatilsa, uning rasmiy yuborilishi kelishilgan davlat xizmati
+kanali bilan bog‘lanadi. Mahalliy qoralama yoki oddiy sayt hisobidan yuborish rasmiy qabul deb
+belgilanmaydi.
+Asosiy ekranlar: talabgorning so‘rovnomalari va tafsiloti; DXMning to‘ldirish oynasi; adliyaning kiruvchi
+so‘rovnomalari; tekshiruv; kotibning tayinlash va natija oynasi; reyestr boshqaruvi; import; o‘zgarish
+xabarnomalari; muddatlar; ochiq ro‘yxat va profil.
+Qabul mezoni: oldindan namuna arizasi bo‘lmagan foydalanuvchi uchun ham tegishli harakat ochiladi.
+Kirish yoki YIDXPga o‘tishdan keyin boshlangan jarayon davom ettiriladi. Bosh sahifadagi ikki havola
+yetarli; to‘liq qayta dizayn shart emas.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+2 / 22
+
+
+3 So‘rovnomaning rasmiy maydonlari
+AR-02: shakl Reglamentning 2-ilovasiga mos bo‘ladi. Quyidagi raqamlar ilovadagi raqamlardir. Yulduzchali
+maydonlar idoralararo manbadan olinadi; bu belgi fuqarodan alohida hujjat talab qilish degani emas.
+Band va maydon
+Kiritish yoki olish
+Qoida
+1 F I O
+Shaxsga oid ishonchli
+manba
+Familiya, ism, otasining ismi; asl yozilishi
+saqlanadi
+2 Pasport yoki ID karta
+Tegishli shaxsiy ma’lumot
+Seriya, raqam, berilgan sana va bergan organ
+alohida
+3 JSHSHIR *
+Idoralararo
+14 raqam; vakilning emas, talabgorning
+identifikatori
+4 Tug‘ilgan sana
+Shaxsiy ma’lumot
+To‘liq sana; kelajak sana emas
+5 Ma’lumoti *
+Idoralararo
+Ma’lumot va mutaxassislik; diplom bo‘yicha
+mutaxassislik saqlanadi
+6 Mediatsiya sohasi
+Talabgor tanlaydi
+Yagona ma’lumotnomadan bir yoki bir nechta
+7 Faoliyat tili
+Talabgor tanlaydi
+Bir yoki bir nechta til
+8 Manzillar
+Tegishli manba va talabgor
+Yashash hamda faoliyat manzili alohida saqlanadi
+9 Elektron manzil
+Talabgor; mavjud bo‘lsa
+Mavjud bo‘lmasa to‘siq emas
+10 Telefon
+Talabgor
+Aloqa raqami; format tekshiriladi
+11 Ish staji *
+Idoralararo
+Ishga kirish, ketish sanalari, ish joyi va
+lavozimdan iborat takrorlanuvchi qatorlar
+12 Sudlanganlik holati *
+Idoralararo
+Manba javobi, holat sanasi va huquqiy tekshiruv
+natijasi
+13 Muomala layoqati bo‘yicha sud
+qarori *
+Idoralararo
+Qaror mavjudligi va tekshirish uchun zarur
+rekvizitlar
+14 Maxsus kurs sertifikati nusxasi *
+Idoralararo
+Kursni muvaffaqiyatli tugatish va sertifikat nusxasi
+yoki manba havolasi
+15 Notarial ishonchnoma nusxasi *
+Vakil bo‘lsa idoralararo
+O‘z nomidan murojaatda talab qilinmaydi
+16 Qonunchilik va kasb etikasi
+bilan tanishish
+Talabgorning aniq tasdig‘i
+Oldindan belgilanmagan; matn versiyasi va tasdiq
+vaqti saqlanadi
+AR-03: maydonning xatosi o‘z joyida tushuntiriladi. Katta-kichik harf, o‘zbekcha apostrof va defis ismni rad
+etishga sabab bo‘lmaydi. Ishdan ketish sanasi ishga kirishdan oldin bo‘lmaydi; davom etayotgan ishda
+ketish sanasi bo‘sh bo‘lishi mumkin. Ish staji faqat bitta “yil” soniga qisqartirilmaydi.
+AR-05: F I O va tekshirilgan shaxs rekvizitlari foydalanuvchi tomonidan boshqa shaxsga almashtirilmaydi.
+Manbada xato bo‘lsa, tuzatish yoki vakolatli organning rasmiy so‘rov tartibi ishlatiladi. Barcha ma’lumot
+yuborilgan versiyada saqlanadi; faqat ekranda qolib ketadigan qiymat bo‘lmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+3 / 22
+
+
+4 Ma’lumotlarni olish va so‘rovnomani tasdiqlash
+AR-06: 2-ilovadagi yulduzchali maydonlar uchun “Elektron hukumat” almashinuviga bog‘lanish mavjud
+bo‘ladi. Har javobda manba, so‘rov IDsi, olingan vaqt va natija saqlanadi. Integratsiya texnik xatosi
+“sudlanganligi yo‘q”, “kursni tugatgan” yoki “ishonchnoma tasdiqlangan” kabi ijobiy natijaga aylantirilmaydi.
+Holat
+Tizimning harakati
+Javob olingan
+So‘rovnomaga to‘ldirish; manba va vaqtni ko‘rsatish
+Javobda ma’lumot topilmagan
+Sababni ajratish; vakolatli xodim tekshiruvi yoki rasmiy so‘rov
+Xizmat vaqtincha ishlamayapti
+Qayta urinish, xatoni qayd etish; mavjud qoralamani saqlash
+Elektron almashinuvdan olish
+imkonsiz
+5-bandga muvofiq organlararo rasmiy so‘rovni qayd etish va javobni biriktirish
+Vakil murojaat qilgan
+Vakil shaxsi, talabgor shaxsi va ishonchnoma vakolatini alohida tekshirish
+Almashinuv ishlamasa, fuqaro uchun pasport skani, tibbiy ma’lumotnoma yoki ilovada nazarda tutilmagan
+boshqa hujjatni majburiy yuklash talabi avtomatik paydo bo‘lmaydi. Rasmiy so‘rovni xodim yuritadi; u xizmat
+muddatlarini o‘z-o‘zidan to‘xtatmaydi.
+AR-07: rasmiy qoralama serverda saqlanadi. Yuklangan xizmat hujjatlari haqiqiy fayl bo‘ladi; “Yuklandi” va
+“Tekshirildi” farqlanadi. Ilova fayllari uchun texnik limit PDF, JPG, PNG; bir fayl 10 MB, arizada jami 50 MB.
+Manbadan kelgan sertifikatga texnik format sababli fuqarodan qayta topshirish buyurilmaydi; uni xodimning
+kelishilgan xizmat yo‘li qayta ishlaydi.
+Kanal bo‘yicha tasdiq
+AR-08: DXMda so‘rovnomani xodim to‘ldiradi, talabgor tekshiradi va 6-banddagi tegishli identifikatsiya
+vositasi orqali tasdiqlaydi. Tasdiq usuli, egasi, vaqt va dalil saqlanadi. Xodimning tizimga kirgani
+talabgorning tasdig‘i o‘rniga o‘tmaydi.
+YIDXP kanalida alohida ERI majburiy shart qilinmaydi. Portalning tasdiqlangan hisobi va murojaat
+rekvizitlari qabul qilinadi. YIDXPdagi istisno DXMga yoki mustaqil saytga asossiz tatbiq etilmaydi. Face ID
+alohida majburiy usul sifatida belgilanmaydi.
+AR-09 va AR-10: yagona ariza raqami, kanal IDsi, tasdiq dalili va yuborilgan versiya saqlanadi. Bir xil
+yuborish yoki portal xabari qayta kelganda bitta so‘rovnoma qoladi. Xizmat bepul; yuborish yoki reyestrga
+kiritish oldidan to‘lov tekshiruvi bo‘lmaydi. Asos: 5-7-bandlar.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+4 / 22
+
+
+5 So‘rovnoma holatlari va asosiy yo‘nalishlar
+AR-11: texnik holatlar quyidagi mazmunda ishlatiladi. Ular qonuniy qaror yoki dalilni almashtirmaydi. Har
+o‘tishda bajaruvchi, vaqt, asos va eski-yangi holat qayd etiladi.
+Joriy holat
+Keyingi holat
+Shart
+Qoralama
+Tasdiqlangan va yuborishga tayyor
+Kanalga mos talabgor tasdig‘i bor
+Yuborishga tayyor
+Hududiy organga yuborilgan
+DXMda 10 daqiqagacha; YIDXPda avtomatik
+Kelib tushgan
+Tekshirilmoqda
+Hududiy organ qabul vaqtini qayd etadi
+Tekshirilmoqda
+Tuzatishga qaytarilgan
+Kamchiliklar va 5 ish kunlik muddat ko‘rsatilgan
+Tuzatishga qaytarilgan
+Qayta yuborilgan
+Tuzatilgan versiya muddatida kelgan
+Tekshirilmoqda
+Komissiyaga taqdim etilgan
+Umumiy yo‘nalish; taqdim etish dalili bor
+Komissiyaga taqdim etilgan
+Imtihon tayinlangan
+Sana, vaqt, joy yoki videohavola
+Imtihon tayinlangan
+Rasmiy natija qayd etilgan
+Komissiyaning tegishli rasmiy asosi
+Tekshirilmoqda
+Imtihondan ozodlik tasdiqlangan
+Amaldagi advokat yoki notarius maqomi
+tekshirilgan
+Ijobiy natija yoki
+tasdiqlangan istisno
+Reyestrga kiritilgan
+Qolgan tekshiruvlar va hududiy organning amali
+Tegishli jarayon holati
+Rad etilgan
+Faqat 11-banddagi asos va rasmiy qaror
+Yakunlanmagan xizmat
+holati
+Ko‘rilmasdan qoldirilgan
+Talabgor xizmatdan voz kechgan
+Muhim: komissiyaga yuborilganlik natija borligini anglatmaydi. Sana tayinlangani imtihon topshirilgan
+degani emas. “Natija olinmagan” “Imtihondan o‘tmadi”ga tenglashtirilmaydi.
+Yuborilgan nusxa talabgor uchun o‘qish holatida; qaytarilgan maydonlar va ilovalar tuzatilganda yangi
+versiya yaratiladi. Bitta shaxs bo‘yicha takroriy jarayon ichki ogohlantirish va mavjud ishni aniqlash orqali
+boshqariladi. Bu 11-banddan tashqari yangi huquqiy rad etish asosi bo‘lmaydi.
+AR-12: parallel qarorlar va qaytarib olingan ariza bo‘yicha kech kelgan tasdiq serverda bloklanadi. Eski
+versiya yangisini bosib ketmaydi. Qaror va ro‘yxatga kiritish vazifalari holatning amaldagi versiyasini
+tekshiradi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+5 / 22
+
+
+6 Qonunda belgilangan muddatlar
+AR-17: muddatlar hisoblagichi so‘rovnoma, kanal va rasmiy voqea vaqtlari bilan ishlaydi. Ish kuni, daqiqa
+va kalendar oy bir-biriga almashtirilmaydi. O‘zbekiston ish kunlari va rasmiy ko‘chirilgan dam olish kunlari
+taqvimda versiya bilan saqlanadi.
+Jarayon
+Muddat
+Tayanch voqea va manba
+DXMdan hududiy organga jo‘natish
+10 daqiqa ichida
+Talabgor tasdig‘idan keyin; 9-band
+YIDXPdan jo‘natish
+Avtomatik
+Portal yuborishi; 9-band
+Kamchilikni bartaraf etish
+5 ish kuni
+Kamchilik xabari bo‘yicha berilgan imkoniyat;
+10-band
+Muddatda tuzatilmagan so‘rovnomani rad etish
+xabari
+Qaror qilingan shu
+kuni
+10-band
+Hujjatlarni komissiyaga taqdim etish
+Kelib tushgan
+kundan so‘ng 1 ish
+kuni ichida
+12-band
+Imtihon tayinlangani yoki rad etilgani xabari
+10 ish kuni ichida
+12-band va 1-ilova
+Malaka imtihonini o‘tkazish
+1 oy muddat ichida
+1-ilovaning 3-bosqichi
+Muvaffaqiyatli imtihondan keyin kiritish va xabar
+3 ish kuni ichida
+Imtihon o‘tkazilgan kundan; 13-band va
+1-ilova
+Muvaffaqiyatsiz imtihondan keyingi qayta
+murojaat
+Kamida 3 oy
+o‘tgach
+Natija sanasi; 11-band
+Mediatorning o‘zgarish haqida xabar berishi
+3 ish kuni ichida
+Ma’lumot o‘zgargan voqea; 16-band
+Hududiy organning reyestrni yangilashi
+2 ish kuni ichida
+O‘zgarish xabarnomasi asosida; 16-band
+Hisoblash va nazorat
+Muddat yaqinlashuvi, tugash va kechikish alohida ko‘rsatiladi. Kechikish voqeasi vakolatli xodimga
+yetkaziladi; tizim uni yashirmaydi yoki ishga yangi boshlanish sanasini berib o‘chirib yubormaydi. Texnik
+qayta urinish dastlabki qabul vaqtini almashtirmaydi.
+Aniqlashtirish kerak: 10 ish kunlik xabar hamda 1 oylik imtihon muddati uchun aniq hisob boshlanish
+hodisasi; 5 ish kunining xabar berilgan sanaga nisbatan chegarasi va qayta yuborishda qolgan muddatlar
+tartibi xizmat egasi bilan tasdiqlanadi. Reglamentda yozilmagan avtomatik to‘xtatish yoki yangidan
+hisoblash kiritilmaydi.
+Advokat va notariuslar uchun imtihon sanasiga bog‘langan 3 ish kunini soxta imtihon sanasi bilan hisoblash
+mumkin emas. Ularning kiritish nazorati alohida, xizmat egasi tasdiqlagan texnik nazorat sifatida
+belgilanadi; u yangi qonuniy muddat deb ko‘rsatilmaydi.
+Qabul mezoni: bayram, ko‘chirilgan dam olish kuni, oy oxiri, aynan uch oy to‘lgan chegara va kechikkan
+integratsiya xabari bilan sinovlar o‘tkaziladi. Uch oy 90 kun deb qotirib yozilmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+6 / 22
+
+
+7 Tekshirish va rad etish qoidalari
+AR-13 va AR-14: xodim arizalarni raqam, F I O, kanal, organ, hudud, holat va sana bilan qidiradi.
+Tafsilotda so‘rovnoma, manbalar, vakil vakolati, xabarlar, tekshiruvlar, versiyalar, komissiya natijasi yoki
+istisno asosi birga ko‘rsatiladi.
+AR-05: Qonunning 12-moddasi bo‘yicha oliy ma’lumot va maxsus kurs ma’lumoti tekshiriladi. Qonunning
+12-moddasi ikkinchi qismidagi to‘sqinliklar amaldagi manba va vakolatli baholashga tayanadi. Davlat
+xizmatiga oid istisnolar hisobga olinadi; eski sudlanganlik qaydining o‘zi amaldagi to‘sqinlik deb olinmaydi.
+Faqat talabgor o‘zi belgilagan “yo‘q” javobi rasmiy tekshiruvni almashtirmaydi.
+Kamchiliklarni tuzatish
+Xodim noto‘g‘ri yoki to‘liq bo‘lmagan ma’lumotni aniq ko‘rsatadi, tuzatiladigan maydonni belgilaydi va 5 ish
+kunlik imkoniyat haqida xabar yuboradi. Muddat, xabarning rasmiy kanali va yetkazilganlik dalili saqlanadi.
+Rasmiy manbadagi ma’lumot uchun tegishli organ javobi qayta olinadi. Vaqtida tuzatish qabul qilinsa yangi
+versiya bilan ko‘rib chiqish davom etadi.
+Rad etishning yopiq ro‘yxati
+AR-15: rad etish sababi quyidagi kodlardan biri bo‘ladi. Izoh kodni asoslaydi; “boshqa sabab” erkin varianti
+berilmaydi. Asos: 11-band.
+Kod
+Huquqiy mazmun
+Kerakli dalil
+LAW12_RESTRICTION
+Qonunning 12-moddasi ikkinchi
+qismidagi talablarga mos kelmaslik
+Aniqlangan aniq holat va amaldagi rasmiy
+manba
+CORRECTION_EXPIRED
+Berilgan muddatda kamchilik bartaraf
+etilmagan
+Kamchilik xabari, hisoblangan muddat va
+tuzatish kelmaganligi
+REAPPLY_TOO_EARLY
+Muvaffaqiyatsiz imtihondan keyin 3 oy
+o‘tmasdan murojaat
+Imtihonning rasmiy sana va natijasi
+EXAM_FAILED
+Malaka imtihonidan muvaffaqiyatli
+o‘tmagan
+Rasmiy natija; imtihondan ozod advokat va
+notariusga qo‘llanmaydi
+Rad etish qarorida kod, tushunarli sabab, huquqiy band, vakolatli shaxs va vaqt ko‘rsatiladi. Zarur qaror
+rekvizitlari saqlanadi. Muddat tugashi tizimda qayd etilib qaror uchun vazifa yaratiladi; tasdiqlanmagan
+avtomatik qaror siyosati qo‘shilmaydi. Rad etilganda tegishli kanalga xabar yuboriladi.
+Texnik nosozlik, elektron pochta yo‘qligi, to‘lov qilinmagani yoki foydalanuvchi YIDXPda ERI qo‘llamagani
+rad etish asosi bo‘lmaydi. Integratsiya natijasi kelmagani salbiy huquqiy natijaga aylantirilmaydi. Kamchilik
+yo‘li beshinchi mustaqil rad etish asosini yaratmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+7 / 22
+
+
+8 Imtihon natijasi va imtihondan ozodlik
+AR-18: talabgor hujjatlari 12-bandga muvofiq malaka komissiyasiga taqdim etiladi. Taqdim etilgan vaqt,
+organ, komissiya va qabul dalili saqlanadi. Imtihondan ozodlikning o‘zi hujjatlarni taqdim qilish talabini
+avtomatik bekor qilmaydi. Rasmiy imtihon faoliyati mazkur relizdan tashqarida o‘tkazilishi mumkin; tizim
+unga tayinlash va natija rekvizitlari orqali ulanadi.
+Mas’ul kotib oynasi
+ Imtihon sanasi, vaqti va joyini kiritish yoki tashqi xizmatdan olish.
+ Videokonferensiya bo‘lsa, amaldagi tashqi havolani qo‘shish; yangi video xizmati qurish shart emas.
+ Talabgorga yuboriladigan xabarnomani tegishli DXM yoki YIDXP kanaliga jo‘natish.
+ Rasmiy natijani “Muvaffaqiyatli” yoki “Muvaffaqiyatsiz” sifatida qayd etish; imtihon sanasi, komissiya,
+bayonnoma yoki boshqa rasmiy asos va manba nusxasini saqlash.
+ Noto‘g‘ri kiritilgan natijani oddiy qayta yozish o‘rniga vakolatli, asosli tuzatish versiyasi orqali o‘zgartirish.
+Tizim tasodifiy baho, sun’iy bayonnoma yoki belgilanmagan “o‘tish bali” yaratmaydi. Ovozlar soni va imtihon
+baholash mezonini ushbu TZ belgilamaydi. Natijani qayd etish imtihonni platformada o‘tkazishga teng
+emas.
+Advokat va notarius yo‘nalishi
+AR-04: O‘zbekistondagi amaldagi advokat yoki notarius maqomi ishonchli reyestr yoki vakolatli rasmiy
+javob bilan tasdiqlansa, imtihon talab qilinmaydi. Foydalanuvchining shunchaki toifani tanlashi yetarli emas.
+Maqom tekshiruvi, manba va vaqt saqlanadi.
+Mazkur istisno maxsus kurs, so‘rovnoma, shaxs va boshqa amaldagi tekshiruvlarni avtomatik bekor
+qilmaydi. Tasdiqlangan istisno uchun soxta imtihon yoki baho yozuvi yaratilmaydi. Uch oylik qayta murojaat
+chekloviga alohida istisno 11-band matnida ko‘rsatilmaganligi sababli, tizim uni o‘zicha qo‘shmaydi;
+ziddiyatli holat vakolatli xodimga ko‘rsatiladi.
+Reyestrga kiritish uchun asos
+Umumiy yo‘nalishda ijobiy rasmiy natija, istisno yo‘nalishida tasdiqlangan maqom va tegishli tekshiruvlar
+mavjud bo‘ladi. Vakolatli xodim kiritishni bajaradi. Kiritish va xabarnoma muddatlari 6-bo‘limga muvofiq
+nazorat qilinadi. To‘liq test, komissiya ovoz berishi va to‘lov modullari shart emas. Asos: 12 va 13-bandlar.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+8 / 22
+
+
+9 Voz kechish va ma’lumot o‘zgarishi xabarnomasi
+Xizmatdan foydalanishdan voz kechish
+AR-19: talabgor xizmat yakunlanmaguncha uning har qanday bosqichida voz kechishi mumkin. Tegishli
+DXM yoki YIDXP kanalidagi tasdiqlangan murojaat asosida so‘rovnoma “Ko‘rilmasdan qoldirilgan” holatiga
+o‘tadi. Bu “Rad etilgan” holati emas va muvaffaqiyatsiz imtihon natijasini yaratmaydi. Asos: 8-band.
+Talabgor ariza raqami va oqibatni ko‘rib harakatni tasdiqlaydi. Vakil qatnashsa uning tegishli vakolati
+tekshiriladi. Vaqt, kanal va dalil saqlanadi. Keyin kelgan avtomatik tayinlash yoki natija so‘rovnomani
+o‘z-o‘zidan qayta faollashtirmaydi. Tugagan ariza va tarix o‘chirilmaydi.
+Reyestrga kiritish allaqachon tugagan bo‘lsa, xizmatdan voz kechish orqali yozuv ortga bekor qilinmaydi.
+Mediatorning o‘z arizasiga ko‘ra reyestrdan chiqarilishi 17-banddagi alohida jarayondir. Bir vaqtda kelgan
+voz kechish va kiritish amallari tranzaksiya hamda joriy holat tekshiruvi bilan ketma-ketlashtiriladi.
+Reyestr ma’lumotini yangilash
+REG-06: mediator ma’lumot o‘zgarganidan keyin 3 ish kuni ichida DXM yoki YIDXP orqali xabarnoma
+yuboradi. Hududiy organ shu xabarnoma asosida 2 ish kuni ichida reyestrga tegishli o‘zgarishni kiritadi.
+Asos: 16-band.
+Xabarnoma ma’lumoti
+Qoida
+Mediator va reyestr yozuvi
+Mavjud shaxsga tekshirilgan bog‘lanish
+O‘zgargan maydonlar
+Eski va yangi qiymat; kerakli manba yoki asos
+O‘zgarish sodir bo‘lgan sana
+Mediator bildirgan sana va uning manbasi
+Kanal va qabul vaqti
+DXM yoki YIDXP tashqi IDsi bilan
+Hududiy organ amali
+Tekshirish, tegishli tuzatish va yangilash vaqti
+Yangilash so‘rovi yangi boshlang‘ich mediatorlik arizasi emas. Buning uchun imtihon qayta talab qilinmaydi.
+Xabarnomadagi o‘zgarish darhol tekshirilmasdan ommaga chiqmaydi; rasmiy yangilashdan so‘ng real vaqt
+rejimida tarqaladi.
+Xodim faqat o‘zgargan qismni yangilaydi; asl ariza va oldingi reyestr versiyasi saqlanadi. Ishlab turgan
+reyestr yurituvchisi vakolat doirasidan tashqari boshqa organning yozuvini egallab olmaydi. Kech berilgan
+xabar tizimda qayd etiladi, lekin bu TZ bilan yangi avtomatik chiqarish yoki jarima asosi yaratilmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+9 / 22
+
+
+10 Reyestrning rasmiy ustunlari
+REG-01: reyestr 14 va 15-bandlar hamda 3-ilova bo‘yicha yuritiladi. Yuborilgan matnda 3-ilova jadvali
+bo‘lmagani uchun uning ustunlari LexUZdagi rasmiy jadvaldan olindi. Quyidagi sakkiz ustun ochiq reyestr
+ko‘rinishida saqlanadi.
+Rasmiy ustun
+Tizimdagi mazmun
+Mediatorga berilgan tartib raqam
+Rasmiy reyestr tartib raqami; texnik ID va sertifikat raqamidan alohida
+Reyestrga kiritilgan sana
+Tegishli kiritish hodisasining haqiqiy sanasi
+Mediatorning F I O
+Shaxsning rasmiy F I Osi
+Joylashgan joyi, telefon, elektron manzil
+Faoliyat va bog‘lanish uchun nashr qilinadigan ma’lumot; elektron
+manzil bo‘lmasa mavjud emas deb ko‘rsatiladi
+Ixtisoslashgan mediatsiya sohasi
+Bir yoki bir nechta tasdiqlangan soha
+Faoliyat olib boradigan til
+Bir yoki bir nechta til
+Mutaxassisligi diplom bo‘yicha
+Ta’limdagi mutaxassislik; mediatsiya sohasi bilan aralashtirilmaydi
+To‘xtatish, tiklash yoki chiqarish ma’lumoti
+Amaldagi holat va tegishli hodisa sanalari; ruxsat etilgan ochiq
+rekvizitlar
+REG-02: tartib raqami sun’iy malaka sertifikati ko‘rinishida yaratilmaydi. Rasmiy raqamlash tartibi xizmat
+egasi bilan aniqlanadi. Migratsiyada asl raqam va sana saqlanadi. Ichki ID barcha yozuvlar uchun alohida
+va o‘zgarmas bo‘ladi.
+Ichki va ommaviy ma’lumotlarni ajratish
+JSHSHIR, pasport rekvizitlari, tug‘ilgan sana, sudlanganlik, sud qarori nusxasi, yashash manzilining yopiq
+qismi va ishonchnoma ochiq reyestrga qo‘shilmaydi. Ular so‘rovnoma yoki tekshiruv uchun xizmat qiladi.
+Ochiq aloqaga mo‘ljallangan faoliyat manzili, telefon va elektron manzil rasmiy jadvalga muvofiq chiqariladi.
+Yopiq yashash manzilini tasodifan shu ustunga ko‘chirishga yo‘l qo‘yilmaydi.
+Kim yuritadi
+Yozuvni kiritgan hududiy organ, asl manba, kiritish asosi, oxirgi o‘zgarish va tarix saqlanadi. Reyestr
+respublika bo‘yicha yagona bazadir, biroq chiqarish vakolati 18-bandga muvofiq aynan kiritgan hududiy
+organga bog‘lanadi. Yashash manzili o‘zgargani bu vakolatni avtomatik boshqa organga o‘tkazmaydi.
+REG-04: yangi kiritish uchun ijobiy rasmiy imtihon natijasi yoki tekshirilgan istisno asos bo‘ladi. Kiritish,
+rasmiy nashr uchun yangilanish voqeasi, tarix va xabarnoma vazifasi bir operatsiyada saqlanadi. Qayta
+bosish yangi yozuv yaratmaydi; majburiy asos bo‘lmasa nashr bajarilmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+10 / 22
+
+
+11 Faoliyat holati va reyestrdan chiqarish
+REG-05: mediator faoliyatining holati Faol, To‘xtatilgan yoki Chiqarilgan bo‘ladi. “Tiklandi” tarixdagi hodisa
+sifatida saqlanadi va joriy faoliyat holati Faolga o‘tadi. “Imtihonda” reyestrdagi faoliyat holati emas.
+To‘xtatish yoki tiklash tegishli vakolatli qaror rekvizitlari bilan amalga oshiriladi; bu TZ yangi asos yoki
+muddat yaratmaydi.
+Chiqarish asoslarining yopiq ro‘yxati
+17-bandga ko‘ra quyidagi guruhlar tanlanadi. Sababni erkin matn bilan to‘ldirish mumkin, ammo yangi
+sakkizinchi huquqiy asos qo‘shilmaydi.
+Kod
+Asos mazmuni
+OWN_REQUEST
+Mediatorning o‘z arizasi
+DEATH
+Vafot yoki vafot etgan deb e’lon qilish haqidagi qonuniy kuchga kirgan sud qarori
+CAPACITY
+Muomala layoqati cheklanishi yoki muomalaga layoqatsiz deb topilishi
+MISSING
+Bedarak yo‘qolgan deb topish haqidagi qonuniy kuchga kirgan sud qarori
+CONVICTION
+Jinoyat bo‘yicha ayblov hukmining qonuniy kuchga kirishi
+PUBLIC_SERVICE
+Davlat xizmatiga kirish; banddagi pedagogik, ilmiy, ijodiy va notarial istisnolar bilan
+COMMISSION_DECISION
+Qonunchilik yoki kasb etikasi buzilishi yuzasidan tegishli malaka komissiyasi yoki
+oliy komissiya qarori
+Har amalda asos kodi, hujjat rekvizitlari, hodisa sanasi, qarorni bajargan xodim va organ saqlanadi.
+Vakolatsiz administrator yoki boshqa hududiy organ yozuvni chiqarib yubora olmaydi. Tizim texnik
+o‘chirishni huquqiy chiqarish o‘rnida ishlatmaydi.
+Qayta murojaat va tarix
+19-bandga ko‘ra chiqarishga asos bo‘lgan holat bartaraf etilgach qayta murojaat mumkin. Bunday holat
+oddiy “Faolga qaytarish” tugmasi bilan yakunlanmaydi; yangi rasmiy murojaat va tegishli tekshiruv o‘tadi.
+Eski chiqarish va yangi kiritish davrlari saqlanadi.
+Bir shaxsning tarixiy bir nechta kiritish davri bo‘lishi mumkin; bir paytda takror faol yozuv yaratish
+bloklanadi. F I O yagona kalit emas. JSHSHIR ichki shaxs mosligi uchun ishlatiladi, ommaga chiqmaydi.
+Takroriy texnik yuborish va qonuniy qayta murojaat farqlanadi.
+Qabul mezoni: rad etish yoki chiqarish xabarnomasida belgilangan tartibda yuqori turuvchi organ yoki
+sudga murojaat qilish imkoniyati ko‘rsatiladi. Mazkur reliz to‘liq elektron shikoyat ko‘rib chiqish tizimini
+yaratmaydi. Asos: 17-21-bandlar.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+11 / 22
+
+
+12 Mavjud reyestrni kiritish va import qilish
+REG-03 va COM-02: qo‘lda kiritish faqat mavjud rasmiy reyestr yozuvini ko‘chirish yoki vakolatli rasmiy
+kiritish asosi bilan bajariladi. Oddiy yangi talabgor uchun imtihon natijasisiz “qo‘lda Faol qilish” muqobil yo‘li
+bo‘lmaydi. Eski ma’lumotga yangi malaka yoki yangi imtihon natijasi o‘ylab yozilmaydi. Namuna odamlar va
+sun’iy sertifikatlar jonli reyestrga aralashmaydi.
+REG-08: import CSV UTF-8, BOM bilan yoki BOMsiz; ajratuvchi nuqtali vergul. Ko‘p soha va tillar vertikal
+chiziq bilan ajratiladi. Limit 5 MB va 1000 qator. Shablon, organ kodlari, soha va til lug‘ati beriladi. XLSX bu
+relizga kirmaydi.
+CSV ustuni
+Mazmun va talab
+registry_number
+Asl tartib raqam; raqamlash sxemasi bo‘yicha yagonalik
+registered_on
+Asl kiritilgan sana, YYYY-MM-DD
+full_name
+Rasmiy F I O
+contact_address
+Reyestrda nashr qilinadigan faoliyat yoki bog‘lanish joyi
+contact_phone
+Reyestrdagi aloqa raqami
+contact_email
+Mavjud bo‘lsa; bo‘sh bo‘lishi mumkin
+diploma_specialty
+Diplom bo‘yicha mutaxassislik
+mediation_specialty_codes
+Bir yoki bir nechta soha, masalan OILAVIY|MEHNAT
+language_codes
+Bir yoki bir nechta til, masalan UZ|RU
+activity_status
+ACTIVE, SUSPENDED yoki REMOVED
+status_details
+To‘xtatish, tiklash yoki chiqarish tafsiloti; tegishli holatda majburiy
+owner_agency_code
+Yozuvni kiritgan hududiy organ kodi
+Paketga manba reyestr nusxasi yoki tasdiqlangan rasmiy asos biriktiriladi. Muayyan yozuvning holat asosi
+paketdan farq qilsa, qatorga mos ichki havola va rekvizit qo‘shiladi. Ochiq CSV shabloniga JSHSHIR yoki
+pasport ma’lumoti qo‘shilmaydi.
+Tekshirish va saqlash
+1. Fayl faqat vaqtincha o‘qiladi; oldindan ko‘rishda bazaga yangi mediator yozilmaydi.
+2. Majburiy ustun, kod, sana, vakolat, asl raqam va dublikat tekshiriladi. Xato bo‘lsa qator, ustun va sabab
+chiqariladi.
+3. Biror xato bo‘lsa to‘liq import tasdiqlanmaydi; xatolarni yuklab olib tuzatish mumkin. Mazkur relizda
+qisman import yo‘q.
+4. Xatosiz paket vakolatli tasdiq bilan to‘liq ko‘chiriladi va nashr oqimiga beriladi. Texnik migratsiya
+qoralamasi rasmiy yangi arizani kiritishni kechiktirish uchun ishlatilmaydi.
+REG-09: takror so‘rov yoki bir xil paket qayta tasdiqlansa, dublikat yaratilmaydi. Import mavjud yozuvni
+yashirin yangilamaydi. Rasmiy raqamlash organlar kesimida bo‘lsa, turli organlardagi bir xil raqam noto‘g‘ri
+global dublikat deb olinmaydi. Xatoda butun paketning yangi o‘zgarishlari bekor qilinadi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+12 / 22
+
+
+13 Ochiq reyestr va rasmiy e’lon qilish
+REG-10: reyestr tizimga kirmasdan ko‘riladi. 20-bandga muvofiq Adliya vazirligi va hududiy organlarning
+rasmiy saytlarida e’lon qilinadi. ADRdagi alohida sahifaning o‘zi bu majburiyat bajarilganini anglatmaydi. Bir
+manbadan olinadigan API, qo‘shib ko‘rsatish yoki rasmiy kelishilgan boshqa usul qo‘llanadi.
+Qidiruv va ko‘rinish
+ 3-ilovadagi sakkiz ustunga mos jadval ko‘rinishi bo‘ladi. Mobil ko‘rinishda shu ma’lumot kartochka va
+profil orqali o‘qiladi.
+ F I O va tartib raqam bilan qidiruv; hudud, mediatsiya sohasi, til va holat bilan birgalikdagi filtrlar ishlaydi.
+ Faol holati dastlab tanlanadi; To‘xtatilgan va Chiqarilgan yozuvlar bo‘yicha ham tegishli ma’lumotni
+topish mumkin. Ular joriy faol mediator sifatida ko‘rsatilmaydi.
+ Matn katta-kichik harfdan qat’i nazar qidiriladi; keng tarqalgan o‘zbekcha apostroflar bir xil ishlaydi. F I
+Oning asl yozilishi o‘zgarmaydi.
+ Sahifada 20 yoki 50 yozuv, jami topilgan son va barqaror tartib bo‘ladi. Filtr va sahifa manzilda saqlanadi;
+profilga kirib qaytganda tiklanadi.
+ Bo‘sh natija, yuklanish va server xatosi turlicha ko‘rsatiladi. Server xatosi “mediator topilmadi” deb
+berilmaydi.
+REG-11: profil rasmiy ustunlar, amaldagi faoliyat holati, kiritilgan sana va ma’lumot yangilangan vaqtni
+ko‘rsatadi. Aloqa telefoni va mavjud elektron manzil nashr qilinadigan reyestr maydonlari sifatida chiqadi.
+Reyting, ishlar soni va kelishuv foizi ushbu relizda talab qilinmaydi.
+REG-12: shaxsiy tekshiruv ma’lumotlari, ishonchnoma, pasport va JSHSHIR HTML, ochiq API, sahifa
+ma’lumoti yoki yuklash havolalariga chiqmaydi. Mavjud bo‘lmagan ID uchun 404 va reyestrga qaytish
+havolasi bo‘ladi. Ichki tayyorlanayotgan yozuv ochiq profil hisoblanmaydi.
+REG-07: rasmiy yangilash bazada saqlanishi bilan nashrga yangilanish voqeasi yuboriladi; odatiy ish
+sharoitida ochiq ko‘rinish ko‘pi bilan 5 soniyada yangilanadi. Bu loyiha texnik mezoni bo‘lib, Reglamentdagi
+real vaqt talabini amalga oshiradi. Yetkazish xatosi kuzatiladi va qayta yuboriladi. Rasmiy saytning eskirgan
+keshida qolib ketgan yozuv ham tekshiriladi.
+Qabul mezoni: yangi kiritilgan profil boshqa qurilmada, to‘g‘ridan to‘g‘ri manzilda va rasmiy sayt
+ko‘rinishida bir xil chiqadi. Natija faqat boshlang‘ich namuna ro‘yxatiga bog‘liq bo‘lmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+13 / 22
+
+
+14 Server ma’lumotlari va operatsiyalar
+COM-01: yagona baza va maxfiy fayl saqlash ishlatiladi. Brauzer xotirasi ariza yoki reyestrning asosiy
+manbasi bo‘lmaydi. Ochiq va yopiq javoblar alohida maydonlar ro‘yxati bilan shakllantiriladi.
+Obyekt
+Asosiy ma’lumot
+Person va Access
+Talabgor, vakil, xodim, shaxs bog‘lanishi, rol va vakolatli organ
+Application va Version
+Raqam, kanal IDsi, talabgor, vakil, rasmiy shakl nusxasi, tasdiq va holat
+SourceResult va Request
+Idoralararo so‘rov, natija, vaqt, texnik xato yoki rasmiy so‘rov javobi
+CommissionRecord
+Komissiyaga taqdim, imtihon rekvizitlari, rasmiy natija yoki tekshirilgan istisno
+ReviewDecision
+Kamchilik, qonuniy rad etish kodi, qaror asosi va bajaruvchi
+Mediator va Enrollment
+Shaxsning yagona profili; tarixiy kiritish davrlari, tartib raqam, organ, sana va
+holat
+ChangeNotice
+O‘zgarish voqeasi, eski-yangi qiymat, kanal, qabul va yangilash sanalari
+Attachment va ImportBatch
+Maxfiy fayl kaliti, egasi, manbasi; import natijalari va yaratilgan yozuvlar
+Deadline va Calendar
+Muddat turi, tayanch voqea, hisoblangan oxirgi vaqt va taqvim versiyasi
+Notification va Delivery
+Rasmiy qabul qiluvchi, kanal, voqea IDsi, yuborish va yetkazish dalili
+AuditEvent
+Amal, obyekt, foydalanuvchi, organ, vaqt va o‘zgargan qiymatlar
+Izchillik talablari
+Ariza raqami va tashqi kanal IDsi takrorlanmasligi bazada himoyalanadi. Tartib raqami bo‘yicha yagonalik
+rasmiy raqamlash sxemasiga mos qo‘yiladi. Bitta shaxs uchun bir paytda takror faol kiritish bo‘lmaydi;
+chiqarilgandan keyingi qonuniy yangi davr tarixni buzmasdan yaratiladi.
+Arizadan reyestrga kiritish yozuvi, ariza holati, audit, nashr va xabar uchun voqealar bitta tranzaksiyada
+saqlanadi. Xatoda qisman reyestr yozuvi yoki “kiritilgan” ariza qolmaydi. Xabarning tashqi yetkazilishi
+ishonchli navbat orqali qayta urinadi; yuborishdagi nosozlik qarorni yashirin bekor qilmaydi.
+Har qaror va tuzatishda versiya tekshiriladi. Yuborish kaliti hisob, amal va obyektga bog‘lanadi; bir kalitga
+boshqa mazmun yuborilsa 409 qaytariladi. DXM yoki YIDXPning takror va tartibsiz kelgan voqealari tarixni
+orqaga qaytarmaydi.
+Vaqt UTC saqlanadi, interfeys va xizmat kuni hisoblari Asia/Tashkent bo‘yicha ishlaydi. Foydalanuvchi
+qurilmasidagi vaqt huquqiy muddat manbasi bo‘lmaydi. Taqvimning keyingi o‘zgarishi avvalgi hisob izini
+o‘chirib yubormaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+14 / 22
+
+
+15 API va integratsiya shartnomasi
+Yo‘llar jamoa standartiga mos o‘zgarishi mumkin; amallar, vakolat va natija ma’nosi saqlanadi. Davlat
+xizmatlari integratsiyasining haqiqiy endpointlari xizmat egasidan olinadi; quyidagi yo‘llar ichki API taklifidir.
+Yo‘l yoki amal
+Maqsad
+POST /channels/applications
+DXM yoki YIDXPdan autentifikatsiyalangan so‘rovnomani
+qabul qilish
+GET /me va /dictionaries
+Hisob vakolatlari va tegishli lug‘atlar
+GET /applications va /{id}
+Egasiga yoki vakolatli xodimga ro‘yxat va tafsilot
+PATCH /applications/{id}
+Ruxsat etilgan qoralama yoki qaytarilgan qiymat
+POST /applications/{id}/confirm
+Kanalga mos tasdiq dalilini qayd etish
+POST /applications/{id}/submit
+Tasdiqlangan versiyani yo‘naltirish, takrorni himoyalash
+POST /applications/{id}/source-requests
+Idoralararo yoki rasmiy so‘rovni ishga tushirish
+POST /applications/{id}/review
+Tekshiruv, kamchilik yoki 11-banddagi qaror
+POST /applications/{id}/commission
+Komissiyaga taqdim etishni qayd etish
+POST /applications/{id}/exam
+Tayinlash va rasmiy natija rekvizitlari
+POST /applications/{id}/exemption
+Advokat yoki notarius maqomini tekshirilgan asos bilan
+POST /applications/{id}/withdraw
+Xizmatdan voz kechish, ko‘rilmasdan qoldirish
+POST /applications/{id}/register
+Vakolatli atomar kiritish, nashr va xabar voqeasi
+POST /change-notices va /{id}/apply
+Rasmiy o‘zgarish xabari va tegishli yangilash
+POST /admin/mediators/{id}/status
+Asosli to‘xtatish yoki tiklash
+POST /admin/mediators/{id}/remove
+17-band asosi va kiritgan organ vakolati bilan chiqarish
+POST /imports va /{id}/commit
+Tasdiqlangan mavjud reyestrni tekshirish va ko‘chirish
+GET /public/mediators va /{id}
+Rasmiy ochiq ustunlar va profil
+GET /attachments/{id}/download
+Har safar egasi va vakolatni tekshirib maxfiy yuklash
+GET /notifications va /audit
+Vakolat doirasidagi xabar va tarix
+Ro‘yxat javobida items, total, page va page_size; xatoda code, message, field_errors va request_id bo‘ladi.
+Sahifa hajmi ko‘pi bilan 50. Server barcha maydon, huquqiy holat va hujjat dalilini tekshiradi.
+401 - kirish kerak; 403 - vakolat yo‘q; 404 - topilmadi yoki begona yopiq obyekt; 409 - dublikat, eski versiya
+yoki noto‘g‘ri holat; 413 - hajm katta; 415 - tur mos emas; 422 - qiymat xatosi; 429 - so‘rov limiti; 5xx - texnik
+xato. Texnik API xatosi davlat xizmatini rad etish qarori bo‘lmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+15 / 22
+
+
+16 Xabarnomalar va umumiy sifat
+AR-16: kabinetdagi xabar rasmiy DXM yoki YIDXPga jo‘natilishi kerak bo‘lgan xabarnomani
+almashtirmaydi. Shaxsan murojaatda tegishli DXMga, elektron murojaatda YIDXP orqali talabgorga xabar
+yetkaziladi. Kanal, manzil, tashqi ID, yuborish va yetkazish holati saqlanadi. “Yuborildi” va “Yetkazildi”
+farqlanadi.
+Xabar
+Majburiy mazmun
+Kamchilik
+Nima tuzatilishi, 5 ish kunlik imkoniyat va qayta topshirish yo‘li
+Imtihon tayinlash
+Sana, vaqt, joy; videokonferensiyada havola
+Rad etish
+11-banddagi sabab, tegishli asos, qaror va shikoyat imkoniyati
+Reyestrga kiritish
+Kiritilgan sana, tartib raqam, ochiq profil
+Voz kechish
+Ko‘rilmasdan qoldirish vaqti va so‘rovnoma
+Reyestr o‘zgarishi yoki chiqarish
+Tegishli yozuv, qaror va holat; talab qilinadigan rasmiy xabar
+COM-03: ishonchli kanal hisobi va server vakolatlari ishlaydi. Umumiy namuna hisob, ochiq rol tanlash yoki
+brauzer qiymati huquq bermaydi. Maxfiy fayllar faqat vakolatli so‘rov bilan ochiladi. Token, pasport,
+JSHSHIR va sud ma’lumotlari oddiy texnik jurnalga yozilmaydi.
+HTTPS, maxfiy saqlash, matnni xavfsiz chiqarish va importdagi formulalarni bajarmaslik ta’minlanadi. Audit
+odatiy foydalanuvchi uchun o‘zgarmas bo‘ladi. So‘rovnoma va rasmiy ochiq reyestr uchun alohida javob
+sxemalari ishlatiladi.
+COM-04: o‘zbek lotin yozuvi; tushunarli holat, xato va tugma nomlari ishlatiladi. 360, 768, 1024, 1440 px
+kengliklarda asosiy amallar bajariladi. Tab va Enter bilan boshqarish, oynani yopish tugmasi va Esc,
+ko‘rinadigan klaviatura tanlovi mavjud.
+Boshlang‘ich texnik qabul yuklamasi: 10 000 mediator, 100 parallel foydalanuvchi. Ro‘yxat va qidiruv
+so‘rovlarining kamida 95 foizi kelishilgan sinov muhitida 2 soniyagacha bajariladi. Fayl uzatish va tashqi
+xizmat kechikishi alohida o‘lchanadi. Bu xizmatning huquqiy muddatlarini almashtirmaydi.
+Har kuni zaxira olinadi; relizdan oldin tiklash sinovi bo‘ladi. Monitoring texnik xato, muddat buzilishi,
+yetkazilmagan xabar va rasmiy saytga tarqalmagan yangilanishni ko‘rsatadi. Saqlash muddati xizmat egasi
+bilan belgilanadi; huquqiy tarix yashirin avtomatik o‘chirilmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+16 / 22
+
+
+17 Jira uchun ariza moduli vazifalari
+Epic: Mediatorlikka rasmiy so‘rovnoma qabul qilish va tekshirish. IDlar shartli. P1 - joriy reliz uchun zarur.
+Avvalgi A01-A06 saqlanib, mazmuni Reglamentga mos yangilandi; A07 va A08 qo‘shildi.
+A01 Kanallar hisoblar vakolatlar va baza
+Mas’ul: Backend va Frontend. Bog‘liqlik: DXM, YIDXP va organlar bo‘yicha integratsiya shartnomasi.
+Rasmiy qabul, ishtirokchilar va hududiy vakolatlar yaratiladi. Qabul: istalgan DXMdan xizmat boshlanadi;
+begona ariza ko‘rinmaydi; rasmiy bo‘lmagan mahalliy yuborish qabul deb belgilanmaydi. 2 va 14-bo‘limlar.
+A02 Ikkinchi ilovaga mos so‘rovnoma
+Mas’ul: Frontend va Backend. Bog‘liqlik: A01. 16 bandli shakl, qoralama va barcha qiymatlarni saqlash.
+Qabul: pasport rekvizitlari, JSHSHIR, manzillar, ish staji qatorlari va etika tasdig‘i mavjud; elektron pochta
+ixtiyoriy. AR-02, AR-03 va AR-05.
+A03 Idoralararo ma’lumot va rasmiy so‘rovlar
+Mas’ul: Backend va Frontend. Bog‘liqlik: A01 va manba xizmatlari. Yulduzchali maydonlar olinadi;
+uzilishda rasmiy so‘rov va qayta urinish ishlaydi. Qabul: texnik xato salbiy huquqiy natijaga aylanmaydi;
+fuqarodan ortiqcha hujjat talab qilinmaydi; manba dalili saqlanadi. AR-06 va AR-07.
+A04 Tasdiqlash yuborish va voz kechish
+Mas’ul: Frontend va Backend. Bog‘liqlik: A02 va A03. DXM tasdig‘i, YIDXPdagi ERI istisnosi, bepul
+yuborish, takror himoyasi va voz kechish. Qabul: bir so‘rovnoma; billing yo‘q; voz kechish ko‘rilmasdan
+qoldirishga olib keladi. AR-08 dan AR-12 gacha va AR-19.
+A05 Hujjat tekshiruvi tuzatish va qonuniy qaror
+Mas’ul: Backend va Frontend. Bog‘liqlik: A04. Xodim ko‘rinishi, kamchilik va yopiq rad etish sabablari.
+Qabul: besh ish kunlik imkoniyat bor; faqat 11-banddagi sabablar; parallel qarorlar to‘qnashuvi aniqlanadi.
+AR-13 dan AR-15 gacha.
+A06 Rasmiy va kabinet xabarnomalari
+Mas’ul: Backend va Frontend. Bog‘liqlik: A04, A05, A07 va R02. Qabul: DXM yoki YIDXPga tegishli
+xabar ketadi; yuborish-yetkazish dalili va qayta urinish bor; ichki xabar yakka o‘zi rasmiy jo‘natish
+hisoblanmaydi. AR-16.
+A07 Imtihon rekvizitlari va tasdiqlangan istisno
+Mas’ul: Backend va Frontend. Bog‘liqlik: A05. Kotib tayinlash va rasmiy natijani qayd etadi; advokat va
+notarius maqomi tekshiriladi. Qabul: oddiy talabgor natijasiz, istisno esa maqom dalilisiz kiritilmaydi; to‘liq
+test yoki ovoz tizimi shart emas. AR-04 va AR-18.
+A08 Ish kunlari va xizmat muddatlari
+Mas’ul: Backend va Frontend. Bog‘liqlik: A01, A04, A05 va A07. Qabul: 6-bo‘limdagi barcha muddatlar, 3
+oylik chegara, kechikishlar va taqvim sinovlari ishlaydi. Taqvim va hisoblash qarori versiyalanadi. AR-17.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+17 / 22
+
+
+18 Jira uchun reyestr moduli vazifalari
+Epic: Mediatorlar reyestrini shakllantirish va yuritish. Barcha tasklar P1. Avvalgi R01-R06 yangilandi;
+o‘zgarish xabarnomasi uchun R07 qo‘shildi. Jami ikki Epic va 15 ta task.
+R01 Uchinchi ilovadagi reyestr ma’lumotlari
+Mas’ul: Backend va Frontend. Bog‘liqlik: A01 va rasmiy raqamlash. Sakkiz ochiq ustun, ichki tekshiruvlar
+va kiritgan organ saqlanadi. Qabul: diplom mutaxassisligi va aloqa ustuni bor; JSHSHIR ochiq emas; tarixiy
+kiritish davrlari yo‘qolmaydi. REG-01 va REG-02.
+R02 Rasmiy asosdan reyestrga kiritish
+Mas’ul: Backend va Frontend. Bog‘liqlik: A05, A07 va R01. Qabul: ijobiy natija yoki tasdiqlangan istisno;
+yozuv, holat, audit, nashr va xabar bir operatsiyada; qayta so‘rov dublikat bermaydi. REG-04 va 14-bo‘lim.
+R03 Mavjud rasmiy reyestr migratsiyasi
+Mas’ul: Backend va Frontend. Bog‘liqlik: R01; tasdiqlangan boshlang‘ich ro‘yxat. Qo‘lda yoki CSVdan
+oldindan ko‘rish va to‘liq ko‘chirish. Qabul: asl sana, raqam, organ va holat saqlanadi; bitta xatoli qator
+importni to‘xtatadi; yangi ariza tartibini chetlab o‘tish yo‘q. REG-03, REG-08 va REG-09.
+R04 Holat chiqarish va tarix
+Mas’ul: Backend va Frontend. Bog‘liqlik: R01. To‘xtatish, tiklash, yettita chiqarish asosi va qayta
+murojaat. Qabul: boshqa organ chiqarolmaydi; chiqarilgan shaxs tegishli tartibda yangi davr bilan qayta
+kiritilishi mumkin; tarix o‘chmaydi. REG-05 va 11-bo‘lim.
+R05 Ochiq reyestr va rasmiy saytlar
+Mas’ul: Frontend va Backend. Bog‘liqlik: R01, R02 va rasmiy sayt ulanishi. Jadval, mobil ko‘rinish, filtr va
+profil. Qabul: barcha rasmiy ustunlar ko‘rinadi; shaxsiy ilova chiqmaydi; boshqa qurilma va rasmiy sayt
+yangilanishni oladi. REG-07 va REG-10 dan REG-12 gacha.
+R06 Yakuniy sinov va reliz
+Mas’ul: QA, Backend, Frontend va PM. Bog‘liqlik: barcha reliz vazifalari. Qabul: 19 va 20-bo‘lim sinovlari,
+tiklash, yuklama, kanal yetkazishi va rasmiy nashr tekshirilgan; bloklovchi va yuqori darajali xatolar
+yopilgan.
+R07 Ma’lumot o‘zgarishi xabarnomasi
+Mas’ul: Backend va Frontend. Bog‘liqlik: R01, A06 va A08. DXM yoki YIDXPdan o‘zgarish xabari,
+eski-yangi qiymat va adliya yangilashi. Qabul: 3 va 2 ish kunlik nazorat; yangi boshlang‘ich ariza yoki takror
+imtihon talab qilinmaydi. REG-06.
+Ketma-ketlik: A01; undan keyin A02/A03 va R01; so‘ng A04/A05, R03/R04/R05; A07/A08, R02, A06/R07;
+yakunda R06. Tasdiqlangan integratsiya va rasmiy natija manbasi relizga bog‘liqlik sifatida Jira’da qayd
+etiladi. Kalendar ish hajmini jamoa baholaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+18 / 22
+
+
+19 Qabul sinovlari ariza va xizmat tartibi
+Sinovlar haqiqiy server saqlashi bilan stagingda bajariladi. Kanal va manbalar uchun test muhitlari
+ishlatiladi; jonli rejimda namuna javob qo‘llanmaydi. Har sinovda talab, qadam, kutilgan natija va dalil
+Jira’ga biriktiriladi.
+Sinov
+Kutilgan natija
+T01
+Oldindan arizasiz foydalanuvchi tegishli shaklni boshlaydi; saqlangan qoralama qayta ochiladi
+T02
+Istalgan DXM xizmatni boshlaydi; boshqa hududda ekanlik o‘zidan o‘zi rad etishga sabab emas
+T03
+2-ilovadagi barcha maydon, ish staji qatorlari va etika tasdig‘i bor
+T04
+Yulduzchali ma’lumot manbadan keladi; fuqaro kiritgan belgi rasmiy javobni almashtirmaydi
+T05
+Integratsiya uzilishi rasmiy so‘rov yo‘liga o‘tadi; “sudlanmagan” kabi soxta ijobiy javob yo‘q
+T06
+Vakil va talabgor alohida; ishonchnoma vakolati tasdiqlanmaguncha vakil amali bajarilmaydi
+T07
+DXMda talabgor tasdig‘i dalili saqlanadi; xodim loginining o‘zi yetarli emas
+T08
+YIDXPdan kelgan ariza alohida ERIsiz qabul qilinadi; to‘lov talab qilinmaydi
+T09
+Takror yuborish, portal callbacki va uzilishdan keyingi qayta urinish bitta so‘rovnoma beradi
+T10
+DXM yuborishi 10 daqiqalik nazoratga, YIDXP yuborishi avtomatik navbatga tushadi
+T11
+Komissiyaga taqdim 1 ish kunlik, tayinlash xabari 10 ish kunlik nazoratga tushadi
+T12
+Kamchilik xabarida sabab va 5 ish kuni bor; tuzatish yangi versiyada saqlanadi
+T13
+Muddatda tuzatilmaganida faqat tegishli asosli qaror; rad etish xabari shu kuni yuboriladi
+T14
+“Boshqa sabab” bilan rad etish yo‘q; texnik xato yoki to‘lovsizlik huquqiy rad etish emas
+T15
+Umumiy talabgor rasmiy natijasiz reyestrga kiritilmaydi
+T16
+Tasdiqlangan advokat yoki notariusga imtihon talab qilinmaydi; tanlangan toifaning o‘zi yetmaydi
+T17
+Muvaffaqiyatsiz imtihon sanasidan uch oy chegarasi kalendar oy bilan ishlaydi
+T18
+Imtihon xabarida sana, vaqt, joy yoki videohavola; rasmiy natija dalili saqlanadi
+Dalil talabi: yuborilganlik, qabul qilinganlik va yetkazilganlik vaqtlari alohida olinadi. Bayram va ko‘chirilgan
+dam olish kunlari bilan muddat natijasi taqqoslanadi. Oddiy texnik qabul javobi rasmiy xabarning
+yetkazilganligi deb olinmaydi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+19 / 22
+
+
+20 Qabul sinovlari reyestr va yakunlash
+ Sinov
+Kutilgan natija
+T19
+Xizmat yakunlanmagan har bir bosqichda voz kechish ko‘rilmasdan qoldirishga olib keladi
+T20
+Voz kechish va kiritish parallel kelsa, ikki zid yakuniy holat paydo bo‘lmaydi
+T21
+Ijobiy imtihondan so‘ng 3 ish kunlik kiritish va xabar nazorati ishlaydi
+T22
+Kiritishdagi xatoda qisman yozuv qolmaydi; takror so‘rov bir mediator davrini yaratadi
+T23
+Rasmiy sakkiz ustun, diplom mutaxassisligi va aloqa ma’lumoti chiqadi
+T24
+JSHSHIR, pasport, ishonchnoma va yopiq manzil ochiq javob yoki HTMLga chiqmaydi
+T25
+O‘zgarish xabari DXM yoki YIDXPdan olinadi; 3 va 2 ish kunlik nazorat ishlaydi
+T26
+Yangilash uchun yangi boshlang‘ich ariza yoki imtihon talab qilinmaydi
+T27
+Boshqa hududiy organ yoki texnik administrator kiritmagan yozuvini chiqara olmaydi
+T28
+Chiqarishda faqat 17-banddagi sabablar; asos va tarix saqlanadi
+T29
+Chiqarilgan shaxs asos bartaraf bo‘lgach qayta murojaat qiladi; eski davr o‘chmaydi
+T30
+CSV oldindan ko‘rish bazaga yozmaydi; bir xato yoki dublikatda butun import to‘xtaydi
+T31
+Xatosiz rasmiy paket asl sana, raqam, organ va holatni saqlaydi; qayta tasdiq dublikat bermaydi
+T32
+Bir xil ismli boshqa odamlar birlashtirilmaydi; noqonuniy takror faol yozuv bloklanadi
+T33
+Filtr, apostrof, sahifalash va profilga qaytish ishlaydi; server xatosi bo‘sh natija emas
+T34
+Yangi profil boshqa qurilma va rasmiy saytda yangilanadi; yetkazilmagan nashr voqeasi kuzatiladi
+T35
+Begona hujjat yoki ariza IDsi bilan murojaat bloklanadi; parallel tahrir yangi qiymatni bosmaydi
+T36
+Mobil va klaviatura amallari, yuklama, zaxiradan tiklash va rasmiy kanalga qayta yuborish ishlaydi
+Relizni qabul qilish mezoni
+Ikki Epicning barcha majburiy tasklari, AR, REG va COM talablari bajarilgan bo‘ladi. Qonuniy asos, rasmiy
+kanal va imtihon natijasi yoki istisno tekshiruvi ishlamay turib, faqat chiroyli shakl “davlat xizmati tayyor” deb
+qabul qilinmaydi.
+Namoyishda oddiy talabgorning rasmiy murojaati, kamchilikni tuzatish, tashqi imtihon natijasi, reyestrga
+kiritish va xabar; shuningdek tasdiqlangan istisno, voz kechish, o‘zgarish xabari va mavjud reyestr importi
+ko‘rsatiladi. Bloklovchi va yuqori darajali xatolar yopiladi. API hujjati, import shabloni, operator yo‘riqnomasi,
+zaxira va relizni qaytarish tartibi topshiriladi. Jarayon egasi va PM amaliy natijani qabul qiladi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+20 / 22
+
+
+21 Reglament va vazifalar mosligi
+Bu jadval dasturchi, tester va PMga har bir asosiy talabning huquqiy manbasi va bajariladigan vazifasini
+topish uchun xizmat qiladi. Qisqa “band” raqamlari 140-son qaror ilovasidagi Reglamentga tegishli.
+Huquqiy manba
+Amalga oshiriladigan talab
+Jira vazifasi
+4 va 5-bandlar
+DXM, YIDXP, vakil va elektron shakl
+A01, A02
+5-band va 2-ilova
+Idoralararo ma’lumot, rasmiy so‘rov, etika tasdig‘i
+A02, A03
+6-band
+Kanalga mos tasdiq, YIDXP uchun ERI istisnosi
+A04
+7-band
+Davlat xizmati bepul
+A04
+8-band
+Har bosqichda voz kechish va ko‘rilmasdan qoldirish
+A04
+9-band
+DXM 10 daqiqa, YIDXP avtomatik yo‘naltirish
+A01, A04, A08
+10-band
+Besh ish kunlik tuzatish va shu kuni rad etish xabari
+A05, A06, A08
+11-band
+To‘rtta rad etish asosi va 3 oylik cheklov
+A05, A07, A08
+12-band
+Komissiyaga taqdim, tayinlash, tasdiqlangan istisno
+A07, A08
+13-band va 1-ilova
+Rasmiy natija, 3 ish kunida kiritish va xabar
+A06, A07, A08, R02
+1-ilova 3-bosqich
+Imtihonning 1 oylik tashkiliy muddati
+A07, A08
+14 va 15-bandlar, 3-ilova
+Elektron reyestr va rasmiy ustunlar
+R01, R03, R05
+16-band
+O‘zgarish xabari va 3 hamda 2 ish kuni
+R07, A08
+17 va 18-bandlar
+Chiqarish sabablari va kiritgan organ vakolati
+R04
+19-band
+Qayta murojaat va tarixiy davr
+R04, R02
+20-band
+Real vaqt yangilash va rasmiy saytlarda e’lon
+R05
+21-band
+Rad etish yoki chiqarishdan shikoyat imkoniyatini ko‘rsatish
+A06, R04
+Qonunning 12-moddasi
+Malaka talablari va amaldagi to‘sqinliklarni tekshirish
+A03, A05, A07
+Texnik amalga oshirish: CSV importi, atomar saqlash, versiya tekshiruvi, audit, navbat va yuklama
+chegaralari Reglamentni bajarishga xizmat qiladigan loyiha yechimlaridir. Ular talabgorga yangi huquqiy
+majburiyat yoki rad etish asosi bermaydi.
+Terminlar: so‘rovnoma - davlat xizmatiga murojaat; qoralama - yuborilmagan nusxa; imtihon natijasi -
+vakolatli komissiyaning rasmiy ma’lumoti; reyestrga kiritish - hududiy organning qonuniy asosli amali; import
+- mavjud rasmiy yozuvni texnik ko‘chirish.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+21 / 22
+
+
+22 Integratsiya qarorlari va manbalar
+Ishga tushirishdan oldin aniqlashtiriladigan texnik qiymatlar
+ Masala
+Kerakli qaror va mas’ul
+DXM va YIDXP ulanishi
+Xizmat egasi va integratsiya jamoasi endpoint, autentifikatsiya, kanal IDsi va
+yetkazish tasdig‘ini beradi
+Tegishli hududiy organga yo‘naltirish
+Xizmat egasi eksterritorial DXM qabulini cheklamasdan marshrutlash qoidasini
+belgilaydi
+Yulduzchali manbalar
+Har ma’lumotning xizmat kodi, ruxsat, javob formati; uzilishda rasmiy so‘rov
+mas’uli
+Advokat yoki notarius maqomi
+Amaldagi maqomni tekshirish reyestri yoki rasmiy javob manbasi
+Imtihon natijasi
+Vakolatli komissiya, kotib hisobi va rasmiy bayonnoma yoki tashqi natija
+shartnomasi
+Muddatlarning tayanch voqeasi
+6-bo‘limda ko‘rsatilgan noaniq boshlanishlar va dam olish kunlari taqvimi
+bo‘yicha yozma ish qoidasi
+Rasmiy raqamlash va boshlang‘ich
+reyestr
+Organlar kesimida raqam yagonaligi, asl manba, tarixiy davr va migratsiya
+tekshiruvi
+Rasmiy saytga nashr
+Vazirlik va hududiy saytlarning yagona manba bilan ulanish usuli; nashr
+monitoringi
+Ochiq aloqa va saqlash
+Faoliyat uchun nashr qilinadigan manzil, hujjat saqlash va xizmat ma’lumotlarini
+himoyalash tartibi
+Endi hujjatlar ro‘yxati, xizmatning pulli yoki bepul ekani va YIDXP uchun ERI majburiyligi ochiq PM qarori
+sifatida qoldirilmaydi: ular qarordagi shakl va qoidalarga muvofiq belgilangan. Ochiq qolganlar texnik
+ulanish va hisoblashning aniqlashtiriladigan qiymatlaridir. Ishlamayotgan integratsiya tasdiqlangan namuna
+bilan jonli rejimda almashtirilmaydi.
+Rasmiy manbalar
+1. Vazirlar Mahkamasining 2026-yil 1-apreldagi 140-son qarori va Reglamentning 1-3-ilovalari. LexUZ:
+https://www.lex.uz/uz/acts/-8115139. Rasmiy e’lon rekviziti: 03.04.2026, 09/26/140/0303. Ushbu TZda
+10.11.2026 kuni ko‘rilgan matn ishlatildi.
+2. “Mediatsiya to‘g‘risida”gi O‘RQ-482-son Qonunning amaldagi 12-moddasi. LexUZ:
+https://lex.uz/uz/acts/-3805227. Faqat malaka talablari va tegishli to‘sqinliklarni aniqlashtirish uchun
+ishlatildi.
+3. Buyurtmachi yuborgan 140-son qaror matni: 1-ilova sxemasi va 2-ilova so‘rovnomasi bilan. Ushbu
+nusxada ko‘rsatilmagan 3-ilovaning sakkiz ustuni birinchi manbadan tekshirildi.
+Versiya o‘zgarishi: 1.0dagi umumiy ariza modeli rasmiy davlat xizmati so‘rovnomasiga moslandi. Imtihon
+dasturini qurmaslik talabi saqlandi, lekin qonuniy imtihon natijasi yoki tasdiqlangan istisno bilan ishlash
+qo‘shildi. Oldingi versiya alohida saqlandi; mazkur 1.1 versiya ishlab chiqish va qabul qilish uchun
+qo‘llanadi.
+Mediatorlikka ariza va mediatorlar reyestri
+Texnik topshiriq 1.1
+ADR platformasi  |  VM 140-son qaror asosida
+22 / 22

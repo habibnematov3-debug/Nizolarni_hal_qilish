@@ -43,11 +43,15 @@ export class PubService {
   }
 
   async statistics() {
-    const publicEntryWhere = { status: 'ACTIVE' as const, publicProfile: true, deletedAt: null };
-    const [mediators, applicants, dossiers, judges, arbitrators, mediationCases, settledCases, mandatoryCases, regions] = await Promise.all([
-      this.prisma.user.count({ where: { registryStatus: 'MEDIATOR', status: 'ACTIVE' } }),
-      this.prisma.user.count({ where: { registryStatus: 'NONE', status: 'ACTIVE' } }),
-      this.prisma.mediatorDossier.findMany({ where: { registryStatus: 'ACTIVE' }, select: { region: true } }),
+    const publicEntryWhere = {
+      status: 'ACTIVE' as const,
+      publicProfile: true,
+      isSample: false,
+      deletedAt: null,
+      AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
+    };
+    const [mediators, judges, arbitrators, mediationCases, settledCases, mandatoryCases, regions] = await Promise.all([
+      this.prisma.registryEntry.count({ where: { ...publicEntryWhere, type: 'MEDIATOR' } }),
       this.prisma.registryEntry.count({ where: { ...publicEntryWhere, type: 'ARBITRATION_JUDGE' } }),
       this.prisma.registryEntry.count({ where: { ...publicEntryWhere, type: 'ARBITRATOR' } }),
       this.prisma.mediationCase.count(),
@@ -57,17 +61,17 @@ export class PubService {
     ]);
     const byRegion: Record<string, number> = {};
     for (const region of regions) byRegion[region.region] = region._count._all;
-    const publicMediators = Object.values(byRegion).reduce((sum, count) => sum + count, 0);
+    const publicMediators = mediators;
     return {
-      mediators,
-      applicants,
-      activeMediatorDossiers: dossiers.length,
+      mediators: publicMediators,
       byRegion,
       publicSpecialistsTotal: publicMediators + judges + arbitrators,
       registryByType: { MEDIATOR: publicMediators, ARBITRATION_JUDGE: judges, ARBITRATOR: arbitrators },
       mediationCasesTotal: mediationCases,
       mediationCasesSettled: settledCases,
       mandatoryMediationCases: mandatoryCases,
+      arbitrationCasesTotal: null,
+      internationalArbitrationCasesTotal: null,
       generatedAt: new Date().toISOString(),
     };
   }

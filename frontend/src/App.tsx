@@ -3,7 +3,7 @@ import {
   Activity, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, Bell, BookOpen,
   BriefcaseBusiness, Building2, CalendarDays, Check, CheckCheck, ChevronDown,
   ChevronRight, CircleHelp, ClipboardList, FileCheck2, FileClock, FilePlus2,
-  FileText, Filter, Fingerprint, Gavel, GraduationCap, Handshake, Landmark,
+  FileText, Filter, Fingerprint, Gavel, Globe2, GraduationCap, Handshake, Landmark,
   LayoutDashboard, LogIn, MapPin, Menu, MessageSquare, Newspaper, Pencil, Phone, Search,
   Settings, ShieldCheck, Sparkles, Star, Trash2, User, UserRound, Users, Video, X,
 } from 'lucide-react'
@@ -38,6 +38,8 @@ type Role = { key: RoleKey; title: string; summary: string; icon: typeof UserRou
 type Metric = [string, number | string, string, typeof UserRound]
 type CabinetGroup = { title: string; summary: string; roles: RoleKey[] }
 const demoModeEnabled = import.meta.env.VITE_ENABLE_DEMO_MODE === 'true'
+// Vercel's preview-only sign-in chooser stays disabled on Production.
+const previewLoginEnabled = __VERCEL_ENV__ === 'preview' || (import.meta.env.DEV && import.meta.env.VITE_ENABLE_PREVIEW_TEST_LOGIN === 'true')
 const previewTestPassword = 'demo1234'
 const previewTestAccounts = [
   { username: 'demo.fuqaro', label: 'Fuqaro', detail: 'Jismoniy shaxs · mediatsiya murojaati' },
@@ -150,7 +152,8 @@ const publicContentTitle = (item: PublicContentItem, language: ApplicantLanguage
 const publicContentSummary = (item: PublicContentItem, language: ApplicantLanguage) => language === 'ru' ? item.summaryRu || item.summaryUz : item.summaryUz
 const publicContentBody = (item: PublicContentItem, language: ApplicantLanguage) => language === 'ru' ? item.bodyRu || item.bodyUz : item.bodyUz
 type PublicContentList = { items: PublicContentItem[] }
-type PublicMediatorCard = { id: string; fullName: string; region: string; specialization: string[]; registryNumber?: string | null; rating?: { score?: number | string } | null }
+type PublicMediatorCard = { id: string; fullName: string; region: string; specialization: string[]; languages?: string[]; registryNumber?: string | null }
+type PublicRegistryPreview = { items: PublicMediatorCard[]; pagination: { total: number } }
 type PublicRatingItem = { profile: PublicMediatorCard; rating: { score?: number | string; periodYear?: number } | null }
 type PublicRatingResponse = { items: PublicRatingItem[]; periodYear: number }
 type PublicRatingMethodology = { status?: string; description?: string; reportComplianceWeight?: number; resolutionRateWeight?: number; agreementExecutionWeight?: number; updatedAt?: string | null }
@@ -164,6 +167,8 @@ type PublicRegistryStatistics = {
   mediationCasesTotal?: number
   mediationCasesSettled?: number
   mandatoryMediationCases?: number
+  arbitrationCasesTotal?: number | null
+  internationalArbitrationCasesTotal?: number | null
   generatedAt?: string
 }
 
@@ -215,9 +220,10 @@ export default function App() {
   const [chooseRole, setChooseRole] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [activePage, setActivePage] = useState('Umumiy ko‘rsatkich')
-  const [query, setQuery] = useState('')
-  const [region, setRegion] = useState('Barcha hududlar')
-  const [registryKind, setRegistryKind] = useState('Mediatorlar')
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('search') || '')
+  const [region, setRegion] = useState(() => new URLSearchParams(window.location.search).get('region') || 'Barcha hududlar')
+  const [registryKind, setRegistryKind] = useState(() => ({ MEDIATOR: 'Mediatorlar', ARBITRATION_JUDGE: 'Hakamlik sudyalari', ARBITRATOR: 'Arbitrlar' } as Record<string, string>)[new URLSearchParams(window.location.search).get('type') || ''] || 'Mediatorlar')
+  const [registrySpecialization, setRegistrySpecialization] = useState(() => new URLSearchParams(window.location.search).get('specialization') || '')
   const [modal, setModal] = useState('')
   const [toast, setToast] = useState('')
   const [cases, setCases] = useState(() => loadRecords('nizolar.demo.cases', initialCases))
@@ -529,12 +535,12 @@ export default function App() {
   }))
 
   if (!role) return <>
-    <PublicSite language={applicantLanguage} onLanguageChange={setApplicantLanguage} page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} onApplyMediator={startPublicMediatorApplication} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} onContact={startPublicMediation} onToast={setToast} />
+    <PublicSite language={applicantLanguage} onLanguageChange={setApplicantLanguage} page={publicPage} setPage={setPublicPage} onLogin={openLogin} onRegistry={showPublicRegistry} onApplyMediator={startPublicMediatorApplication} query={query} setQuery={setQuery} region={region} setRegion={setRegion} registryKind={registryKind} setRegistryKind={setRegistryKind} specialization={registrySpecialization} setSpecialization={setRegistrySpecialization} onContact={startPublicMediation} onToast={setToast} />
     {showLogin && <ModalShell onClose={closeLogin}><div className="bg-slate-950 px-7 py-6 text-white sm:px-8"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300">Xavfsiz identifikatsiya</p><h2 className="mt-2 text-2xl font-semibold">Tizimga kirish usuli</h2><button onClick={closeLogin} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20} /></button></div><div className="space-y-3 p-6 sm:p-8">
-      {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => setLoginMethod(String(name))} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
-      {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} · sinov rejimi</p><p className="mt-1 text-xs leading-5 text-slate-600">Rasmiy OneID, ERI va Mobile ID ulanishlari hali yoqilmagan. Preview’da quyidagi vaqtinchalik hisob bilan shu kirish usulini sinab ko‘rishingiz mumkin.</p>{import.meta.env.VITE_ENABLE_PREVIEW_TEST_LOGIN === 'true' && previewMethodExamples[loginMethod] && <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-white p-3"><div><p className="text-xs font-semibold text-slate-800">{previewMethodExamples[loginMethod].label}</p><p className="mt-1 font-mono text-xs text-slate-600">Login: {previewMethodExamples[loginMethod].username} · Parol: {previewTestPassword}</p></div><Button size="xs" color="dark" loading={previewLoginLoading} disabled={previewLoginLoading} onClick={() => void loginAsPreviewAccount(previewMethodExamples[loginMethod].username)}>Sinab ko‘rish</Button></div>}{demoModeEnabled && <button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">Demo kabinetni tanlash<ArrowRight size={15} /></button>}</div>}
+      {[['OneID', 'Yagona identifikatsiya tizimi orqali', Fingerprint], ['Elektron raqamli imzo', 'ERI kaliti orqali xavfsiz kirish', ShieldCheck], ['Mobil ID / Face ID', 'Mobil qurilma orqali tasdiqlash', UserRound]].map(([name, caption, Icon]) => <button key={String(name)} onClick={() => { setLoginMethod(String(name)); if (demoModeEnabled || previewLoginEnabled) { setShowLogin(false); setChooseRole(true) } }} className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition ${loginMethod === name ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'}`}><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-900 shadow-sm"><Icon size={21} /></span><span className="flex-1"><strong className="block text-sm font-semibold text-slate-900">{String(name)}</strong><span className="mt-1 block text-xs text-slate-500">{String(caption)}</span></span><ArrowRight size={17} className="text-emerald-500" /></button>)}
+      {loginMethod && <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4"><p className="text-sm font-semibold text-slate-900">{loginMethod} · sinov rejimi</p><p className="mt-1 text-xs leading-5 text-slate-600">Rasmiy OneID, ERI va Mobile ID ulanishlari hali yoqilmagan. Preview’da vaqtinchalik hisob yoki kabinet tanlash oynasi orqali sinab ko‘ring.</p>{previewLoginEnabled && previewMethodExamples[loginMethod] && <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-white p-3"><div><p className="text-xs font-semibold text-slate-800">{previewMethodExamples[loginMethod].label}</p><p className="mt-1 font-mono text-xs text-slate-600">Login: {previewMethodExamples[loginMethod].username} · Parol: {previewTestPassword}</p></div><Button size="xs" color="dark" loading={previewLoginLoading} disabled={previewLoginLoading} onClick={() => void loginAsPreviewAccount(previewMethodExamples[loginMethod].username)}>Sinab ko‘rish</Button></div>}{(demoModeEnabled || previewLoginEnabled) && <button onClick={() => { setShowLogin(false); setChooseRole(true) }} className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800">4 ta kabinetni tanlash<ArrowRight size={15} /></button>}</div>}
       {!loginMethod && <p className="pt-1 text-center text-xs text-slate-400">Autentifikatsiya provayderlari loyiha integratsiyasi doirasida ulanadi.</p>}
-      {import.meta.env.VITE_ENABLE_PREVIEW_TEST_LOGIN === 'true' && <section className="mt-5 space-y-3 border-t border-slate-200 pt-5" aria-label="Preview sinov akkauntlari">
+      {previewLoginEnabled && <section className="mt-5 space-y-3 border-t border-slate-200 pt-5" aria-label="Preview sinov akkauntlari">
         <div><p className="text-sm font-semibold text-slate-900">Barcha sinov kabinetlari</p><p className="mt-1 text-xs leading-5 text-slate-500">Preview havolasini ochganlar ushbu vaqtinchalik hisoblar bilan kirishi mumkin. Barcha hisoblar uchun parol: <strong className="font-semibold text-slate-700">{previewTestPassword}</strong></p></div>
         <div className="grid gap-2 sm:grid-cols-2">
           {previewTestAccounts.map((account) => <article key={account.username} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -550,7 +556,7 @@ export default function App() {
         </form></details>
       </section>}
     </div></ModalShell>}
-    {chooseRole && demoModeEnabled && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }} onChoose={startRoles} />}
+    {chooseRole && (demoModeEnabled || previewLoginEnabled) && <RolePicker initialRoles={assignedRoles.length ? assignedRoles : ['CITIZEN']} onClose={() => { setChooseRole(false); setPendingPublicMediation(false); setPendingMediatorApplication(false) }} onChoose={startRoles} onTestAccounts={() => { setChooseRole(false); setShowLogin(true); setLoginMethod('') }} />}
     {modal === 'mediatsiya' && <MediationRequestForm initialMediator={selectedMediator} initialMediatorRegistryId={selectedMediatorRegistryId} initialMediatorIsSample={selectedMediatorIsSample} onClose={() => { setModal(''); setSelectedMediator(''); setSelectedMediatorRegistryId(''); setSelectedMediatorIsSample(false) }} onSubmit={submitMediation} />}
     {toast && <Toast text={toast} />}
   </>
@@ -585,12 +591,27 @@ export default function App() {
   </div>
 }
 
-function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegistry, onApplyMediator, query, setQuery, region, setRegion, registryKind, setRegistryKind, onContact, onToast }: { language: ApplicantLanguage; onLanguageChange: (language: ApplicantLanguage) => void; page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; onApplyMediator: () => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onToast: (text: string) => void }) {
+function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegistry, onApplyMediator, query, setQuery, region, setRegion, registryKind, setRegistryKind, specialization, setSpecialization, onContact, onToast }: { language: ApplicantLanguage; onLanguageChange: (language: ApplicantLanguage) => void; page: string; setPage: (page: string) => void; onLogin: () => void; onRegistry: () => void; onApplyMediator: () => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; registryKind: string; setRegistryKind: (value: string) => void; specialization: string; setSpecialization: (value: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onToast: (text: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
-  const links = ['Bosh sahifa', 'Mediatorlar reyestri', 'Hakamlik va arbitraj', 'Reyting', 'Statistika', 'Hududlar', 'Qonunchilik', 'Yo‘riqnomalar']
-  const linkLabels: Record<string, string> = { 'Bosh sahifa': 'Главная', 'Mediatorlar reyestri': 'Реестр медиаторов', 'Hakamlik va arbitraj': 'Третейский суд и арбитраж', 'Reyting': 'Рейтинг', 'Statistika': 'Статистика', 'Hududlar': 'Регионы', 'Qonunchilik': 'Законодательство', 'Yo‘riqnomalar': 'Руководства' }
+  const [heroSlide, setHeroSlide] = useState(0)
+  const [heroPaused, setHeroPaused] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const heroSlides = [
+    { lead: t('Nizolarni', 'Разрешайте споры'), accent: t('tinch', 'мирно'), tail: t('va o‘zaro manfaatli hal eting', 'и на взаимовыгодных условиях'), description: t('Mediatsiya, hakamlik va arbitraj mutaxassislarini toping. Nizoni sudgacha kelishuv bilan hal etish yo‘lini tanlang.', 'Найдите специалистов по медиации, третейскому разбирательству и арбитражу. Выберите способ урегулировать спор до суда.') },
+    { lead: t('Hakamlik va arbitrajda', 'В третейском суде и арбитраже'), accent: t('xolis', 'беспристрастно'), tail: t('yechimni toping', 'найдите решение'), description: t('Ochiq reyestrdan hakamlik sudyasi yoki arbitrni topib, tartib-taomillar bilan tanishing.', 'Найдите третейского судью или арбитра в открытом реестре и ознакомьтесь с процедурой.') },
+    { lead: t('Xalqaro nizolarni', 'Международные споры'), accent: t('professional', 'профессионально'), tail: t('tartibda hal eting', 'урегулируйте'), description: t('Arbitraj mutaxassislarini ko‘ring. Xalqaro arbitraj bo‘yicha maxsus platforma funksiyalari hozircha ulanmagan.', 'Посмотрите специалистов по арбитражу. Функции международного арбитража пока не подключены.') },
+    { lead: t('Jarayon va hujjatlarni', 'Следите за процессом и документами'), accent: t('tartibli', 'удобно'), tail: t('kuzating', 'и системно'), description: t('Murojaatlar holatini kabinetda ko‘ring. ERI orqali imzolash integratsiyasi hozircha ulanmagan.', 'Проверяйте статус обращений в кабинете. Интеграция подписания через ЭЦП пока не подключена.') },
+    { lead: t('Mediatorlik', 'Медиация'), accent: t('faoliyatini', 'профессионально'), tail: t('boshlang', 'начните'), description: t('Mediatorlar reyestriga kirish uchun ariza va hujjatlarni tayyorlang.', 'Подготовьте заявление и документы для включения в реестр медиаторов.') },
+  ]
+  useEffect(() => {
+    if (page !== 'Bosh sahifa' || heroPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const timer = window.setInterval(() => setHeroSlide((current) => (current + 1) % heroSlides.length), 7000)
+    return () => window.clearInterval(timer)
+  }, [page, heroPaused, heroSlides.length])
+  const links = ['Bosh sahifa', 'Mediatorlar reyestri', 'Hakamlik va arbitraj', 'SI tavsiyasi', 'Reyting', 'Statistika', 'Hududlar', 'Qonunchilik']
+  const linkLabels: Record<string, string> = { 'Bosh sahifa': 'Главная', 'Mediatorlar reyestri': 'Реестр медиаторов', 'Hakamlik va arbitraj': 'Третейский суд и арбитраж', 'SI tavsiyasi': 'Рекомендация ИИ', 'Reyting': 'Рейтинг', 'Statistika': 'Статистика', 'Hududlar': 'Регионы', 'Qonunchilik': 'Законодательство' }
   const displayLink = (link: string) => language === 'ru' ? linkLabels[link] || link : link
-  const navigate = (link: string) => link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link)
+  const navigate = (link: string) => { setMobileMenuOpen(false); link === 'Mediatorlar reyestri' ? onRegistry() : setPage(link) }
   return <Box mih="100vh" bg="gray.0" c="dark.9" style={{ overflowX: 'hidden' }}>
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur">
       <Container size="xl" style={{ maxWidth: 1600 }} px="md">
@@ -613,11 +634,12 @@ function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegi
               <LanguageFlag language={language}/>
             </ActionIcon>
             <Button type="button" onClick={onLogin} color="blue" radius="md" size="sm" leftSection={<LogIn size={17}/>} className="shrink-0"><span className="hidden sm:inline">{t('Tizimga kirish', 'Войти в систему')}</span></Button>
+            <ActionIcon type="button" hiddenFrom="xl" variant="light" color="blue" size="lg" aria-label={mobileMenuOpen ? t('Menyuni yopish', 'Закрыть меню') : t('Menyuni ochish', 'Открыть меню')} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)}><Menu size={19}/></ActionIcon>
           </Group>
         </Group>
-        <Group gap={4} wrap="nowrap" hiddenFrom="xl" className="overflow-x-auto pb-2">
-          {links.map((link) => <Button key={link} type="button" variant={page === link ? 'light' : 'subtle'} color="blue" radius="md" size="compact-xs" onClick={() => navigate(link)} className="shrink-0">{displayLink(link)}</Button>)}
-        </Group>
+        {mobileMenuOpen && <nav aria-label={t('Asosiy navigatsiya', 'Основная навигация')} className="grid grid-cols-2 gap-2 border-t border-slate-100 py-3 sm:grid-cols-3">
+          {links.map((link) => <Button key={link} type="button" variant={page === link ? 'light' : 'subtle'} color="blue" radius="md" size="sm" onClick={() => navigate(link)}>{displayLink(link)}</Button>)}
+        </nav>}
       </Container>
     </header>
     {page === 'Bosh sahifa' ? <>
@@ -631,15 +653,21 @@ function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegi
                   <Badge variant="light" color="cyan" radius="xl" size="lg" leftSection={<Sparkles size={14} className="text-amber-400"/>}>
                     {t('O‘zbekiston Respublikasi Adliya vazirligi platformasi', 'Платформа Министерства юстиции Республики Узбекистан')}
                   </Badge>
-                  <Title order={1} fw={750} style={{ maxWidth: 780, fontSize: 'clamp(2.6rem, 5vw, 4.6rem)', lineHeight: 1.04, letterSpacing: '-0.045em', color: '#fff' }}>
-                    {t('Nizolarni', 'Разрешайте споры')} <Text component="span" inherit c="cyan.3">{t('tinch', 'мирно')}</Text> {t('va o‘zaro manfaatli hal eting', 'и на взаимовыгодных условиях')}
+                  <Title order={1} aria-live="polite" fw={750} style={{ maxWidth: 780, fontSize: 'clamp(2.6rem, 5vw, 4.6rem)', lineHeight: 1.04, letterSpacing: '-0.045em', color: '#fff' }}>
+                    {heroSlides[heroSlide].lead} <Text component="span" inherit c="cyan.3">{heroSlides[heroSlide].accent}</Text> {heroSlides[heroSlide].tail}
                   </Title>
-                  <Text size="lg" c="blue.0" maw={700} lh={1.65}>
-                    {t('Mediatsiya, hakamlik va arbitraj mutaxassislarini toping. Nizoni sudgacha kelishuv bilan hal etish yo‘lini tanlang.', 'Найдите специалистов по медиации, третейскому разбирательству и арбитражу. Выберите способ урегулировать спор до суда.')}
+                  <Text size="lg" c="blue.0" maw={700} lh={1.65} aria-live="polite">
+                    {heroSlides[heroSlide].description}
                   </Text>
                   <Group gap="sm" mt="xs" wrap="wrap">
-                    <Button type="button" size="lg" radius="md" leftSection={<Handshake size={19}/>} rightSection={<ArrowRight size={17}/>} onClick={() => onContact('')} style={{ background: '#ffc126', color: '#071a31', boxShadow: '0 12px 28px rgba(4, 18, 34, .22)' }}>
-                      {t('Mediatsiyaga murojaat qilish', 'Подать заявление на медиацию')}
+                    <Button type="button" size="lg" radius="md" leftSection={heroSlide === 0 ? <Handshake size={19}/> : heroSlide === 1 ? <Gavel size={19}/> : heroSlide === 2 ? <Globe2 size={19}/> : heroSlide === 3 ? <ShieldCheck size={19}/> : <FilePlus2 size={19}/>} rightSection={<ArrowRight size={17}/>} onClick={() => {
+                      if (heroSlide === 0) onContact('')
+                      else if (heroSlide === 1) { setRegistryKind('Hakamlik sudyalari'); onRegistry() }
+                      else if (heroSlide === 2) { setRegistryKind('Arbitrlar'); onRegistry() }
+                      else if (heroSlide === 3) setPage('Elektron raqamli imzo')
+                      else onApplyMediator()
+                    }} style={{ background: '#ffc126', color: '#071a31', boxShadow: '0 12px 28px rgba(4, 18, 34, .22)' }}>
+                      {[t('Mediatsiyaga murojaat qilish', 'Подать заявление на медиацию'), t('Hakamlik sudyalarini ko‘rish', 'Найти третейского судью'), t('Arbitrlarni ko‘rish', 'Найти арбитра'), t('ERI haqida', 'Об электронной подписи'), t('Mediator bo‘lish uchun ariza', 'Подать заявление на статус медиатора')][heroSlide]}
                     </Button>
                     <Button type="button" size="lg" radius="md" variant="default" leftSection={<Search size={18}/>} onClick={onRegistry} styles={{ root: { background: 'rgba(255,255,255,.1)', color: '#fff', borderColor: 'rgba(255,255,255,.28)' } }}>
                       {t('Reyestrni ko‘rish', 'Открыть реестр')}
@@ -648,31 +676,44 @@ function PublicSite({ language, onLanguageChange, page, setPage, onLogin, onRegi
                       {t('Mediator bo‘lish uchun ariza', 'Подать заявление на статус медиатора')}
                     </Button>
                   </Group>
+                  <Group gap="xs" mt={4} role="group" aria-label={t('Bosh sahifa slaydlari boshqaruvi', 'Управление слайдами главной страницы')}>
+                    <ActionIcon type="button" variant="subtle" color="gray.0" aria-label={t('Oldingi slayd', 'Предыдущий слайд')} onClick={() => setHeroSlide((current) => (current + heroSlides.length - 1) % heroSlides.length)}><ArrowLeft size={16}/></ActionIcon>
+                    {heroSlides.map((slide, index) => <ActionIcon key={index} type="button" variant={heroSlide === index ? 'filled' : 'subtle'} color={heroSlide === index ? 'cyan' : 'gray.0'} size="sm" radius="xl" aria-label={`${index + 1}. ${slide.lead}`} aria-current={heroSlide === index ? 'true' : undefined} onClick={() => setHeroSlide(index)}/>) }
+                    <ActionIcon type="button" variant="subtle" color="gray.0" aria-label={heroPaused ? t('Avtomatik o‘tishni yoqish', 'Включить автопрокрутку') : t('Slaydlarni to‘xtatish', 'Приостановить слайды')} onClick={() => setHeroPaused((paused) => !paused)}>{heroPaused ? '▶' : 'Ⅱ'}</ActionIcon>
+                    <ActionIcon type="button" variant="subtle" color="gray.0" aria-label={t('Keyingi slayd', 'Следующий слайд')} onClick={() => setHeroSlide((current) => (current + 1) % heroSlides.length)}><ArrowRight size={16}/></ActionIcon>
+                    <Text size="xs" c="blue.1">{heroSlide + 1} / {heroSlides.length}</Text>
+                  </Group>
                 </Stack>
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 5 }}>
-                <RegistrySearchBox language={language} query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} onSearch={onRegistry}/>
+                <RegistrySearchBox language={language} query={query} setQuery={setQuery} region={region} setRegion={setRegion} kind={registryKind} setKind={setRegistryKind} specialization={specialization} setSpecialization={setSpecialization} onSearch={onRegistry}/>
               </Grid.Col>
             </Grid>
           </Container>
         </Box>
-        <PublicHomeSections language={language} onRegistry={onRegistry} setRegion={setRegion} setRegistryKind={setRegistryKind} onContact={onContact}/>
+        <PublicHomeSections language={language} onRegistry={onRegistry} setRegion={setRegion} setRegistryKind={setRegistryKind} onContact={onContact} onApplyMediator={onApplyMediator} setPage={setPage}/>
       </Box>
       <PublicFooter language={language} onLogin={onLogin} setPage={setPage}/>
-    </> : <PublicInfoPage page={page} registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} onRegistry={onRegistry} onLogin={onLogin} onToast={onToast} onContact={onContact}/>}
+    </> : <PublicInfoPage page={page} registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} specialization={specialization} setSpecialization={setSpecialization} onRegistry={onRegistry} onLogin={onLogin} onToast={onToast} onContact={onContact}/>}
   </Box>
 }
 
-function RegistrySearchBox({ language, query, setQuery, region, setRegion, kind, setKind, onSearch }: { language: ApplicantLanguage; query: string; setQuery: (v: string) => void; setRegion: (v: string) => void; region: string; kind: string; setKind: (v: string) => void; onSearch: () => void }) {
+function RegistrySearchBox({ language, query, setQuery, region, setRegion, kind, setKind, specialization, setSpecialization, onSearch }: { language: ApplicantLanguage; query: string; setQuery: (v: string) => void; setRegion: (v: string) => void; region: string; kind: string; setKind: (v: string) => void; specialization: string; setSpecialization: (v: string) => void; onSearch: () => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const specialistTypes = [['Mediatorlar', 'Медиаторы'], ['Hakamlik sudyalari', 'Третейские судьи'], ['Arbitrlar', 'Арбитры']]
+  const allRegions = ['Qoraqalpog‘iston Respublikasi', 'Andijon viloyati', 'Buxoro viloyati', 'Farg‘ona viloyati', 'Jizzax viloyati', 'Xorazm viloyati', 'Namangan viloyati', 'Navoiy viloyati', 'Qashqadaryo viloyati', 'Samarqand viloyati', 'Surxondaryo viloyati', 'Sirdaryo viloyati', 'Toshkent shahri', 'Toshkent viloyati']
+  const specialtyOptions = kind === 'Arbitrlar'
+    ? [['ECONOMIC', 'Iqtisodiy / tijorat'], ['INVESTMENT', 'Investitsiya'], ['INTELLECTUAL_PROPERTY', 'Intellektual mulk'], ['SPORT', 'Sport'], ['DIGITAL', 'Raqamli texnologiyalar']]
+    : kind === 'Hakamlik sudyalari'
+      ? [['CIVIL', 'Fuqarolik'], ['ECONOMIC', 'Iqtisodiy'], ['FAMILY', 'Oilaviy'], ['LABOR', 'Mehnat']]
+      : [['FAMILY', 'Oilaviy'], ['CIVIL', 'Fuqarolik'], ['LABOR', 'Mehnat'], ['ECONOMIC', 'Iqtisodiy / tijorat'], ['INTELLECTUAL_PROPERTY', 'Intellektual mulk'], ['INVESTMENT', 'Investitsiya']]
   return <Card withBorder radius="xl" padding="lg" shadow="xl" style={{ background: 'rgba(255,255,255,.1)', borderColor: 'rgba(255,255,255,.2)', backdropFilter: 'blur(14px)' }}>
     <Stack gap="lg">
       <Group gap="sm">
         <ThemeIcon variant="light" color="yellow" radius="md" size="lg"><Search size={19}/></ThemeIcon>
         <Text fw={700} size="lg" c="white">{t('Mutaxassisni tez topish', 'Быстрый поиск специалиста')}</Text>
       </Group>
-      <Tabs value={kind} onChange={(value) => { if (value) setKind(value) }} color="yellow" variant="default">
+      <Tabs value={kind} onChange={(value) => { if (value) { setKind(value); setSpecialization('') } }} color="yellow" variant="default">
         <Tabs.List grow>
           {specialistTypes.map(([tab, label]) => <Tabs.Tab key={tab} value={tab} c="white" fw={600}>{language === 'ru' ? label : tab}</Tabs.Tab>)}
         </Tabs.List>
@@ -694,9 +735,19 @@ function RegistrySearchBox({ language, query, setQuery, region, setRegion, kind,
           onChange={(value) => setRegion(value || '')}
           data={[
             { value: 'Barcha hududlar', label: t('Barcha hududlar (O‘zbekiston)', 'Все регионы (Узбекистан)') },
-            ...['Toshkent shahri', 'Samarqand viloyati', 'Buxoro viloyati', 'Farg‘ona viloyati'].map((value) => ({ value, label: value })),
+            ...allRegions.map((value) => ({ value, label: value })),
           ]}
           allowDeselect={false}
+          styles={{ label: { color: '#eff6ff', marginBottom: 8 }, input: { height: 52, background: '#fff', borderRadius: 12 } }}
+        />
+        <Select
+          label={t('Ixtisoslik', 'Специализация')}
+          aria-label={t('Ixtisoslik', 'Специализация')}
+          value={specialization || null}
+          onChange={(value) => setSpecialization(value || '')}
+          data={specialtyOptions.map(([value, label]) => ({ value, label }))}
+          placeholder={t('Barcha ixtisosliklar', 'Все специализации')}
+          clearable
           styles={{ label: { color: '#eff6ff', marginBottom: 8 }, input: { height: 52, background: '#fff', borderRadius: 12 } }}
         />
         <Button type="button" color="blue" size="lg" radius="md" fullWidth leftSection={<Search size={18}/>} rightSection={<ArrowRight size={16}/>} onClick={onSearch}>
@@ -734,18 +785,16 @@ function DeferredPublicMediatorMap({ points, selectedId, onSelect, label, loadin
   </div>
 }
 
-function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, onContact }: { language: ApplicantLanguage; onRegistry: () => void; setRegion: (region: string) => void; setRegistryKind: (kind: string) => void; onContact: (name: string) => void }) {
+function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, onContact, onApplyMediator, setPage }: { language: ApplicantLanguage; onRegistry: () => void; setRegion: (region: string) => void; setRegistryKind: (kind: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void; onApplyMediator: () => void; setPage: (page: string) => void }) {
   const t = (uz: string, ru: string) => applicantText(language, uz, ru)
   const [content, setContent] = useState<Record<string, PublicContentItem[]>>({ news: [], announcements: [], legal_framework: [], templates: [], manuals: [], video_manuals: [], faq: [], mandatory_mediation: [] })
   const [contentErrors, setContentErrors] = useState<Record<string, boolean>>({})
   const [mapPoints, setMapPoints] = useState<PublicMapPoint[]>([])
-  const [publicSpecialists, setPublicSpecialists] = useState<Record<'MEDIATOR' | 'ARBITRATION_JUDGE' | 'ARBITRATOR', PublicRatingItem[]>>({ MEDIATOR: [], ARBITRATION_JUDGE: [], ARBITRATOR: [] })
+  const [publicSpecialists, setPublicSpecialists] = useState<Record<'MEDIATOR' | 'ARBITRATION_JUDGE' | 'ARBITRATOR', PublicMediatorCard[]>>({ MEDIATOR: [], ARBITRATION_JUDGE: [], ARBITRATOR: [] })
   const [leadingType, setLeadingType] = useState<'MEDIATOR' | 'ARBITRATION_JUDGE' | 'ARBITRATOR'>('MEDIATOR')
   const [statistics, setStatistics] = useState<PublicRegistryStatistics | null>(null)
   const [statisticsUnavailable, setStatisticsUnavailable] = useState(false)
-  const [ratingErrors, setRatingErrors] = useState<Partial<Record<'MEDIATOR' | 'ARBITRATION_JUDGE' | 'ARBITRATOR', boolean>>>({})
-  const [ratingMethodology, setRatingMethodology] = useState<PublicRatingMethodology | null>(null)
-  const [ratingPeriod, setRatingPeriod] = useState<number | null>(null)
+  const [specialistErrors, setSpecialistErrors] = useState<Partial<Record<'MEDIATOR' | 'ARBITRATION_JUDGE' | 'ARBITRATOR', boolean>>>({})
   const [regionTotals, setRegionTotals] = useState<Record<string, number>>({})
   const [selectedMapPoint, setSelectedMapPoint] = useState<PublicMapPoint | null>(null)
   const [contentLoaded, setContentLoaded] = useState(false)
@@ -765,26 +814,22 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
       .then((points) => { if (active) setMapPoints(points.filter((point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude))) })
       .catch(() => { if (active) setMapPoints([]) })
     Promise.allSettled([
-      apiGetPublic<PublicRatingResponse>('/public/ratings?type=MEDIATOR&limit=3'),
-      apiGetPublic<PublicRatingResponse>('/public/ratings?type=ARBITRATION_JUDGE&limit=3'),
-      apiGetPublic<PublicRatingResponse>('/public/ratings?type=ARBITRATOR&limit=3'),
+      apiGetPublic<PublicRegistryPreview>('/public/mediators?type=MEDIATOR&status=ACTIVE&limit=3'),
+      apiGetPublic<PublicRegistryPreview>('/public/mediators?type=ARBITRATION_JUDGE&status=ACTIVE&limit=3'),
+      apiGetPublic<PublicRegistryPreview>('/public/mediators?type=ARBITRATOR&status=ACTIVE&limit=3'),
       apiGetPublic<PublicRegistryStatistics>('/public/statistics'),
-      apiGetPublic<PublicRatingMethodology>('/public/ratings/methodology'),
-    ]).then(([mediators, judges, arbitrators, publicStats, methodology]) => {
+    ]).then(([mediators, judges, arbitrators, publicStats]) => {
       if (!active) return
       setPublicSpecialists({
         MEDIATOR: mediators.status === 'fulfilled' ? mediators.value.items || [] : [],
         ARBITRATION_JUDGE: judges.status === 'fulfilled' ? judges.value.items || [] : [],
         ARBITRATOR: arbitrators.status === 'fulfilled' ? arbitrators.value.items || [] : [],
       })
-      setRatingErrors({ MEDIATOR: mediators.status === 'rejected', ARBITRATION_JUDGE: judges.status === 'rejected', ARBITRATOR: arbitrators.status === 'rejected' })
-      const period = [mediators, judges, arbitrators].find((result) => result.status === 'fulfilled')
-      if (period?.status === 'fulfilled') setRatingPeriod(period.value.periodYear)
+      setSpecialistErrors({ MEDIATOR: mediators.status === 'rejected', ARBITRATION_JUDGE: judges.status === 'rejected', ARBITRATOR: arbitrators.status === 'rejected' })
       if (publicStats.status === 'fulfilled') {
         setStatistics(publicStats.value)
         setRegionTotals(publicStats.value.byRegion || {})
       } else setStatisticsUnavailable(true)
-      if (methodology.status === 'fulfilled') setRatingMethodology(methodology.value)
     })
     return () => { active = false }
   }, [])
@@ -796,12 +841,22 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
   const statisticsUpdatedAt = statistics?.generatedAt && !Number.isNaN(Date.parse(statistics.generatedAt))
     ? new Intl.DateTimeFormat(language === 'ru' ? 'ru-RU' : 'uz-UZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(statistics.generatedAt))
     : null
-  const leadingSpecialists = publicSpecialists[leadingType].filter((item) => item.rating?.score != null).slice(0, 3)
+  const leadingSpecialists = publicSpecialists[leadingType].slice(0, 3)
   const registryLabel = { MEDIATOR: 'Mediatorlar', ARBITRATION_JUDGE: 'Hakamlik sudyalari', ARBITRATOR: 'Arbitrlar' }[leadingType]
   const registryDisplayLabel = language === 'ru' ? ({ MEDIATOR: 'Медиаторы', ARBITRATION_JUDGE: 'Третейские судьи', ARBITRATOR: 'Арбитры' } as const)[leadingType] : registryLabel
   const faqs = content.faq.length ? content.faq.map((item) => ({ question: publicContentTitle(item, language), answer: publicContentBody(item, language) || publicContentSummary(item, language) || '' })) : language === 'ru' ? publicFaqRuFallbacks : publicFaqFallbacks
   const materials = [...content.templates, ...content.manuals, ...content.video_manuals]
   const latestUpdates = [...content.news, ...content.announcements].sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime()).slice(0, 3)
+  const publicServices: { title: string; description: string; action: string; icon: typeof Handshake; run?: () => void }[] = [
+    { title: t('Mediatsiyaga murojaat', 'Обратиться за медиацией'), description: t('Nizo bo‘yicha murojaat yuborib, ish holatini kuzating.', 'Подайте обращение по спору и следите за его ходом.'), action: t('Murojaat boshlash', 'Начать обращение'), icon: Handshake, run: () => onContact('') },
+    { title: t('Mediatorlar reyestri', 'Реестр медиаторов'), description: t('Faol mutaxassislarni hudud, ixtisoslik va til bo‘yicha qidiring.', 'Найдите действующих специалистов по региону, специализации и языку.'), action: t('Reyestrni ochish', 'Открыть реестр'), icon: Users, run: onRegistry },
+    { title: t('Mediator bo‘lish', 'Стать медиатором'), description: t('Mediatorlar reyestriga kiritilish bo‘yicha ariza bering.', 'Подайте заявление о включении в реестр медиаторов.'), action: t('Ariza berish', 'Подать заявление'), icon: FilePlus2, run: onApplyMediator },
+    { title: t('Hakamlik va arbitraj', 'Третейский суд и арбитраж'), description: t('Hakamlik sudyalari va arbitrlar bo‘yicha ochiq ma’lumotlarni ko‘ring.', 'Посмотрите открытые сведения о третейских судьях и арбитрах.'), action: t('Mutaxassislarni ko‘rish', 'Найти специалистов'), icon: Gavel, run: () => { setRegistryKind('Hakamlik sudyalari'); onRegistry() } },
+    { title: t('SI tavsiyasi', 'Рекомендация ИИ'), description: t('Avtomatik tavsiya xizmati hozircha ulanmagan.', 'Автоматическая рекомендация пока не подключена.'), action: t('Holatini ko‘rish', 'Посмотреть статус'), icon: Sparkles, run: () => setPage('SI tavsiyasi') },
+    { title: t('Qonunchilik va hujjatlar', 'Законодательство и документы'), description: t('Mediatsiya bo‘yicha amaldagi hujjatlar va nashr qilingan namunalar.', 'Действующие документы и опубликованные образцы по медиации.'), action: t('Hujjatlarni ko‘rish', 'Открыть документы'), icon: BookOpen, run: () => setPage('Qonunchilik') },
+    { title: t('Ochiq statistika', 'Открытая статистика'), description: t('Bazaga kiritilgan platforma ko‘rsatkichlari va hududiy qamrov.', 'Показатели платформы и охват регионов по данным базы.'), action: t('Statistikani ko‘rish', 'Открыть статистику'), icon: Activity, run: () => setPage('Statistika') },
+    { title: t('Hududlar', 'Регионы'), description: t('Xaritada koordinatasi kiritilgan faol mediatorlarni ko‘ring.', 'Посмотрите действующих медиаторов с указанными координатами на карте.'), action: t('Xaritaga o‘tish', 'Перейти к карте'), icon: MapPin, run: () => document.getElementById('home-regions')?.scrollIntoView({ behavior: 'smooth' }) },
+  ]
 
   return <>
     <section aria-label={t('Platforma ko‘rsatkichlari', 'Показатели платформы')} className="relative z-10 -mt-7">
@@ -809,10 +864,10 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
         <Paper withBorder radius="xl" p="sm" shadow="md">
           <SimpleGrid cols={{ base: 2, sm: 2, lg: 4 }} spacing="sm">
             {[
-              { value: statistics ? String(publicSpecialistsTotal ?? '—') : '—', label: t('Faol mutaxassislar', 'Действующие специалисты'), detail: t('Ochiq reyestr bo‘yicha', 'По открытому реестру'), color: 'blue.8' },
+              { value: statistics ? String(statistics.registryByType?.MEDIATOR ?? '—') : '—', label: t('Faol mediatorlar', 'Действующие медиаторы'), detail: t('Ochiq reyestr bo‘yicha', 'По открытому реестру'), color: 'blue.8' },
               { value: statistics ? String(statistics.mediationCasesTotal ?? '—') : '—', label: t('Mediatsiya murojaatlari', 'Заявления на медиацию'), detail: t('Umumiy soni', 'Всего'), color: 'teal.7' },
-              { value: statistics ? String(statistics.mediationCasesSettled ?? '—') : '—', label: t('Yakunlangan mediatsiyalar', 'Завершённые медиации'), detail: t('Kelishuv bilan yakunlangan', 'Завершены соглашением'), color: 'orange.7' },
-              { value: statistics ? String(coveredRegions) : '—', label: t('Hudud qamrovi', 'Охват регионов'), detail: t('Faol mediatorlar mavjud hududlar', 'Регионы с действующими медиаторами'), color: 'violet.7' },
+              { value: statistics?.arbitrationCasesTotal == null ? '—' : String(statistics.arbitrationCasesTotal), label: t('Hakamlik ishlari', 'Дела третейского суда'), detail: t('Ma’lumot manbasi ulanmagan', 'Источник данных не подключён'), color: 'orange.7' },
+              { value: statistics?.internationalArbitrationCasesTotal == null ? '—' : String(statistics.internationalArbitrationCasesTotal), label: t('Xalqaro arbitraj ishlari', 'Международный арбитраж'), detail: t('Ma’lumot manbasi ulanmagan', 'Источник данных не подключён'), color: 'violet.7' },
             ].map((metric) => <Paper key={metric.label} withBorder radius="lg" bg="gray.0" p="md" ta="center">
               <Text size="2rem" fw={750} c={metric.color} lh={1.15}>{metric.value}</Text>
               <Text mt={8} size="xs" fw={700} c="dark.6" tt="uppercase" lts={0.35}>{metric.label}</Text>
@@ -830,35 +885,21 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
       <Container size="xl" style={{ maxWidth: 1420 }} px="lg">
         <Stack gap="xl">
           <Stack gap="xs">
-            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Muqobil hal etish yo‘llari', 'Способы альтернативного урегулирования')}</Text>
-            <Title order={2} size="h2" c="dark.9">{t('Nizo turiga mos xizmatni tanlang', 'Выберите способ урегулирования спора')}</Title>
-            <Text size="sm" c="dimmed" maw={780}>{t('Nizo va taraflarning ehtiyojiga qarab mediatsiya, hakamlik yoki arbitraj tartibi bilan tanishing.', 'Ознакомьтесь с медиацией, третейским разбирательством и арбитражем с учётом спора и потребностей сторон.')}</Text>
+            <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Xizmatlar', 'Услуги')}</Text>
+            <Title order={2} size="h2" c="dark.9">{t('Barcha xizmatlar', 'Все услуги')}</Title>
+            <Text size="sm" c="dimmed" maw={780}>{t('Amalda mavjud xizmatlarni oching. Ulanmagan imkoniyatlar alohida ko‘rsatiladi.', 'Откройте доступные услуги. Ещё не подключённые возможности отмечены отдельно.')}</Text>
           </Stack>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-            <Card withBorder radius="xl" padding="lg" shadow="xs" h="100%">
-              <Stack align="flex-start" gap="sm" h="100%">
-                <ThemeIcon size={46} radius="md" color="teal" variant="light"><Handshake size={22}/></ThemeIcon>
-                <Title order={3} size="h4">{t('Mediatsiya', 'Медиация')}</Title>
-                <Text size="sm" c="dimmed" lh={1.6} flex={1}>{t('Taraflar mediator ko‘magida nizoni kelishuv asosida hal qilish uchun murojaat yuboradi.', 'Стороны обращаются за помощью медиатора, чтобы урегулировать спор на основе соглашения.')}</Text>
-                <Button type="button" variant="light" color="blue" rightSection={<ArrowRight size={15}/>} onClick={() => onContact('')}>{t('Murojaat boshlash', 'Подать заявление')}</Button>
-              </Stack>
-            </Card>
-            <Card id="mandatory-mediation" withBorder radius="xl" padding="lg" shadow="xs" h="100%" style={{ scrollMarginTop: 100 }}>
-              <Stack align="flex-start" gap="sm" h="100%">
-                <ThemeIcon size={46} radius="md" color="orange" variant="light"><FileCheck2 size={22}/></ThemeIcon>
-                <Title order={3} size="h4">{t('Majburiy sudgacha mediatsiya', 'Обязательная досудебная медиация')}</Title>
-                <Text size="sm" c="dimmed" lh={1.6} flex={1}>{t('Qonunchilikda belgilangan holatlarda sudgacha mediatsiya tartibi va tegishli toifalar bilan tanishing.', 'Ознакомьтесь с порядком и категориями обязательной досудебной медиации, предусмотренными законодательством.')}</Text>
-                <Button component="a" href="#mandatory-guidance" variant="subtle" color="blue" rightSection={<ArrowRight size={15}/>} px={0}>{t('Toifalar va yo‘riqnoma', 'Категории и руководство')}</Button>
-              </Stack>
-            </Card>
-            <Card withBorder radius="xl" padding="lg" shadow="xs" h="100%">
-              <Stack align="flex-start" gap="sm" h="100%">
-                <ThemeIcon size={46} radius="md" color="blue" variant="light"><Gavel size={22}/></ThemeIcon>
-                <Title order={3} size="h4">{t('Hakamlik va arbitraj', 'Третейское разбирательство и арбитраж')}</Title>
-                <Text size="sm" c="dimmed" lh={1.6} flex={1}>{t('Hakamlik muhokamasi va arbitraj bo‘yicha tartib, mutaxassislar hamda hujjat namunalari.', 'Порядок третейского разбирательства и арбитража, специалисты и образцы документов.')}</Text>
-                <Button type="button" variant="subtle" color="blue" rightSection={<ArrowRight size={15}/>} px={0} onClick={() => { setRegistryKind('Hakamlik sudyalari'); onRegistry() }}>{t('Mutaxassislarni topish', 'Найти специалистов')}</Button>
-              </Stack>
-            </Card>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+            {publicServices.map(({ title, description, action, icon: Icon, run }) => <UnstyledButton key={title} type="button" disabled={!run} onClick={run} className="h-full rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 disabled:cursor-default">
+              <Card withBorder radius="xl" padding="lg" shadow="xs" h="100%" className="transition hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-blue-700">
+                <Stack align="flex-start" gap="sm" h="100%">
+                  <ThemeIcon size={44} radius="md" color="teal" variant="light"><Icon size={21}/></ThemeIcon>
+                  <Title order={3} size="h5">{title}</Title>
+                  <Text size="sm" c="dimmed" lh={1.6} flex={1}>{description}</Text>
+                  <Group gap="xs" c={run ? 'blue.8' : 'gray.6'}><Text size="sm" fw={650}>{action}</Text>{run && <ArrowRight size={15}/>}</Group>
+                </Stack>
+              </Card>
+            </UnstyledButton>)}
           </SimpleGrid>
         </Stack>
       </Container>
@@ -896,12 +937,14 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
             <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Jarayon', 'Порядок работы')}</Text>
             <Title order={2} size="h2" mt="xs">{t('Platformadan foydalanish tartibi', 'Как пользоваться платформой')}</Title>
           </div>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {[
-              [t('Tizimga kiring', 'Войдите в систему'), t('OneID yoki mavjud identifikatsiya usuli orqali shaxsni tasdiqlang.', 'Подтвердите личность через OneID или другой доступный способ идентификации.')],
-              [t('Nizo yo‘lini tanlang', 'Выберите способ урегулирования'), t('Mediatsiya, sudgacha mediatsiya yoki hakamlik/arbitraj bo‘limini tanlang.', 'Выберите медиацию, досудебную медиацию, третейское разбирательство или арбитраж.')],
-              [t('Murojaatni yuboring', 'Отправьте заявление'), t('Nizo haqida zarur ma’lumotni kiriting va mutaxassisni tanlang.', 'Укажите необходимые сведения о споре и выберите специалиста.')],
-              [t('Jarayonni kuzating', 'Следите за ходом дела'), t('Kabinetda xabarnomalar, uchrashuvlar va hujjatlar bilan ishlang.', 'Работайте с уведомлениями, встречами и документами в личном кабинете.')],
+              [t('Murojaat', 'Обращение'), t('Nizo haqida ma’lumot va taraflar rekvizitlarini yuboring.', 'Передайте сведения о споре и сторонах.')],
+              [t('Qabul', 'Принятие'), t('Mutaxassis arizani qabul qiladi va taraflarga xabar beradi.', 'Специалист принимает заявление и уведомляет стороны.')],
+              [t('Shartnoma', 'Соглашение'), t('Taraflar mediatsiya tartibi va shartlarini kelishadi.', 'Стороны согласуют порядок и условия медиации.')],
+              [t('Mediatsiya', 'Медиация'), t('Mediator taraflarga muzokara jarayonida ko‘maklashadi.', 'Медиатор помогает сторонам провести переговоры.')],
+              [t('Kelishuv', 'Соглашение сторон'), t('Kelishuvga erishilsa, uning shartlari rasmiylashtiriladi.', 'При достижении согласия оформляются его условия.')],
+              [t('Ijro nazorati', 'Контроль исполнения'), t('Kelishuv shartlarining bajarilishini kabinetda kuzating.', 'Следите за исполнением условий соглашения в кабинете.')],
             ].map(([title, detail], index) => <Paper key={title} withBorder radius="lg" p="md" bg="white">
               <Stack gap="sm">
                 <ThemeIcon size={38} radius="xl" color="blue" variant="light">{index + 1}</ThemeIcon>
@@ -914,7 +957,7 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
       </Container>
     </section>
 
-    <section className="bg-slate-50 px-5 pb-12 pt-16 sm:px-8 lg:px-10">
+    <section id="home-regions" className="bg-slate-50 px-5 pb-12 pt-16 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-[1420px] rounded-3xl bg-gradient-to-br from-[#101b31] to-[#082f5f] p-5 text-white shadow-xl shadow-slate-900/10 sm:p-8 lg:p-10">
         <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-amber-400">{t('Interaktiv xarita', 'Интерактивная карта')}</p><h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{t('Hududlar bo‘yicha mediatorlar', 'Медиаторы по регионам')}</h2><p className="mt-2 text-sm text-blue-100/70">{t('Hududni tanlab, reyestrdagi mutaxassislarni ko‘ring.', 'Выберите регион и посмотрите специалистов в реестре.')}</p></div><button onClick={onRegistry} className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-semibold text-white transition hover:bg-white/15 sm:self-auto"><MapPin size={15} className="text-amber-400"/>{t('To‘liq reyestr', 'Полный реестр')}<ArrowRight size={14}/></button></div>
         <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_.8fr]">
@@ -934,9 +977,9 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
         <Stack gap="lg">
           <Group justify="space-between" align="flex-end" wrap="wrap">
             <Stack gap="xs">
-              <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Ochiq reyting', 'Открытый рейтинг')}</Text>
-              <Title order={2} size="h2">{t('Mutaxassislar reytingi', 'Рейтинг специалистов')}</Title>
-              <Text size="sm" c="dimmed">{t('Reyestrdagi mediator, hakamlik sudyasi va arbitrlar reytingi.', 'Рейтинг медиаторов, третейских судей и арбитров из реестра.')}</Text>
+              <Text size="xs" fw={700} tt="uppercase" lts={1.5} c="blue.8">{t('Ochiq reyestr', 'Открытый реестр')}</Text>
+              <Title order={2} size="h2">{t('Mutaxassislar ro‘yxati', 'Список специалистов')}</Title>
+              <Text size="sm" c="dimmed">{t('Har bir guruhda bazadagi faol mutaxassislar soni va ulardan ko‘pi bilan uch nafari ko‘rsatiladi. Reyting ushbu relizda chiqmaydi.', 'В каждой группе показано число действующих специалистов из базы и до трёх профилей. Рейтинг в этом релизе не отображается.')}</Text>
             </Stack>
             <Button type="button" variant="subtle" color="blue" rightSection={<ArrowRight size={16}/>} onClick={() => { setRegistryKind(registryLabel); onRegistry() }}>
               {t('Reyestrni ochish', 'Открыть реестр')}
@@ -949,48 +992,35 @@ function PublicHomeSections({ language, onRegistry, setRegion, setRegistryKind, 
                 ['MEDIATOR', 'Mediatorlar', 'Медиаторы'],
                 ['ARBITRATION_JUDGE', 'Hakamlik sudyalari', 'Третейские судьи'],
                 ['ARBITRATOR', 'Arbitrlar', 'Арбитры'],
-              ] as const).map(([type, labelUz, labelRu]) => <Tabs.Tab key={type} value={type}>{language === 'ru' ? labelRu : labelUz}</Tabs.Tab>)}
+              ] as const).map(([type, labelUz, labelRu]) => <Tabs.Tab key={type} value={type}>{language === 'ru' ? labelRu : labelUz}<Badge ml={8} size="xs" variant="light" color="gray">{statistics?.registryByType?.[type] ?? '—'}</Badge></Tabs.Tab>)}
             </Tabs.List>
           </Tabs>
 
           {leadingSpecialists.length
-            ? <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">{leadingSpecialists.map(({ profile: person, rating }) => <Card key={person.id} withBorder radius="xl" shadow="xs" padding="lg" h="100%">
+            ? <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">{leadingSpecialists.map((person) => <Card key={person.id} withBorder radius="xl" shadow="xs" padding="lg" h="100%">
               <Stack gap="md" h="100%">
                 <Group align="flex-start" wrap="nowrap">
                   <ThemeIcon size={48} radius="md" variant="light" color="blue">{person.fullName.split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</ThemeIcon>
                   <Box className="min-w-0 flex-1">
                     <Text fw={700} lineClamp={1}>{person.fullName}</Text>
                     <Text mt={4} size="sm" c="dimmed" className="flex items-center gap-1"><MapPin size={13}/>{person.region}</Text>
-                    <Text mt={4} size="xs" c="dimmed">{t('Reyting davri:', 'Период рейтинга:')} {rating?.periodYear || ratingPeriod || '—'}</Text>
                   </Box>
-                  <Badge color="yellow" variant="light" leftSection={<Star size={12} className="fill-current"/>}>{Number(rating?.score).toFixed(1)}</Badge>
                 </Group>
                 <Group gap="xs" flex={1} align="flex-start">
                   {(person.specialization || []).slice(0, 2).map((specialty) => <Badge key={specialty} color="gray" variant="light" radius="sm">{specialty}</Badge>)}
                 </Group>
+                <Text size="xs" c="dimmed">{t('Mediatsiya tillari:', 'Языки медиации:')} {(person.languages || []).join(', ') || '—'}</Text>
                 <Group justify="space-between" align="center" wrap="wrap" className="border-t border-slate-100 pt-3">
                   <Text size="xs" c="dimmed">{t('Reyestr №', 'Реестр №')} {person.registryNumber || '—'}</Text>
-                  <Button type="button" size="compact-sm" color="blue" onClick={() => { if (leadingType === 'MEDIATOR') onContact(person.fullName); else { setRegistryKind(registryLabel); onRegistry() } }}>
+                  <Button type="button" size="compact-sm" color="blue" onClick={() => { if (leadingType === 'MEDIATOR') onContact(person.fullName, person.id); else { setRegistryKind(registryLabel); onRegistry() } }}>
                     {leadingType === 'MEDIATOR' ? t('Mediatsiyaga murojaat', 'Обратиться за медиацией') : t('Reyestrda ko‘rish', 'Открыть реестр')}
                   </Button>
                 </Group>
               </Stack>
             </Card>)}</SimpleGrid>
             : <Paper withBorder radius="lg" p="lg" bg="white">
-              <Text size="sm" c="dimmed">{ratingErrors[leadingType] ? t(registryLabel + ' reytingini yuklab bo‘lmadi.', 'Не удалось загрузить рейтинг: ' + registryDisplayLabel.toLowerCase() + '.') : t(registryLabel + ' bo‘yicha reyting shakllanmagan.', 'Рейтинг ' + registryDisplayLabel.toLowerCase() + ' пока не сформирован.')}</Text>
+              <Text size="sm" c="dimmed">{specialistErrors[leadingType] ? t(registryLabel + ' reyestrini yuklab bo‘lmadi. Keyinroq qayta urinib ko‘ring.', 'Не удалось загрузить реестр: ' + registryDisplayLabel.toLowerCase() + '. Попробуйте позже.') : t(registryLabel + ' bo‘yicha hozir ochiq mutaxassis yo‘q.', 'В открытом реестре пока нет специалистов категории «' + registryDisplayLabel.toLowerCase() + '».')}</Text>
             </Paper>}
-
-          <Accordion variant="separated" radius="md">
-            <Accordion.Item value="rating-methodology">
-              <Accordion.Control>{t('Reyting metodikasi', 'Методика рейтинга')}</Accordion.Control>
-              <Accordion.Panel>
-                <Text size="sm" c="dimmed">{ratingMethodology?.description || t('Reyting metodikasi yuklanmoqda.', 'Загрузка методики рейтинга.')}</Text>
-                {ratingMethodology && <Text mt="sm" size="sm" c="dimmed">
-                  {t('Mezonlar:', 'Критерии:')} {t('hisobot intizomi', 'соблюдение отчётности')} {ratingMethodology.reportComplianceWeight ?? '—'}%, {t('nizolarni yakunlash', 'завершение споров')} {ratingMethodology.resolutionRateWeight ?? '—'}%, {t('kelishuv ijrosi', 'исполнение соглашений')} {ratingMethodology.agreementExecutionWeight ?? '—'}%. {t('Yangilangan:', 'Обновлено:')} {ratingMethodology.updatedAt ? formatPublicDate(ratingMethodology.updatedAt) : t('tasdiqlanishi kutilmoqda', 'ожидается утверждение')}.
-                </Text>}
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
         </Stack>
       </Container>
     </section>
@@ -1153,8 +1183,8 @@ function PublicRatingsPage({ setRegistryKind, onRegistry, onContact }: { setRegi
   return <section className="min-h-[calc(100vh-130px)] bg-slate-50 px-5 py-10 sm:px-10"><div className="mx-auto max-w-6xl"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-wide text-blue-800">Ochiq ma’lumotlar</p><h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Mutaxassislar reytingi</h1><p className="mt-3 text-sm leading-6 text-slate-500">Ochiq profillar bo‘yicha amaldagi davr reytingi va uni hisoblash metodikasi.</p></div><span className="text-xs text-slate-500">Reyting davri: {data?.periodYear || '—'}</span></div><div className="mt-7 flex flex-wrap gap-2" role="tablist" aria-label="Mutaxassis turi">{(Object.entries(labels) as [keyof typeof labels, string][]).map(([key, label]) => <button key={key} role="tab" aria-selected={type === key} onClick={() => setType(key)} className={`rounded-full px-4 py-2 text-xs font-semibold ${type === key ? 'bg-blue-900 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}>{label}</button>)}</div>{failed ? <p role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">Reytingni yuklab bo‘lmadi. Keyinroq qayta urinib ko‘ring.</p> : loading ? <p className="mt-5 rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Reyting yuklanmoqda…</p> : data?.items.length ? <div className="mt-5 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">{data.items.map(({ profile, rating }) => <article key={profile.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-semibold text-slate-900">{profile.fullName}</h2><p className="mt-1 text-xs text-slate-500">{profile.region} · {profile.specialization?.join(', ') || 'Ixtisoslik ko‘rsatilmagan'} · Reyestr № {profile.registryNumber || '—'}</p></div><div className="flex items-center gap-3"><span className="text-xs font-semibold text-slate-700">{rating ? `★ ${Number(rating.score).toFixed(1)}` : 'Reyting shakllanmagan'}</span><button onClick={() => { if (type === 'MEDIATOR') onContact(profile.fullName); else { setRegistryKind(labels[type]); onRegistry() } }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-blue-800 hover:bg-slate-50">{type === 'MEDIATOR' ? 'Murojaat qilish' : 'Reyestrda ko‘rish'}</button></div></article>)}</div> : <p className="mt-5 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">{labels[type]} bo‘yicha reyting profillari topilmadi.</p>}<details className="mt-5 rounded-xl border border-slate-200 bg-white px-5 py-4"><summary className="cursor-pointer text-sm font-semibold text-slate-800">Reyting metodikasi</summary><div className="mt-3 border-t border-slate-100 pt-3 text-xs leading-5 text-slate-500"><p>{methodology?.description || 'Metodika ma’lumoti mavjud emas.'}</p>{methodology && <p className="mt-2">Holati: {methodology.status === 'DRAFT' ? 'Dastlabki loyiha, tasdiqlanishi kutilmoqda' : methodology.status || '—'}. Mezonlar vazni: hisobot intizomi {methodology.reportComplianceWeight ?? '—'}%, nizolarni yakunlash {methodology.resolutionRateWeight ?? '—'}%, kelishuv ijrosi {methodology.agreementExecutionWeight ?? '—'}%.</p>}</div></details></div></section>
 }
 
-function PublicInfoPage({ page, registryKind, setRegistryKind, query, setQuery, region, setRegion, onRegistry, onLogin, onToast, onContact }: { page: string; registryKind: string; setRegistryKind: (value: string) => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; onRegistry: () => void; onLogin: () => void; onToast: (text: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void }) {
-  if (page === 'Mediatorlar reyestri') return <PublicRegistryDirectory registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} onLogin={onLogin} onContact={onContact}/>
+function PublicInfoPage({ page, registryKind, setRegistryKind, query, setQuery, region, setRegion, specialization, setSpecialization, onRegistry, onLogin, onToast, onContact }: { page: string; registryKind: string; setRegistryKind: (value: string) => void; query: string; setQuery: (value: string) => void; region: string; setRegion: (value: string) => void; specialization: string; setSpecialization: (value: string) => void; onRegistry: () => void; onLogin: () => void; onToast: (text: string) => void; onContact: (name: string, registryId?: string, isSample?: boolean) => void }) {
+  if (page === 'Mediatorlar reyestri') return <PublicRegistryDirectory registryKind={registryKind} setRegistryKind={setRegistryKind} query={query} setQuery={setQuery} region={region} setRegion={setRegion} specialization={specialization} setSpecialization={setSpecialization} onLogin={onLogin} onContact={onContact}/>
   if (page === 'Statistika') return <PublicStatisticsPage />
   if (page === 'Reyting') return <PublicRatingsPage setRegistryKind={setRegistryKind} onRegistry={onRegistry} onContact={onContact} />
   if (page === 'Qonunchilik') return <PublicMaterialsPage title="Qonunchilik va hujjat namunalari" types={publicLegalMaterialTypes} />
@@ -1193,13 +1223,13 @@ function PublicFooter({ language, onLogin, setPage }: { language: ApplicantLangu
     </Container>
   </Box>
 }
-function RolePicker({ initialRoles, onClose, onChoose }: { initialRoles: RoleKey[]; onClose: () => void; onChoose: (roles: RoleKey[]) => void }) {
+function RolePicker({ initialRoles, onClose, onChoose, onTestAccounts }: { initialRoles: RoleKey[]; onClose: () => void; onChoose: (roles: RoleKey[]) => void; onTestAccounts: () => void }) {
   const currentGroup = cabinetGroups.find((group) => initialRoles.some((role) => group.roles.includes(role)))
   return <ModalShell onClose={onClose}>
     <div className="bg-slate-950 px-7 py-6 text-white sm:px-8">
       <p className="text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-300">Demo ko‘rinishi</p>
       <h2 className="mt-2 text-2xl font-semibold">Kabinet turini tanlang</h2>
-      <p className="mt-1 text-sm text-slate-400">To‘rtta kabinetdan biriga kiring. Rolni kabinet ichidagi yuqori o‘ng menyudan tanlaysiz.</p>
+      <p className="mt-1 text-sm text-slate-400">To‘rtta kabinetdan birini tanlang. Mutaxassislar kabinetida mediator, hakamlik sudyasi va arbitr rollari mavjud.</p>
       <button onClick={onClose} className="absolute right-5 top-5 rounded-lg p-2 text-slate-300 hover:bg-white/10" aria-label="Yopish"><X size={20}/></button>
     </div>
     <div className="max-h-[68vh] overflow-y-auto p-5 sm:p-7">
@@ -1217,7 +1247,7 @@ function RolePicker({ initialRoles, onClose, onChoose }: { initialRoles: RoleKey
       </div>
     </div>
     <div className="flex flex-col-reverse items-center justify-between gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row">
-      <p className="w-full text-center text-[11px] leading-4 text-slate-400">Demo tanlovi interfeysni ko‘rsatadi. Kabinetga kirgach, faqat shu kabinet rollari yuqori o‘ngdagi menyuda chiqadi; haqiqiy tizimda rollar tasdiqlangan vakolatdan olinadi.</p>
+      <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:justify-between"><p className="text-center text-[11px] leading-4 text-slate-400">Kabinetni tanlang yoki serverdagi vaqtinchalik test hisobi bilan kiring.</p><button type="button" onClick={onTestAccounts} className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50">Sinov hisoblariga o‘tish<ArrowRight size={14}/></button></div>
     </div>
   </ModalShell>
 }

@@ -61,33 +61,34 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
 
   async listPublic(query: PublicRegistryQueryDto) {
     const where: Prisma.RegistryEntryWhereInput = {
-      status: RegistryEntryStatus.ACTIVE,
+      ...(query.status ? { status: query.status } : {}),
       publicProfile: true,
+      isSample: false,
       deletedAt: null,
-      AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
       type: query.type || RegistryType.MEDIATOR,
       ...(query.region ? { region: { contains: query.region, mode: 'insensitive' } } : {}),
       ...(query.specialization ? { specialization: { has: query.specialization } } : {}),
       ...(query.language ? { languages: { has: query.language } } : {}),
-      ...(query.minimumRating !== undefined ? { ratings: { some: { score: { gte: query.minimumRating } } } } : {}),
       ...(query.search
         ? {
             OR: [
               { fullName: { contains: query.search, mode: 'insensitive' } },
               { region: { contains: query.search, mode: 'insensitive' } },
+              { registryNumber: { contains: query.search, mode: 'insensitive' } },
             ],
           }
         : {}),
     };
-    const { page = 1, limit = 20 } = query;
+    const page = query.page || 1;
+    const limit = Math.min(query.limit || 20, 50);
     const [total, entries] = await Promise.all([
       this.prisma.registryEntry.count({ where }),
       this.prisma.registryEntry.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
-        include: { ratings: { orderBy: [{ periodYear: 'desc' }, { calculatedAt: 'desc' }], take: 1 } },
-        orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
+        include: { statusHistory: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } } },
+        orderBy: [{ status: 'asc' }, { fullName: 'asc' }, { id: 'asc' }],
       }),
     ]);
     return {
@@ -100,12 +101,11 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
     const entry = await this.prisma.registryEntry.findFirst({
       where: {
         id,
-        status: RegistryEntryStatus.ACTIVE,
         publicProfile: true,
+        isSample: false,
         deletedAt: null,
-        AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
       },
-      include: { ratings: { orderBy: [{ periodYear: 'desc' }, { calculatedAt: 'desc' }], take: 1 } },
+      include: { statusHistory: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } } },
     });
     if (!entry) throw new NotFoundException('Ochiq reyestr yozuvi topilmadi');
     return this.publicProjection(entry);
@@ -117,6 +117,7 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         type: query.type || RegistryType.MEDIATOR,
         status: RegistryEntryStatus.ACTIVE,
         publicProfile: true,
+        isSample: false,
         deletedAt: null,
         AND: [{ OR: [{ certificateExpiresAt: null }, { certificateExpiresAt: { gte: new Date() } }] }],
         latitude: { not: null },
@@ -124,7 +125,6 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
         ...(query.region ? { region: { contains: query.region, mode: 'insensitive' } } : {}),
         ...(query.specialization ? { specialization: { has: query.specialization } } : {}),
         ...(query.language ? { languages: { has: query.language } } : {}),
-        ...(query.minimumRating !== undefined ? { ratings: { some: { score: { gte: query.minimumRating } } } } : {}),
         ...(query.search
           ? {
               OR: [
@@ -204,9 +204,9 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
           pinfl,
           type: dto.type,
           fullName: dto.fullName.trim(),
-          phone: this.clean(dto.phone) || linkedUser?.phone,
-          email: this.clean(dto.email) || linkedUser?.email,
-          address: this.clean(dto.address) || linkedUser?.address,
+          phone: this.clean(dto.phone),
+          email: this.clean(dto.email),
+          address: this.clean(dto.address),
           region: dto.region.trim(),
           gender: this.clean(dto.gender) || linkedUser?.gender,
           birthDate: dto.birthDate ? new Date(dto.birthDate) : this.parseBirthDate(linkedUser?.birthDate),
@@ -578,10 +578,10 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
             userId: linkedUser?.id,
             type,
             fullName,
-            phone: this.clean(rowData.phone) || linkedUser?.phone,
-            email: this.clean(rowData.email) || linkedUser?.email,
+            phone: this.clean(rowData.phone),
+            email: this.clean(rowData.email),
             region,
-            address: this.clean(rowData.address) || linkedUser?.address,
+            address: this.clean(rowData.address),
             gender: this.normalizeGender(rowData.gender) || linkedUser?.gender,
             birthDate,
             education: this.clean(rowData.education),
@@ -963,33 +963,25 @@ export class RegistryService implements OnModuleInit, OnModuleDestroy {
   }
 
   private publicProjection(entry: any) {
+    const certificateExpired = Boolean(entry.certificateExpiresAt && entry.certificateExpiresAt < new Date());
+    const publicStatus = entry.status === RegistryEntryStatus.ACTIVE && certificateExpired
+      ? RegistryEntryStatus.SUSPENDED
+      : entry.status;
     return {
       id: entry.id,
       registryNumber: entry.registryNumber,
-      type: entry.type,
+      registeredAt: entry.registeredAt,
       fullName: entry.fullName,
-      photoUrl: entry.photoUrl,
+      phone: entry.phone,
+      email: entry.email,
+      address: entry.address,
       region: entry.region,
       education: entry.education,
       specialization: entry.specialization,
       languages: entry.languages,
-      latitude: entry.latitude,
-      longitude: entry.longitude,
-      status: entry.status,
-      isSample: entry.isSample,
-      certificateNumber: entry.certificateNumber,
-      certificateIssuedAt: entry.certificateIssuedAt,
-      certificateExpiresAt: entry.certificateExpiresAt,
-      registeredAt: entry.registeredAt,
+      status: publicStatus,
+      statusChangedAt: entry.statusHistory?.[0]?.createdAt || entry.updatedAt,
       profileUrl: `/public/mediators/${entry.id}`,
-      rating: entry.ratings?.[0]
-        ? {
-            score: entry.ratings[0].score,
-            periodYear: entry.ratings[0].periodYear,
-            metrics: entry.ratings[0].metrics,
-            calculatedAt: entry.ratings[0].calculatedAt,
-          }
-        : null,
     };
   }
 

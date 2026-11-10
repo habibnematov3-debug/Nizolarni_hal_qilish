@@ -420,7 +420,7 @@ export class MkService {
     const questionnairePassport = application.passportData as Record<string, any> | null;
     const registryData = {
       registryNumber: dto.registryNumber.trim(), pinfl: person.pinfl, type: RegistryType.MEDIATOR,
-      fullName: person.fullName, phone: application.phone, email: application.email, address: questionnairePassport?.questionnaire?.practiceAddress || application.address,
+      fullName: person.fullName, phone: application.phone, email: application.email, address: questionnairePassport?.questionnaire?.practiceAddress || null,
       region: application.region, gender: person.gender, birthDate: person.birthDate || questionnairePassport?.birthDate ? new Date(person.birthDate || questionnairePassport.birthDate) : null,
       education: application.education, specialization: application.specialization, languages: application.languages,
       status: RegistryEntryStatus.ACTIVE, publicProfile: true, registeredAt: new Date(), createdById: actor.id,

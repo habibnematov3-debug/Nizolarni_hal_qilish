@@ -60,6 +60,11 @@ export class PublicRegistryQueryDto extends PaginationQueryDto {
   @IsEnum(RegistryType)
   type?: RegistryType;
 
+  @ApiPropertyOptional({ enum: RegistryEntryStatus, description: 'Holat tanlanmasa faol yozuvlar birinchi ko‘rsatiladi' })
+  @IsOptional()
+  @IsEnum(RegistryEntryStatus)
+  status?: RegistryEntryStatus;
+
   @ApiPropertyOptional({ example: 'Toshkent shahri' })
   @IsOptional()
   @IsString()
